@@ -1,0 +1,42 @@
+# Gradle
+.gradle/
+build/
+composeApp/build/
+!composeApp/build/web/dist-prod/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.kotlin/
+
+# Android
+local.properties
+
+# Node / npm
+node_modules/
+package-lock.json
+package.json
+web/
+
+# Logs
+*.log
+dev-server.log
+php_server.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp / misc
+body.txt
+create_body.txt
+test_img.jpg
+features-proposal.md
+*.bat
+!gradlew.bat
+kotlin-js-store/

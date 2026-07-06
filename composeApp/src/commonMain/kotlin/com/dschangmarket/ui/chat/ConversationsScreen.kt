@@ -1,0 +1,202 @@
+package com.dschangmarket.ui.chat
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.dschangmarket.api.ApiClient
+import com.dschangmarket.api.ApiConversation
+import com.dschangmarket.theme.*
+import kotlinx.coroutines.launch
+
+data class Conversation(
+    val id: String,
+    val name: String,
+    val lastMessage: String,
+    val isLastMessageFromMe: Boolean = false,
+    val timestamp: String,
+    val unreadCount: Int = 0,
+    val isOnline: Boolean = false,
+    val productTitle: String? = null,
+    val vendorUserId: Int = 0
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ConversationsScreen(
+    onBack: () -> Unit,
+    onConversationClick: (vendorName: String, productTitle: String?, vendorUserId: Int, isOnline: Boolean) -> Unit,
+    showBack: Boolean = true
+) {
+    var conversations by remember { mutableStateOf<List<Conversation>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        try {
+            val apiConvs = ApiClient.fetchConversations()
+            conversations = apiConvs.map { apiConv ->
+                Conversation(
+                    id = apiConv.userId.toString(),
+                    name = apiConv.userName,
+                    lastMessage = apiConv.lastMessage,
+                    isLastMessageFromMe = apiConv.lastSenderId == ApiClient.getCurrentUser()?.id,
+                    timestamp = apiConv.lastMessageAt,
+                    unreadCount = apiConv.unreadCount,
+                    isOnline = apiConv.isOnline, 
+                    productTitle = null, 
+                    vendorUserId = apiConv.userId
+                )
+            }
+        } catch (_: Exception) {}
+        isLoading = false
+    }
+
+    Scaffold(
+        topBar = {
+            Surface(shadowElevation = 2.dp) {
+                TopAppBar(
+                    title = { Text("Centre de messages", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) },
+                    navigationIcon = { if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
+                    actions = {
+                        IconButton(onClick = {}) { Icon(Icons.Default.FilterList, null, tint = Color.White) }
+                        IconButton(onClick = {}) { Icon(Icons.Default.DoneAll, null, tint = Color.White) }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
+                )
+            }
+        }
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF7F8FA))) {
+            // Search bar
+            SearchBar()
+
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Green)
+                }
+            } else if (conversations.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.ChatBubbleOutline, null, Modifier.size(64.dp), tint = Color.LightGray)
+                        Spacer(Modifier.height(16.dp))
+                        Text("Aucun message", fontSize = 16.sp, color = Color.Gray)
+                    }
+                }
+            } else {
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(conversations) { conv ->
+                        ConversationItem(conv, onClick = { onConversationClick(conv.name, conv.productTitle, conv.vendorUserId, conv.isOnline) })
+                        HorizontalDivider(Modifier.padding(start = 80.dp), color = Color(0xFFF0F0F0), thickness = 0.5.dp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchBar() {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = Color.Gray)
+            Spacer(Modifier.width(8.dp))
+            Text("Rechercher des contacts ou messages", color = Color.Gray, fontSize = 14.sp)
+        }
+    }
+}
+
+@Composable
+private fun ConversationItem(conv: Conversation, onClick: () -> Unit) {
+    Surface(onClick = onClick, color = Color.White) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar with verified badge potential
+            Box {
+                Surface(
+                    modifier = Modifier.size(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = GreenSurface
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(conv.name.take(1).uppercase(), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Green)
+                    }
+                }
+                if (conv.isOnline) {
+                    Box(
+                        Modifier.size(12.dp).align(Alignment.BottomEnd).offset(x = 2.dp, y = 2.dp)
+                            .background(Color.White, CircleShape)
+                    ) {
+                        Box(Modifier.size(8.dp).align(Alignment.Center).background(Green, CircleShape))
+                    }
+                }
+            }
+            
+            Spacer(Modifier.width(12.dp))
+            
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(conv.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(formatShortDate(conv.timestamp), fontSize = 11.sp, color = Color.Gray)
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val prefix = if (conv.isLastMessageFromMe) "Moi: " else ""
+                    Text(
+                        "$prefix${conv.lastMessage}",
+                        fontSize = 13.sp,
+                        color = if (conv.unreadCount > 0) Color.Black else Color.Gray,
+                        fontWeight = if (conv.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (conv.unreadCount > 0) {
+                        Spacer(Modifier.width(8.dp))
+                        Surface(color = Color.Red, shape = CircleShape) {
+                            Text(
+                                "${conv.unreadCount}",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatShortDate(dateStr: String): String {
+    if (dateStr.isBlank()) return ""
+    // Expect "YYYY-MM-DD HH:MM:SS"
+    return if (dateStr.contains(" ")) dateStr.substringAfter(" ").take(5) else dateStr
+}

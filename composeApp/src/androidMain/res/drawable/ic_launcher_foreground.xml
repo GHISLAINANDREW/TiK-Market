@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylized Shopping Basket for Dschang Market -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,40 L78,40 L74,75 C73.5,80 70,82 65,82 L43,82 C38,82 34.5,80 34,75 L30,40 Z" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M40,40 C40,30 45,25 54,25 C63,25 68,30 68,40 L64,40 C64,32 60,29 54,29 C48,29 44,32 44,40 L40,40 Z" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M30,40 L78,40 L78,45 L30,45 Z" />
+    <!-- Letter D accent -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M48,55 L48,70 C48,70 58,70 58,62.5 C58,55 48,55 48,55 Z M51,58 L51,67 C53,67 55,65 55,62.5 C55,60 53,58 51,58 Z" />
+</vector>
