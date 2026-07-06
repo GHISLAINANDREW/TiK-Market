@@ -1,0 +1,10 @@
+.gradle/
+.idea/
+.kotlin/
+build/
+composeApp/
+node_modules/
+web/
+*.bat
+Dockerfile
+.gitignore

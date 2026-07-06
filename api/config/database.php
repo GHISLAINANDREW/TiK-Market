@@ -2,30 +2,64 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Platform');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
+/**
+ * Connect to the database using Environment Variables.
+ * On Render/Aiven/TiDB, these will be set in the dashboard.
+ */
 function getDB(): PDO {
     $host = getenv('DB_HOST') ?: 'localhost';
+    $port = getenv('DB_PORT') ?: '3306';
     $name = getenv('DB_NAME') ?: 'dschang_market';
     $user = getenv('DB_USER') ?: 'root';
     $pass = getenv('DB_PASS') ?: '';
-    $pdo = new PDO("mysql:host=$host;dbname=$name;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
-    return $pdo;
+
+    try {
+        $pdo = new PDO("mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4", $user, $pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]);
+        return $pdo;
+    } catch (PDOException $e) {
+        json(500, ['error' => 'Database connection failed: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+/**
+ * Replaces local URLs with the production URL in the JSON response.
+ */
+function rewriteUrls($data) {
+    $oldBase = 'http://192.168.1.230:8081'; // Your old local IP
+    $newBase = getenv('APP_URL') ?: ('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+
+    if (is_string($data)) {
+        return str_replace($oldBase, $newBase, $data);
+    }
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            $data[$key] = rewriteUrls($value);
+        }
+    }
+    if (is_object($data)) {
+        foreach ($data as $key => $value) {
+            $data->$key = rewriteUrls($value);
+        }
+    }
+    return $data;
 }
 
 function json(int $code, $data): void {
     http_response_code($code);
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    echo json_encode(rewriteUrls($data), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-define('JWT_SECRET', 'dschang_market_jwt_secret_2026_change_in_production');
+define('JWT_SECRET', getenv('JWT_SECRET') ?: 'dschang_market_jwt_secret_2026_change_in_production');
 define('JWT_EXPIRY', 86400 * 30); // 30 days
 
 function base64url_encode(string $data): string {
@@ -33,7 +67,6 @@ function base64url_encode(string $data): string {
 }
 
 function base64url_decode(string $data): string {
-    // Restore padding if needed (base64_decode handles missing padding in PHP 7+, but be explicit)
     $remainder = strlen($data) % 4;
     if ($remainder > 0) {
         $data .= str_repeat('=', 4 - $remainder);
@@ -63,8 +96,6 @@ function jwt_decode(string $token): ?array {
 }
 
 function getAuthUserId(): int {
-    $userId = 0;
-    // Fallback: PHP built-in server does not always populate getallheaders()
     $token = '';
     $headers = function_exists('getallheaders') ? getallheaders() : [];
     if (!empty($headers['Authorization'])) {
@@ -74,13 +105,13 @@ function getAuthUserId(): int {
     } elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
         $token = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
     }
+
     if (!str_starts_with($token, 'Bearer ')) json(401, ['error' => 'Non authentifié']);
     $jwt = substr($token, 7);
     $payload = jwt_decode($jwt);
     if (!$payload || !isset($payload['user_id'])) json(401, ['error' => 'Token invalide ou expiré']);
     $userId = (int)$payload['user_id'];
 
-    // Update last seen
     try {
         $db = getDB();
         $db->exec("UPDATE users SET last_seen = NOW() WHERE id = $userId");
