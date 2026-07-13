@@ -11,18 +11,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
  * On Render/Aiven/TiDB, these will be set in the dashboard.
  */
 function getDB(): PDO {
-    $host = getenv('DB_HOST') ?: 'localhost';
+    // ⚠️ IMPORTANT: For remote DB (Aiven, TiDB, etc.), set DB_HOST to the hostname.
+    // Do NOT use "localhost" for remote databases — PHP interprets it as a Unix socket.
+    $host = getenv('DB_HOST') ?: '127.0.0.1';
     $port = getenv('DB_PORT') ?: '3306';
     $name = getenv('DB_NAME') ?: 'dschang_market';
     $user = getenv('DB_USER') ?: 'root';
     $pass = getenv('DB_PASS') ?: '';
+    $sslMode = getenv('DB_SSL') ?: '';
+
+    $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false
+    ];
+
+    // Aiven / remote SSL connection
+    if ($sslMode === 'required') {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+    }
 
     try {
-        $pdo = new PDO("mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4", $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]);
+        $pdo = new PDO($dsn, $user, $pass, $options);
         return $pdo;
     } catch (PDOException $e) {
         json(500, ['error' => 'Database connection failed: ' . $e->getMessage()]);

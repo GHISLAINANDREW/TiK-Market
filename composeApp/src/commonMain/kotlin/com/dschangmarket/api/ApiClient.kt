@@ -173,7 +173,7 @@ object ApiClient {
         coerceInputValues = true
     }
 
-    private var _baseUrl: String = "http://192.168.1.230:8081"
+    private var _baseUrl: String = "https://dschang-market.onrender.com"
     var baseUrl: String
         get() = _baseUrl
         set(value) {
