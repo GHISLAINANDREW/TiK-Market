@@ -19,7 +19,7 @@ try {
                 FROM products p
                 JOIN shops s ON p.shop_id = s.id
                 JOIN users u ON s.vendor_id = u.id
-                WHERE p.id = ? AND p.is_active = 1 AND s.status = "active" AND u.status = "active"
+                WHERE p.id = ? AND p.is_active = 1 AND s.status = 'active' AND u.status = 'active'
             ');
             $stmt->execute([$id]);
             $product = $stmt->fetch();
@@ -67,7 +67,7 @@ try {
         $offset = ($page - 1) * $limit;
         $sort_by = $_GET['sort_by'] ?? 'newest';
 
-        $where = ['p.is_active = 1', 's.status = "active"', 'u.status = "active"'];
+        $where = ['p.is_active = 1', "s.status = 'active'", "u.status = 'active'"];
         $params = [];
 
         if ($category !== '') {

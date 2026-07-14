@@ -53,7 +53,7 @@ try {
     // Notifier les admins pour une nouvelle inscription vendeur
     if ($role === 'vendor') {
         try {
-            $stmtAdmin = $db->prepare('SELECT id FROM users WHERE role = "admin"');
+            $stmtAdmin = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
             $stmtAdmin->execute();
             $admins = $stmtAdmin->fetchAll();
             foreach ($admins as $admin) {

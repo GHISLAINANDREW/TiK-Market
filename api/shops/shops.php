@@ -87,7 +87,7 @@ try {
             FROM shops s
             JOIN users u ON s.vendor_id = u.id
             LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
-            WHERE s.status = "active" AND u.status = "active"
+            WHERE s.status = 'active' AND u.status = 'active'
             GROUP BY s.id
             ORDER BY s.created_at DESC
         ');

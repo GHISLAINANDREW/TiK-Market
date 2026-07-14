@@ -44,7 +44,7 @@ try {
         if (!$order) json(404, ['error' => 'Commande non trouvée']);
 
         // Vérifier qu'aucun paiement n'existe déjà pour cette commande
-        $stmt = $db->prepare('SELECT id FROM payments WHERE order_id = ? AND status = "completed"');
+        $stmt = $db->prepare("SELECT id FROM payments WHERE order_id = ? AND status = 'completed'");
         $stmt->execute([$order_id]);
         if ($stmt->fetch()) json(400, ['error' => 'Cette commande est déjà payée']);
 
@@ -52,12 +52,12 @@ try {
         $txId = strtoupper(bin2hex(random_bytes(8)));
 
         // Insérer le paiement
-        $stmt = $db->prepare('INSERT INTO payments (order_id, amount, provider, phone, transaction_id, status, message) VALUES (?, ?, ?, ?, ?, "completed", "Paiement simulé avec succès")');
+        $stmt = $db->prepare("INSERT INTO payments (order_id, amount, provider, phone, transaction_id, status, message) VALUES (?, ?, ?, ?, ?, 'completed', 'Paiement simulé avec succès')");
         $stmt->execute([$order_id, $order['total'], $provider, $phone, $txId]);
         $paymentId = (int)$db->lastInsertId();
 
         // Mettre à jour le statut de la commande
-        $stmt = $db->prepare('UPDATE orders SET payment_status = "paid", status = "confirmed", payment_method = ? WHERE id = ?');
+        $stmt = $db->prepare("UPDATE orders SET payment_status = 'paid', status = 'confirmed', payment_method = ? WHERE id = ?");
         $stmt->execute([$provider, $order_id]);
 
         // Notification à l'acheteur

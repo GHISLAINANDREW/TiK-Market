@@ -124,14 +124,14 @@ try {
     $result['same_dsn_test'] = 'SUCCESS - ' . json_encode($row2);
     
     // Test products JOIN query (same as products.php)
-    $joinStmt = $pdo2->prepare('
-        SELECT p.id, p.title, p.image, p.images, s.name AS shop_name
+    $joinStmt = $pdo2->prepare("
+        SELECT p.id, p.title, p.image_url, s.name AS shop_name
         FROM products p
         JOIN shops s ON p.shop_id = s.id
         JOIN users u ON s.vendor_id = u.id
-        WHERE p.is_active = 1 AND s.status = "active" AND u.status = "active"
+        WHERE p.is_active = 1 AND s.status = 'active' AND u.status = 'active'
         LIMIT 5
-    ');
+    ");
     $joinStmt->execute();
     $products = $joinStmt->fetchAll();
     $result['products_sample'] = $products;

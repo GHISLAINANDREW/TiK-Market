@@ -31,19 +31,19 @@ try {
 
 // Test 3: products JOIN query
 try {
-    $stmt = $db->prepare('
+    $stmt = $db->prepare("
         SELECT p.*, s.name AS shop_name
         FROM products p
         JOIN shops s ON p.shop_id = s.id
         JOIN users u ON s.vendor_id = u.id
-        WHERE p.is_active = 1 AND s.status = "active" AND u.status = "active"
+        WHERE p.is_active = 1 AND s.status = 'active' AND u.status = 'active'
         LIMIT 1
-    ');
+    ");
     $stmt->execute();
     $row = $stmt->fetch();
     $results['join_query'] = $row ? 'OK - found product' : 'OK - no products';
     if ($row) {
-        $results['sample_image'] = $row['image'] ?? $row['images'] ?? 'no image field';
+        $results['sample_image'] = $row['image_url'] ?? 'no image field';
     }
 } catch (\Throwable $e) {
     $results['join_query'] = 'FAIL: ' . $e->getMessage();
@@ -51,15 +51,9 @@ try {
 
 // Test 4: Image URLs
 try {
-    $stmt = $db->query('SELECT image, images FROM products LIMIT 3');
+    $stmt = $db->query('SELECT image_url FROM products LIMIT 3');
     $rows = $stmt->fetchAll();
-    $results['image_urls'] = [];
-    foreach ($rows as $r) {
-        $results['image_urls'][] = [
-            'image' => $r['image'] ?? null,
-            'images' => $r['images'] ?? null,
-        ];
-    }
+    $results['image_urls'] = $rows;
 } catch (\Throwable $e) {
     $results['image_urls'] = 'FAIL: ' . $e->getMessage();
 }
