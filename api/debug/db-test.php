@@ -1,0 +1,90 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+
+$result = [
+    'status' => 'running',
+    'php_version' => phpversion(),
+    'env' => [],
+    'dns' => null,
+    'tcp' => null,
+    'pdo_without_ssl' => null,
+    'pdo_with_ssl' => null,
+    'pdo_drivers' => PDO::getAvailableDrivers(),
+    'openssl' => extension_loaded('openssl'),
+];
+
+// ── Env vars (redacted) ──
+foreach (['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'DB_SSL'] as $key) {
+    $val = getenv($key) ?: '(not set)';
+    if ($key === 'DB_PASS' && $val !== '(not set)') {
+        $val = substr($val, 0, 3) . '***';
+    }
+    $result['env'][$key] = $val;
+}
+
+// ── DNS resolution ──
+$host = getenv('DB_HOST') ?: 'localhost';
+$port = getenv('DB_PORT') ?: '3306';
+$hostIp = gethostbyname($host);
+$result['dns'] = "$host → $hostIp";
+if ($hostIp === $host) {
+    $result['dns'] .= ' (DNS LOOKUP FAILED)';
+}
+
+// ── TCP connection test ──
+$result['tcp'] = 'testing...';
+$errno = 0;
+$errstr = '';
+$fp = @fsockopen($host, (int)$port, $errno, $errstr, 5);
+if ($fp) {
+    $result['tcp'] = "SUCCESS - Port $port open";
+    fclose($fp);
+} else {
+    $result['tcp'] = "FAILED - $errstr ($errno)";
+}
+
+// ── SSL CA certificates check ──
+$caPaths = [
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/pki/tls/certs/ca-bundle.crt',
+    '/etc/ssl/cert.pem',
+    '/etc/pki/tls/cert.pem',
+];
+$result['ca_certs'] = [];
+foreach ($caPaths as $path) {
+    $result['ca_certs'][$path] = file_exists($path) ? 'EXISTS (' . filesize($path) . ' bytes)' : 'NOT FOUND';
+}
+
+// ── PDO without SSL ──
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=" . (getenv('DB_NAME') ?: 'defaultdb') . ";charset=utf8mb4";
+    $user = getenv('DB_USER') ?: 'root';
+    $pass = getenv('DB_PASS') ?: '';
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5,
+    ]);
+    $result['pdo_without_ssl'] = 'SUCCESS';
+} catch (Exception $e) {
+    $result['pdo_without_ssl'] = $e->getMessage();
+}
+
+// ── PDO with SSL ──
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=" . (getenv('DB_NAME') ?: 'defaultdb') . ";charset=utf8mb4";
+    $user = getenv('DB_USER') ?: 'root';
+    $pass = getenv('DB_PASS') ?: '';
+    $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5,
+        PDO::MYSQL_ATTR_SSL_CA => $caCert,
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true,
+    ]);
+    $result['pdo_with_ssl'] = 'SUCCESS';
+} catch (Exception $e) {
+    $result['pdo_with_ssl'] = $e->getMessage();
+}
+
+$result['status'] = 'done';
+echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
