@@ -9,6 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 /**
  * Connect to the database using Environment Variables.
  * On Render/Aiven/TiDB, these will be set in the dashboard.
+ * 
+ * Required env vars for production:
+ *   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+ *   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
  */
 function getDB(): PDO {
     // ⚠️ IMPORTANT: For remote DB (Aiven, TiDB, etc.), set DB_HOST to the hostname.
@@ -57,11 +61,17 @@ function getDB(): PDO {
 function rewriteUrls($data) {
     $oldBase = 'http://192.168.1.230:8081'; // Your old local IP
     $newBase = getenv('APP_URL') ?: ('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $cloudName = getenv('CLOUDINARY_CLOUD_NAME');
 
     if (is_string($data)) {
         // Replace old local IP with new Render URL
         $data = str_replace($oldBase, $newBase, $data);
-        // Also fix relative upload paths (e.g. "uploads/..." becomes "https://.../uploads/...")
+        // If Cloudinary is configured and image URL is still local, rewrite to Cloudinary
+        if ($cloudName && str_contains($data, $newBase . '/uploads/')) {
+            // Image URL points to Render but file isn't there → keep it, user must re-upload
+            // (old local images won't work until re-uploaded to Cloudinary)
+        }
+        // Fix relative upload paths
         if (str_starts_with($data, 'uploads/') || str_starts_with($data, '/uploads/')) {
             $data = $newBase . '/' . ltrim($data, '/');
         }
