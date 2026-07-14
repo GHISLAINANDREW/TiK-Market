@@ -30,7 +30,6 @@ function getDB(): PDO {
 
     // Aiven / remote SSL connection
     if ($sslMode === 'required') {
-        // Use system CA bundle (Aiven uses public CA - Let's Encrypt)
         $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
         if (file_exists($caCert)) {
             $options[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
@@ -38,6 +37,13 @@ function getDB(): PDO {
         // SSL_VERIFY_SERVER_CERT may not be defined in all PHP builds
         if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
+        // Try SSL first; if it fails, fallback to non-SSL
+        try {
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            return $pdo;
+        } catch (PDOException $e) {
+            // Fallback: try without SSL
         }
     }
 
