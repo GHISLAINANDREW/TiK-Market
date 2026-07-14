@@ -80,7 +80,7 @@ try {
         }
 
         // Pas d'ID ni vendor_id → retourner les boutiques actives (non bannies)
-        $stmt = $db->query('
+        $stmt = $db->query("
             SELECT s.*,
                 COUNT(p.id) AS product_count,
                 COALESCE(SUM(p.total_sales), 0) AS total_sales
@@ -90,7 +90,7 @@ try {
             WHERE s.status = 'active' AND u.status = 'active'
             GROUP BY s.id
             ORDER BY s.created_at DESC
-        ');
+        ");
         $shops = $stmt->fetchAll();
 
         foreach ($shops as &$s) {

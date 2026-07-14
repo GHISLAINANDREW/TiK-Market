@@ -14,13 +14,13 @@ try {
 
     if ($method === 'GET') {
         if ($id) {
-            $stmt = $db->prepare('
+            $stmt = $db->prepare("
                 SELECT p.*, s.name AS shop_name, s.phone AS shop_phone, s.location AS shop_location, s.vendor_id, s.is_verified
                 FROM products p
                 JOIN shops s ON p.shop_id = s.id
                 JOIN users u ON s.vendor_id = u.id
                 WHERE p.id = ? AND p.is_active = 1 AND s.status = 'active' AND u.status = 'active'
-            ');
+            ");
             $stmt->execute([$id]);
             $product = $stmt->fetch();
 
