@@ -217,15 +217,7 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (order.status == "pending") {
-                        Button(
-                            onClick = onPay,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Orange)
-                        ) {
-                            Text("Payer", fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    // Paiement désactivé pour le moment
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,

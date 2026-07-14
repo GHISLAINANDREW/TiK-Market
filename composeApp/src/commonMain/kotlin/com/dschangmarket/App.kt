@@ -427,7 +427,11 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             )
             NavScreen.Orders -> OrdersScreen(
                 onBack = { appState.goBack() },
-                onPay = { order -> appState.paymentOrder = order; appState.navigateTo(NavScreen.Payment) },
+                onPay = { order ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Paiement désactivé pour le moment. La commande est enregistrée.")
+                    }
+                },
                 onContactVendor = { productId ->
                     scope.launch {
                         try {
@@ -649,9 +653,18 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                 )
                             }
                             val order = ApiClient.createOrder(addr, ph, n, m, items)
-                            appState.paymentOrder = order
                             appState.cartItems = emptyList()
-                            appState.navigateTo(NavScreen.Payment)
+                            // Skip payment: go directly to orders
+                            appState.navigateTo(NavScreen.Orders)
+                            // Earn loyalty points automatically
+                            try {
+                                val resp = ApiClient.earnPoints(order.totalAmount, order.id)
+                                if (resp.success) {
+                                    snackbarHostState.showSnackbar(
+                                        "${resp.earnedCashback.toInt()} FCFA cashback • ${resp.earnedPoints} pts gagnés !"
+                                    )
+                                }
+                            } catch (_: Exception) { }
                         } catch (e: Exception) { showError(e.message ?: "Erreur") }
                     }
                 }

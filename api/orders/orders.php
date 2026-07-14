@@ -137,9 +137,10 @@ try {
 
         $orderNumber = 'CMD-' . time();
 
+        // Paiement désactivé : commande créée directement comme confirmée
         $stmt = $db->prepare('
             INSERT INTO orders (user_id, order_number, total_amount, status, payment_method, payment_status, phone, shipping_address, notes)
-            VALUES (?, ?, ?, \'pending\', ?, \'unpaid\', ?, ?, ?)
+            VALUES (?, ?, ?, \'confirmed\', ?, \'paid\', ?, ?, ?)
         ');
         $stmt->execute([$userId, $orderNumber, $total, $payment_method, $phone, $shipping_address, $notes ?: null]);
         $orderId = (int)$db->lastInsertId();
