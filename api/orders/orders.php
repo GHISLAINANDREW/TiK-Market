@@ -50,8 +50,7 @@ try {
         }
 
         $stmt = $db->prepare('
-            SELECT o.*,
-                (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
+            SELECT o.*
             FROM orders o
             WHERE o.user_id = ?
             ORDER BY o.created_at DESC
@@ -62,7 +61,37 @@ try {
         foreach ($orders as &$o) {
             $o['id'] = (int)$o['id'];
             $o['total_amount'] = (float)$o['total_amount'];
-            $o['item_count'] = (int)$o['item_count'];
+
+            // Fetch items for this order
+            $stmtItems = $db->prepare('
+                SELECT oi.product_id, oi.quantity, oi.price, p.title
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = ?
+            ');
+            $stmtItems->execute([$o['id']]);
+            $items = $stmtItems->fetchAll();
+            foreach ($items as &$item) {
+                $item['product_id'] = (int)$item['product_id'];
+                $item['quantity'] = (int)$item['quantity'];
+                $item['price'] = (float)$item['price'];
+            }
+            unset($item);
+            $o['items'] = $items;
+
+            // Fetch vendor info for direct payment orders
+            if (($o['payment_type'] ?? 'delivery') === 'direct') {
+                $stmtV = $db->prepare('
+                    SELECT DISTINCT s.name AS shop_name, s.phone AS vendor_phone, u.phone AS vendor_phone_user
+                    FROM order_items oi
+                    JOIN products p ON oi.product_id = p.id
+                    JOIN shops s ON p.shop_id = s.id
+                    JOIN users u ON s.vendor_id = u.id
+                    WHERE oi.order_id = ?
+                ');
+                $stmtV->execute([$o['id']]);
+                $o['vendor_info'] = $stmtV->fetchAll();
+            }
         }
         unset($o);
 
