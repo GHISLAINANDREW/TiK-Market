@@ -86,5 +86,45 @@ try {
     $result['pdo_with_ssl'] = $e->getMessage();
 }
 
+// ── Test query (non-SSL connection) ──
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=" . (getenv('DB_NAME') ?: 'defaultdb') . ";charset=utf8mb4";
+    $user = getenv('DB_USER') ?: 'root';
+    $pass = getenv('DB_PASS') ?: '';
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    // Test simple query
+    $stmt = $pdo->query('SELECT 1 AS test');
+    $row = $stmt->fetch();
+    $result['test_query'] = 'SUCCESS: ' . json_encode($row);
+    
+    // List tables
+    $stmt = $pdo->query('SHOW TABLES');
+    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $result['tables'] = $tables;
+} catch (Exception $e) {
+    $result['test_query'] = 'FAILED: ' . $e->getMessage();
+    $result['tables'] = [];
+}
+
+// ── Test the SAME DSN as database.php ──
+try {
+    $name = getenv('DB_NAME') ?: 'defaultdb';
+    $dsn2 = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4;connect_timeout=5";
+    $pdo2 = new PDO($dsn2, getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
+    // Test a real query that products.php uses
+    $stmt2 = $pdo2->query('SELECT COUNT(*) as cnt FROM products');
+    $row2 = $stmt2->fetch();
+    $result['same_dsn_test'] = 'SUCCESS - ' . json_encode($row2);
+} catch (Exception $e) {
+    $result['same_dsn_test'] = 'FAILED: ' . $e->getMessage();
+}
+
 $result['status'] = 'done';
 echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
