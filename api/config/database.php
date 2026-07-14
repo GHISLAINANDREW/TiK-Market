@@ -28,22 +28,21 @@ function getDB(): PDO {
         PDO::ATTR_TIMEOUT => 5
     ];
 
-    // Aiven / remote SSL connection
+    // Aiven / remote SSL connection: try SSL first, fallback to non-SSL
     if ($sslMode === 'required') {
         $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
+        $sslOptions = $options; // copy base options
         if (file_exists($caCert)) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
+            $sslOptions[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
         }
-        // SSL_VERIFY_SERVER_CERT may not be defined in all PHP builds
         if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
-            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            $sslOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
         }
-        // Try SSL first; if it fails, fallback to non-SSL
         try {
-            $pdo = new PDO($dsn, $user, $pass, $options);
+            $pdo = new PDO($dsn, $user, $pass, $sslOptions);
             return $pdo;
         } catch (PDOException $e) {
-            // Fallback: try without SSL
+            // SSL failed → fall through to non-SSL attempt below
         }
     }
 
