@@ -20,38 +20,34 @@ function getDB(): PDO {
     $pass = getenv('DB_PASS') ?: '';
     $sslMode = getenv('DB_SSL') ?: '';
 
-    $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4;connect_timeout=5";
+    $dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 5
     ];
 
-    // Aiven / remote SSL connection: try SSL first, fallback to non-SSL
-    if ($sslMode === 'required') {
-        $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
-        $sslOptions = $options; // copy base options
-        if (file_exists($caCert)) {
-            $sslOptions[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
-        }
-        if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
-            $sslOptions[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-        }
-        try {
-            $pdo = new PDO($dsn, $user, $pass, $sslOptions);
-            return $pdo;
-        } catch (PDOException $e) {
-            // SSL failed → fall through to non-SSL attempt below
-        }
-    }
-
+    // Aiven: SSL cert doesn't work on this PHP build → connect without SSL
+    // TLS encryption is still used if the server requires it.
     try {
         $pdo = new PDO($dsn, $user, $pass, $options);
         return $pdo;
     } catch (PDOException $e) {
-        json(500, ['error' => 'Database connection failed: ' . $e->getMessage()]);
-        exit;
+        // Last resort: try with explicit SSL options
+        try {
+            $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
+            if (file_exists($caCert)) {
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
+            }
+            if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            }
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            return $pdo;
+        } catch (PDOException $e2) {
+            json(500, ['error' => 'Database connection failed: ' . $e2->getMessage()]);
+            exit;
+        }
     }
 }
 
