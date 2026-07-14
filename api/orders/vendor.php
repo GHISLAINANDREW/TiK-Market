@@ -25,7 +25,7 @@ try {
         $stmt = $db->prepare('
             SELECT DISTINCT o.id, o.order_number, o.total_amount, o.status, o.payment_method,
                    o.payment_status, o.phone, o.shipping_address, o.notes, o.created_at,
-                   o.user_id, u.name AS customer_name, u.phone AS customer_phone
+                   o.payment_type, o.user_id, u.name AS customer_name, u.phone AS customer_phone
             FROM orders o
             JOIN order_items oi ON oi.order_id = o.id
             JOIN products p ON oi.product_id = p.id
