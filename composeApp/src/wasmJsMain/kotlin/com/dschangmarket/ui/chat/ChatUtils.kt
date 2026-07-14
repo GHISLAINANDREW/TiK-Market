@@ -33,10 +33,26 @@ private external fun playChatSoundJs()
 
 @JsFun("""(url) => {
     try {
+        if (!url || url === '') {
+            alert('Fichier audio introuvable');
+            return;
+        }
         const audio = new Audio(url);
-        audio.play().catch(e => console.error('Audio play error:', e));
+        audio.onerror = () => {
+            console.error('Audio play error - file may be missing or format unsupported:', url);
+            alert('Impossible de lire ce message vocal. Le fichier est peut-être introuvable.');
+        };
+        audio.play().catch(e => {
+            console.error('Audio play error:', e);
+            if (e.name === 'NotAllowedError') {
+                alert('Cliquez sur la page puis réessayez (autoplay bloqué)');
+            } else {
+                alert('Erreur de lecture audio: ' + e.message);
+            }
+        });
     } catch (e) {
         console.error('Audio creation error:', e);
+        alert('Erreur audio: ' + e.message);
     }
 }""")
 private external fun playAudioJs(url: String)

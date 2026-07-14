@@ -105,63 +105,27 @@ try {
         $audio_url = $input['audio_url'] ?? null;
         $duration = (int)($input['duration'] ?? 0);
 
-        // If audio_url contains base64 data, save it as a file
+        // If audio_url contains base64 data, upload it (Cloudinary preferred, local fallback)
         if ($audio_url && (strpos($audio_url, 'data:') === 0 || strlen($audio_url) > 1000)) {
             $base64 = $audio_url;
-            $extension = 'bin';
+            $mimeType = 'audio/mp4'; // default for voice messages
 
             if (strpos($base64, 'data:') === 0) {
-                // Extract extension from mime type — support image, audio, application, text, etc.
-                $mimeMap = [
-                    'application/pdf' => 'pdf',
-                    'application/msword' => 'doc',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
-                    'application/vnd.ms-excel' => 'xls',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
-                    'application/vnd.ms-powerpoint' => 'ppt',
-                    'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
-                    'application/zip' => 'zip',
-                    'application/gzip' => 'gz',
-                    'application/x-rar-compressed' => 'rar',
-                    'application/json' => 'json',
-                    'text/plain' => 'txt',
-                    'text/csv' => 'csv',
-                    'text/vcard' => 'vcf',
-                    'text/html' => 'html',
-                ];
                 if (preg_match('/^data:([^;]+);base64,/', $base64, $matches)) {
-                    $fullMime = strtolower($matches[1]);
-                    $extension = $mimeMap[$fullMime] ?? 'bin';
-                    // Fallback: extract subtype (e.g. "svg+xml" → "svg")
-                    if ($extension === 'bin') {
-                        $parts = explode('/', $fullMime);
-                        $sub = end($parts);
-                        // Clean up: remove +xml, +json suffixes
-                        $sub = preg_replace('/\+.*$/', '', $sub);
-                        if (strlen($sub) <= 6) $extension = $sub;
-                    }
+                    $mimeType = strtolower($matches[1]);
                 }
                 $base64 = substr($base64, strpos($base64, ',') + 1);
-            } else {
-                // Fallback for raw base64 without header
-                $extension = ($duration > 0) ? 'mp4' : 'bin';
             }
 
             $fileData = base64_decode($base64);
             if ($fileData) {
-                $filename = 'msg_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
-                $subDir = ($duration > 0) ? 'voices' : 'chat_files';
-                $targetDir = __DIR__ . '/../uploads/' . $subDir . '/';
-
-                if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
-
-                if (file_put_contents($targetDir . $filename, $fileData)) {
-                    // Force HTTPS for tunnel compatibility
-                    $protocol = 'https';
-                    $host = $_SERVER['HTTP_HOST'];
-                    // Construct URL relative to the project root
-                    $audio_url = "$protocol://$host/api/uploads/$subDir/$filename";
+                $folder = ($duration > 0) ? 'voices' : 'chat_files';
+                $uploadedUrl = uploadToCloudinary($fileData, $mimeType, $folder, 'msg_');
+                if ($uploadedUrl) {
+                    $audio_url = $uploadedUrl;
                 }
+                // If uploadToCloudinary returns null, keep original audio_url (data URI)
+                // so the client can attempt local playback from the raw data
             }
         }
 

@@ -28,11 +28,16 @@ actual fun playAudio(url: String) {
         mediaPlayer?.release()
         mediaPlayer = null
 
+        if (url.isBlank()) {
+            showToast("Fichier audio introuvable")
+            return
+        }
+
         val dataSource = if (url.startsWith("data:")) {
             // Write data URL to a temp file and play it
             val base64 = url.substringAfter(",")
             val bytes = Base64.decode(base64, Base64.DEFAULT)
-            val ext = if (url.contains("audio/mp4")) ".mp4" else if (url.contains("audio/webm")) ".webm" else ".bin"
+            val ext = if (url.contains("audio/mp4")) ".mp4" else if (url.contains("audio/webm")) ".webm" else ".mp4"
             val tempFile = File.createTempFile("audio_", ext)
             tempFile.writeBytes(bytes)
             tempFile.absolutePath
@@ -43,18 +48,41 @@ actual fun playAudio(url: String) {
         mediaPlayer = MediaPlayer().apply {
             try {
                 setDataSource(dataSource)
-                setOnPreparedListener { start() }
-                setOnErrorListener { _, _, _ ->
+                setOnPreparedListener { 
+                    start() 
+                }
+                setOnErrorListener { _, what, extra ->
+                    val errorMsg = when (what) {
+                        MediaPlayer.MEDIA_ERROR_UNKNOWN -> "Format audio non supporté"
+                        MediaPlayer.MEDIA_ERROR_SERVER_DIED -> "Erreur du serveur audio"
+                        else -> "Erreur de lecture ($what/$extra)"
+                    }
+                    showToast(errorMsg)
                     mediaPlayer?.release()
                     mediaPlayer = null
                     true
                 }
+                setOnCompletionListener {
+                    mediaPlayer?.release()
+                    mediaPlayer = null
+                }
                 prepareAsync()
             } catch (e: Exception) {
+                showToast("Impossible de lire ce message vocal")
                 release()
                 mediaPlayer = null
             }
         }
+    } catch (e: Exception) {
+        showToast("Erreur audio: ${e.message ?: "inconnue"}")
+    }
+}
+
+/** Show a short toast message to the user */
+private fun showToast(message: String) {
+    try {
+        val activity = AndroidChatContext.currentActivity ?: return
+        android.widget.Toast.makeText(activity, message, android.widget.Toast.LENGTH_SHORT).show()
     } catch (_: Exception) {}
 }
 

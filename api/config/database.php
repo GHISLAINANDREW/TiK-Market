@@ -161,6 +161,95 @@ function generateToken(int $userId, string $email): string {
     return jwt_encode(['user_id' => $userId, 'email' => $email]);
 }
 
+/**
+ * Upload file data to Cloudinary (or fallback to local storage).
+ * 
+ * @param string $fileData Raw binary file data
+ * @param string $mimeType MIME type of the file (e.g. 'audio/mp4', 'image/jpeg')
+ * @param string $folder   Cloudinary folder prefix (e.g. 'voices', 'chat_files')
+ * @param string $prefix   File name prefix (e.g. 'msg_')
+ * @return string|null     Public URL of the uploaded file, or null on failure
+ */
+function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', string $folder = 'voices', string $prefix = 'msg_'): ?string {
+    $cloudName = getenv('CLOUDINARY_CLOUD_NAME');
+    $apiKey = getenv('CLOUDINARY_API_KEY');
+    $apiSecret = getenv('CLOUDINARY_API_SECRET');
+
+    if ($cloudName && $apiKey && $apiSecret && function_exists('curl_init')) {
+        // Upload to Cloudinary
+        $timestamp = time();
+        $signature = sha1("timestamp=$timestamp$apiSecret");
+        
+        // Map MIME to Cloudinary resource type
+        $resourceType = 'auto'; // auto-detect
+        
+        $url = "https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload";
+        
+        $base64Data = base64_encode($fileData);
+        $dataUri = "data:$mimeType;base64,$base64Data";
+        
+        $publicId = $folder . '/' . $prefix . time() . '_' . bin2hex(random_bytes(4));
+        
+        $postData = [
+            'file' => $dataUri,
+            'public_id' => $publicId,
+            'timestamp' => $timestamp,
+            'api_key' => $apiKey,
+            'signature' => $signature
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($response && $httpCode === 200) {
+            $result = json_decode($response, true);
+            if (isset($result['secure_url'])) {
+                return $result['secure_url'];
+            }
+        }
+        
+        error_log("Cloudinary upload failed (HTTP $httpCode): " . ($error ?: $response));
+        // Fall through to local storage
+    }
+
+    // Fallback: local storage (useful for local dev, broken on Render after restart)
+    $subDir = $folder; // 'voices' or 'chat_files'
+    $targetDir = __DIR__ . '/../uploads/' . $subDir . '/';
+    if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+
+    // Determine extension from MIME
+    $extMap = [
+        'audio/mp4' => 'mp4',
+        'audio/mpeg' => 'mp3',
+        'audio/webm' => 'webm',
+        'audio/ogg' => 'ogg',
+        'audio/wav' => 'wav',
+        'audio/amr' => 'amr',
+        'audio/x-m4a' => 'm4a',
+        'audio/aac' => 'aac',
+        'video/mp4' => 'mp4',
+        'video/webm' => 'webm',
+    ];
+    $extension = $extMap[$mimeType] ?? 'bin';
+    $filename = $prefix . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+
+    if (file_put_contents($targetDir . $filename, $fileData)) {
+        $protocol = 'https';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return "$protocol://$host/api/uploads/$subDir/$filename";
+    }
+
+    return null;
+}
+
 function sendNotification(?int $userId, string $title, string $message, string $type = 'system', ?int $relatedId = null): void {
     try {
         $db = getDB();
