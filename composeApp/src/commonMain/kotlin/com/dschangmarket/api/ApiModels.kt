@@ -96,6 +96,13 @@ data class ApiCartItem(
 )
 
 @Serializable
+data class ApiVendorInfo(
+    @SerialName("shop_name") val shopName: String = "",
+    @SerialName("vendor_phone") val vendorPhone: String = "",
+    @SerialName("vendor_phone_user") val vendorPhoneUser: String = ""
+)
+
+@Serializable
 data class ApiOrder(
     val id: Int = 0,
     @SerialName("order_number") val orderNumber: String = "",
@@ -103,11 +110,13 @@ data class ApiOrder(
     val status: String = "pending",
     @SerialName("payment_method") val paymentMethod: String = "Mobile Money",
     @SerialName("payment_status") val paymentStatus: String = "unpaid",
+    @SerialName("payment_type") val paymentType: String = "delivery",
     val phone: String = "",
     @SerialName("shipping_address") val shippingAddress: String = "",
     val notes: String? = null,
     @SerialName("created_at") val createdAt: String = "",
-    val items: List<ApiOrderItem>? = null
+    val items: List<ApiOrderItem>? = null,
+    @SerialName("vendor_info") val vendorInfo: List<ApiVendorInfo>? = null
 )
 
 @Serializable

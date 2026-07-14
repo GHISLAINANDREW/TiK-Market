@@ -356,8 +356,10 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     onChat = {
                         appState.chatVendorName = product.shopName
                         appState.chatProductTitle = product.title
+                        appState.chatProductImage = product.images.firstOrNull()
+                        appState.chatProductPrice = "${product.price.toInt()} FCFA"
                         appState.chatVendorId = product.vendorId.toIntOrNull() ?: 0
-                        appState.chatVendorAvatar = null // Will be fetched or passed if available
+                        appState.chatVendorAvatar = null
                         appState.navigateTo(NavScreen.Chat)
                     },
                     onShopClick = { p ->
@@ -411,6 +413,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onBack = { appState.goBack() },
                 vendorName = appState.chatVendorName,
                 productTitle = appState.chatProductTitle,
+                productImage = appState.chatProductImage,
+                productPrice = appState.chatProductPrice,
                 vendorId = appState.chatVendorId,
                 vendorIsOnline = appState.chatVendorIsOnline
             )
@@ -438,6 +442,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                             val product = ApiClient.fetchProduct(productId)
                             appState.chatVendorName = product.shopName
                             appState.chatProductTitle = product.title
+                            appState.chatProductImage = product.imageUrl
+                            appState.chatProductPrice = "${product.price} FCFA"
                             appState.chatVendorId = product.vendorId
                             appState.chatVendorAvatar = null
                             appState.chatVendorIsOnline = false
@@ -641,7 +647,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 items = appState.cartItems,
                 totalAmount = appState.cartItems.sumOf { it.subtotal },
                 onBack = { appState.goBack() },
-                onPlaceOrder = { addr, ph, n, m ->
+                onPlaceOrder = { addr, ph, n, m, paymentType ->
                     scope.launch {
                         try {
                             val items = appState.cartItems.map { cartItem ->
@@ -652,19 +658,24 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                     title = cartItem.product.title
                                 )
                             }
-                            val order = ApiClient.createOrder(addr, ph, n, m, items)
+                            val order = ApiClient.createOrder(addr, ph, n, m, paymentType, items)
                             appState.cartItems = emptyList()
-                            // Skip payment: go directly to orders
                             appState.navigateTo(NavScreen.Orders)
-                            // Earn loyalty points automatically
-                            try {
-                                val resp = ApiClient.earnPoints(order.totalAmount, order.id)
-                                if (resp.success) {
-                                    snackbarHostState.showSnackbar(
-                                        "${resp.earnedCashback.toInt()} FCFA cashback • ${resp.earnedPoints} pts gagnés !"
-                                    )
-                                }
-                            } catch (_: Exception) { }
+                            if (paymentType == "delivery") {
+                                // Earn loyalty points
+                                try {
+                                    val resp = ApiClient.earnPoints(order.totalAmount, order.id)
+                                    if (resp.success) {
+                                        snackbarHostState.showSnackbar(
+                                            "${resp.earnedCashback.toInt()} FCFA cashback • ${resp.earnedPoints} pts gagnés !"
+                                        )
+                                    }
+                                } catch (_: Exception) { }
+                            } else {
+                                snackbarHostState.showSnackbar(
+                                    "Payez le vendeur, il validera votre commande"
+                                )
+                            }
                         } catch (e: Exception) { showError(e.message ?: "Erreur") }
                     }
                 }
@@ -768,6 +779,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onReply = { msg, product ->
                     appState.chatVendorName = product.shopName
                     appState.chatProductTitle = product.title
+                    appState.chatProductImage = product.images.firstOrNull()
+                    appState.chatProductPrice = "${product.price.toInt()} FCFA"
                     appState.chatVendorId = product.vendorId.toIntOrNull() ?: 0
                     appState.chatVendorAvatar = null
                     appState.chatVendorIsOnline = false

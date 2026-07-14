@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide Utilisateur - Dschang Market</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1a1a2e;
+    line-height: 1.7;
+    background: #f8f9fa;
+  }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(135deg, #0f4c2e 0%, #1a7a4c 50%, #2ea86a 100%);
+    color: white;
+    padding: 80px 60px 60px;
+    position: relative;
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.05) 0%, transparent 50%);
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 8px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .cover h1 {
+    font-size: 52px;
+    font-weight: 800;
+    color: #FFB300;
+    margin-bottom: 15px;
+    position: relative;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .cover h1 span { color: white; }
+  .cover p.subtitle {
+    font-size: 20px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 300;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .cover .version-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(0,0,0,0.2);
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    position: relative;
+  }
+  .cover .version-box strong { color: white; }
+
+  /* ===== CONTENT ===== */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 30px;
+  }
+
+  /* ===== TOC ===== */
+  .toc {
+    background: white;
+    border-radius: 16px;
+    padding: 35px 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .toc h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #2ea86a;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: item;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 30px;
+  }
+  .toc ol li {
+    counter-increment: item;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    color: #555;
+  }
+  .toc ol li::before {
+    content: counter(item);
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: #e8f5e9;
+    color: #2ea86a;
+    border-radius: 6px;
+    text-align: center;
+    line-height: 24px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 10px;
+  }
+
+  /* ===== SECTIONS ===== */
+  .section {
+    background: white;
+    border-radius: 16px;
+    padding: 35px 40px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    page-break-inside: avoid;
+  }
+  .section h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section h2 .icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0f4c2e, #2ea86a);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .section h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #2ea86a;
+    margin: 20px 0 10px;
+  }
+  .section p { margin: 10px 0; color: #444; font-size: 15px; }
+  .section ul, .section ol { margin: 10px 0 10px 20px; }
+  .section li { margin: 6px 0; color: #444; font-size: 15px; }
+
+  /* ===== STEPS ===== */
+  .step {
+    background: #f8faf8;
+    border-left: 4px solid #2ea86a;
+    border-radius: 0 10px 10px 0;
+    padding: 18px 22px;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #333;
+  }
+  .step strong { color: #0f4c2e; }
+
+  /* ===== TAGS ===== */
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #0f4c2e, #2ea86a);
+    color: white;
+    padding: 3px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-orange {
+    background: linear-gradient(135deg, #e65100, #ff9800);
+  }
+
+  /* ===== NOTES ===== */
+  .note, .tip, .warning {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .note { background: #e3f2fd; color: #1565c0; border-left: 4px solid #1976d2; }
+  .tip { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #4caf50; }
+  .warning { background: #fff3e0; color: #e65100; border-left: 4px solid #ff9800; }
+
+  /* ===== TABLES ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  th {
+    background: linear-gradient(135deg, #0f4c2e, #2ea86a);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 15px;
+    text-align: left;
+  }
+  td {
+    padding: 11px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    color: #444;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  /* ===== PLATFORM CARDS ===== */
+  .platforms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 15px 0;
+  }
+  .platform-card {
+    background: linear-gradient(135deg, #f8faf8, #e8f5e9);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #c8e6c9;
+  }
+  .platform-card .emoji { font-size: 32px; margin-bottom: 8px; }
+  .platform-card .name { font-weight: 700; font-size: 15px; color: #1a1a2e; }
+  .platform-card .url { font-size: 12px; color: #2ea86a; font-weight: 500; margin-top: 4px; }
+  .platform-card .url code { background: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+    font-size: 13px;
+    border-top: 1px solid #eee;
+    margin-top: 40px;
+  }
+
+  /* ===== PAGE BREAK ===== */
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">📖 Guide Utilisateur</div>
+  <h1>DSCHANG <span>MARKET</span></h1>
+  <p class="subtitle">La plateforme de commerce en ligne de Dschang et ses environs</p>
+  <div class="version-box">
+    <span>Version <strong>1.0</strong></span>
+    <span>•</span>
+    <span>Juillet 2026</span>
+    <span>•</span>
+    <span><strong>Web</strong> + <strong>Android</strong></span>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="content">
+<div class="toc">
+  <h2>📑 Sommaire</h2>
+  <ol>
+    <li>Introduction</li>
+    <li>Accès à la plateforme</li>
+    <li>Création de compte</li>
+    <li>Connexion</li>
+    <li>Page d'accueil</li>
+    <li>Recherche et filtres</li>
+    <li>Détail d'un produit</li>
+    <li>Panier et commande</li>
+    <li>Paiement</li>
+    <li>Suivi de commande</li>
+    <li>Mes favoris</li>
+    <li>Messagerie</li>
+    <li>Espace vendeur</li>
+    <li>Espace administrateur</li>
+    <li>Notifications</li>
+    <li>Support et FAQ</li>
+  </ol>
+</div>
+
+<!-- 1. INTRODUCTION -->
+<div class="section">
+  <h2><span class="icon">🚀</span> 1. Introduction</h2>
+  <p><strong>Dschang Market</strong> est une plateforme de commerce en ligne connectant acheteurs et vendeurs de Dschang et ses environs. L'objectif est de faciliter le commerce local en proposant une solution moderne accessible à tous.</p>
+  
+  <h3>Fonctionnalités clés</h3>
+  <table>
+    <tr><th>Fonctionnalité</th><th>Description</th></tr>
+    <tr><td>🛒 Achat en ligne</td><td>Parcourez les produits, commandez en quelques clics</td></tr>
+    <tr><td>🏪 Boutiques vendeurs</td><td>Chaque vendeur a sa propre boutique personnalisée</td></tr>
+    <tr><td>💬 Messagerie</td><td>Discutez directement avec les vendeurs</td></tr>
+    <tr><td>⭐ Avis et notes</td><td>Partagez votre expérience d'achat</td></tr>
+    <tr><td>📱 Mobile + Web</td><td>Accessible depuis le navigateur et en application Android</td></tr>
+    <tr><td>🔒 Paiements sécurisés</td><td>Mobile Money (Orange, MTN) et paiement à la livraison</td></tr>
+  </table>
+</div>
+
+<!-- 2. ACCÈS -->
+<div class="section">
+  <h2><span class="icon">🌍</span> 2. Accès à la plateforme</h2>
+  
+  <div class="platforms">
+    <div class="platform-card">
+      <div class="emoji">🌐</div>
+      <div class="name">Site Web</div>
+      <div class="url"><code>dschang-market.vercel.app</code></div>
+    </div>
+    <div class="platform-card">
+      <div class="emoji">📱</div>
+      <div class="name">Android APK</div>
+      <div class="url">Application native</div>
+    </div>
+  </div>
+
+  <h3>Depuis un navigateur</h3>
+  <div class="step">
+    <strong>1.</strong> Ouvrez Chrome, Firefox, Safari ou Edge<br>
+    <strong>2.</strong> Rendez-vous sur <strong>dschang-market.vercel.app</strong><br>
+    <strong>3.</strong> La page d'accueil s'affiche automatiquement
+  </div>
+  <div class="tip">💡 Utilisez un navigateur récent (2023+) pour une expérience optimale.</div>
+
+  <h3>Depuis Android</h3>
+  <div class="step">
+    <strong>1.</strong> Téléchargez le fichier APK<br>
+    <strong>2.</strong> Ouvrez le fichier sur votre appareil Android<br>
+    <strong>3.</strong> Autorisez l'installation depuis <em>sources inconnues</em><br>
+    <strong>4.</strong> Lancez l'application et connectez-vous
+  </div>
+  <div class="warning">⚠️ L'APK n'est pas disponible sur le Google Play Store. Téléchargez-le depuis une source de confiance.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 3. CRÉATION DE COMPTE -->
+<div class="section">
+  <h2><span class="icon">📝</span> 3. Création de compte</h2>
+  
+  <div class="step">
+    <strong>1.</strong> Sur la page d'accueil, cliquez sur <span class="badge">S'inscrire</span><br>
+    <strong>2.</strong> Remplissez le formulaire d'inscription :<br>
+    <br>
+    <table>
+      <tr><th>Champ</th><th>Description</th></tr>
+      <tr><td>Nom complet</td><td>Votre nom ou celui de votre entreprise</td></tr>
+      <tr><td>Email</td><td>Adresse email valide (ex: vous@email.com)</td></tr>
+      <tr><td>Téléphone</td><td>Numéro WhatsApp / Mobile Money</td></tr>
+      <tr><td>Mot de passe</td><td>Minimum 6 caractères</td></tr>
+      <tr><td>Rôle</td><td><span class="badge">Acheteur</span> ou <span class="badge badge-orange">Vendeur</span></td></tr>
+    </table>
+    <br>
+    <strong>3.</strong> Cliquez sur <span class="badge">S'inscrire</span> pour valider
+  </div>
+  <div class="tip">💡 Choisissez <strong>"Vendeur"</strong> si vous souhaitez créer une boutique et vendre vos produits.</div>
+  <div class="note">📧 Un email de notification est envoyé aux administrateurs à chaque nouvelle inscription.</div>
+</div>
+
+<!-- 4. CONNEXION -->
+<div class="section">
+  <h2><span class="icon">🔐</span> 4. Connexion</h2>
+  <div class="step">
+    <strong>1.</strong> Cliquez sur <span class="badge">Connexion</span><br>
+    <strong>2.</strong> Saisissez votre <strong>email</strong> et votre <strong>mot de passe</strong><br>
+    <strong>3.</strong> Cliquez sur <span class="badge">Se connecter</span><br>
+    <strong>4.</strong> Vous êtes redirigé vers votre espace personnel
+  </div>
+  <div class="tip">💡 Si vous avez oublié votre mot de passe, utilisez le lien <em>"Mot de passe oublié"</em>.</div>
+</div>
+
+<!-- 5. ACCUEIL -->
+<div class="section">
+  <h2><span class="icon">🏠</span> 5. Page d'accueil</h2>
+  <p>La page d'accueil présente :</p>
+  <ul>
+    <li><strong>✨ Nouveautés</strong> — produits récemment ajoutés</li>
+    <li><strong>🔥 Meilleures ventes</strong> — produits les plus populaires</li>
+    <li><strong>🏪 Boutiques recommandées</strong> — vendeurs mis en avant</li>
+    <li><strong>📂 Catégories</strong> — naviguer par type de produit</li>
+  </ul>
+
+  <h3>Barre de navigation</h3>
+  <table>
+    <tr><th>Icône</th><th>Fonction</th></tr>
+    <tr><td>🏠</td><td>Accueil</td></tr>
+    <tr><td>🔍</td><td>Rechercher</td></tr>
+    <tr><td>🛒</td><td>Panier</td></tr>
+    <tr><td>❤️</td><td>Favoris</td></tr>
+    <tr><td>👤</td><td>Mon compte</td></tr>
+    <tr><td>💬</td><td>Messages</td></tr>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 6. RECHERCHE -->
+<div class="section">
+  <h2><span class="icon">🔍</span> 6. Recherche et filtres</h2>
+  
+  <h3>Recherche rapide</h3>
+  <div class="step">
+    <strong>1.</strong> Cliquez sur l'icône 🔍 dans la barre de navigation<br>
+    <strong>2.</strong> Tapez votre mot-clé (ex: "pommes", "miel", "tissu")<br>
+    <strong>3.</strong> Les résultats apparaissent en temps réel
+  </div>
+
+  <h3>Filtres avancés</h3>
+  <table>
+    <tr><th>Filtre</th><th>Utilité</th></tr>
+    <tr><td>Catégorie</td><td>Alimentation, Mode, Électronique, Artisanat...</td></tr>
+    <tr><td>Prix min / max</td><td>Définir une fourchette de prix</td></tr>
+    <tr><td>Boutique</td><td>Voir les produits d'un vendeur spécifique</td></tr>
+    <tr><td>Tri</td><td>Prix croissant, décroissant, nouveautés, popularité</td></tr>
+  </table>
+</div>
+
+<!-- 7. PRODUIT -->
+<div class="section">
+  <h2><span class="icon">📦</span> 7. Détail d'un produit</h2>
+  <p>En cliquant sur un produit, vous accédez à sa fiche détaillée :</p>
+  
+  <table>
+    <tr><th>Élément</th><th>Description</th></tr>
+    <tr><td>📷 Image</td><td>Photo du produit (agrandissable)</td></tr>
+    <tr><td>📝 Titre</td><td>Nom du produit</td></tr>
+    <tr><td>💰 Prix</td><td>Prix actuel + éventuel prix avant remise</td></tr>
+    <tr><td>🏪 Boutique</td><td>Lien vers la boutique du vendeur</td></tr>
+    <tr><td>📊 Stock</td><td>Quantité disponible</td></tr>
+    <tr><td>⭐ Avis</td><td>Notes et commentaires des clients</td></tr>
+  </table>
+
+  <h3>Actions disponibles</h3>
+  <ul>
+    <li><strong>🛒 Ajouter au panier</strong> — avec quantité personnalisable</li>
+    <li><strong>❤️ Ajouter aux favoris</strong> — pour retrouver le produit plus tard</li>
+    <li><strong>💬 Contacter le vendeur</strong> — poser une question avant d'acheter</li>
+    <li><strong>⭐ Donner un avis</strong> — après réception du produit</li>
+  </ul>
+</div>
+
+<!-- 8. PANIER -->
+<div class="section">
+  <h2><span class="icon">🛒</span> 8. Panier et commande</h2>
+  
+  <h3>Gérer le panier</h3>
+  <div class="step">
+    <strong>1.</strong> Cliquez sur l'icône 🛒 dans la barre de navigation<br>
+    <strong>2.</strong> Consultez vos articles :<br>
+    &nbsp;&nbsp;• Modifier la quantité (<strong>+</strong> / <strong>−</strong>)<br>
+    &nbsp;&nbsp;• Supprimer un article (<strong>🗑️</strong>)<br>
+    &nbsp;&nbsp;• Voir le montant total<br>
+    <strong>3.</strong> Cliquez sur <span class="badge badge-orange">Commander</span>
+  </div>
+
+  <h3>Finaliser la commande</h3>
+  <div class="step">
+    <strong>1.</strong> Saisissez votre <strong>adresse de livraison</strong><br>
+    <strong>2.</strong> Indiquez votre <strong>numéro de téléphone</strong><br>
+    <strong>3.</strong> Ajoutez des <strong>notes</strong> (optionnel)<br>
+    <strong>4.</strong> Choisissez le mode de paiement<br>
+    <strong>5.</strong> Cliquez sur <span class="badge">Confirmer la commande</span>
+  </div>
+  <div class="tip">💡 Vérifiez bien vos coordonnées avant de confirmer.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 9. PAIEMENT -->
+<div class="section">
+  <h2><span class="icon">💳</span> 9. Paiement</h2>
+
+  <h3>Mobile Money</h3>
+  <div class="step">
+    <strong>1.</strong> Sélectionnez <strong>"Mobile Money"</strong><br>
+    <strong>2.</strong> Choisissez <strong>Orange Money</strong> ou <strong>MTN Mobile Money</strong><br>
+    <strong>3.</strong> Entrez votre numéro de téléphone<br>
+    <strong>4.</strong> Vous recevez une demande de paiement sur votre téléphone<br>
+    <strong>5.</strong> Confirmez dans l'application Mobile Money<br>
+    <strong>6.</strong> Le statut de la commande se met à jour automatiquement
+  </div>
+
+  <h3>Paiement à la livraison</h3>
+  <p>Vous payez en <strong>espèces</strong> à la réception de votre commande.</p>
+
+  <div class="warning">⚠️ En cas d'échec du paiement Mobile Money, réessayez une deuxième fois ou choisissez un autre mode de paiement.</div>
+</div>
+
+<!-- 10. SUIVI -->
+<div class="section">
+  <h2><span class="icon">📋</span> 10. Suivi de commande</h2>
+  
+  <p>Dans la section <strong>"Mes commandes"</strong>, vous pouvez suivre l'état de vos achats :</p>
+  
+  <table>
+    <tr><th>Statut</th><th>Signification</th></tr>
+    <tr><td>🟡 En attente</td><td>Commande reçue, en cours de traitement</td></tr>
+    <tr><td>🔵 Confirmée</td><td>Le vendeur a accepté la commande</td></tr>
+    <tr><td>🟢 Expédiée</td><td>La commande a été envoyée</td></tr>
+    <tr><td>✅ Livrée</td><td>Commande reçue avec succès</td></tr>
+    <tr><td>❌ Annulée</td><td>Commande annulée (par vous ou le vendeur)</td></tr>
+  </table>
+</div>
+
+<!-- 11. FAVORIS -->
+<div class="section">
+  <h2><span class="icon">❤️</span> 11. Mes favoris</h2>
+  <p>La liste de favoris vous permet de :</p>
+  <ul>
+    <li>⭐ Sauvegarder les produits qui vous intéressent</li>
+    <li>🛒 Ajouter directement un favori au panier</li>
+    <li>🔔 Être alerté en cas de baisse de prix</li>
+    <li>🗑️ Supprimer des produits de votre liste</li>
+  </ul>
+</div>
+
+<!-- 12. MESSAGERIE -->
+<div class="section">
+  <h2><span class="icon">💬</span> 12. Messagerie</h2>
+  <p>La messagerie intégrée permet de communiquer directement avec les vendeurs.</p>
+  
+  <h3>Fonctionnalités</h3>
+  <ul>
+    <li>💬 Messages texte en temps réel</li>
+    <li>🎤 Envoi de messages audio (enregistrement vocal)</li>
+    <li>📷 Envoi de photos</li>
+    <li>🔔 Notifications de nouveaux messages</li>
+    <li>📋 Historique complet des conversations</li>
+  </ul>
+  
+  <div class="tip">💡 Utilisez la messagerie pour poser des questions sur un produit avant d'acheter.</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 13. VENDEUR -->
+<div class="section">
+  <h2><span class="icon">🏪</span> 13. Espace vendeur</h2>
+
+  <h3>Créer votre boutique</h3>
+  <div class="step">
+    <strong>1.</strong> Connectez-vous en tant que <strong>Vendeur</strong><br>
+    <strong>2.</strong> Allez dans <span class="badge badge-orange">Ma boutique</span><br>
+    <strong>3.</strong> Cliquez sur <span class="badge">Créer ma boutique</span><br>
+    <strong>4.</strong> Remplissez les informations :<br>
+    &nbsp;&nbsp;• Nom de la boutique<br>
+    &nbsp;&nbsp;• Description et catégorie<br>
+    &nbsp;&nbsp;• Localisation<br>
+    &nbsp;&nbsp;• Photo de la boutique<br>
+    <strong>5.</strong> Validez. La boutique sera vérifiée par l'administration
+  </div>
+
+  <h3>Gérer vos produits</h3>
+  <ul>
+    <li><strong>➕ Ajouter</strong> — titre, description, prix, stock, photos</li>
+    <li><strong>✏️ Modifier</strong> — mettre à jour les informations</li>
+    <li><strong>🗑️ Supprimer</strong> — retirer un produit de la boutique</li>
+  </ul>
+
+  <h3>Gérer les commandes</h3>
+  <ul>
+    <li>📋 Consulter les commandes reçues</li>
+    <li>✅ Confirmer les commandes</li>
+    <li>🚚 Marquer comme expédié</li>
+    <li>📊 Voir les statistiques (ventes, revenus)</li>
+  </ul>
+</div>
+
+<!-- 14. ADMIN -->
+<div class="section">
+  <h2><span class="icon">👑</span> 14. Espace administrateur</h2>
+  <p>Réservé aux administrateurs de la plateforme.</p>
+
+  <table>
+    <tr><th>Section</th><th>Actions possibles</th></tr>
+    <tr><td>👥 Utilisateurs</td><td>Lister, promouvoir, bannir, ajouter, supprimer</td></tr>
+    <tr><td>🏪 Boutiques</td><td>Vérifier, approuver, mettre en avant, suspendre</td></tr>
+    <tr><td>📊 Tableau de bord</td><td>Statistiques, revenus, utilisateurs en ligne</td></tr>
+    <tr><td>🔔 Notifications</td><td>Envoyer des notifications à tous les utilisateurs</td></tr>
+  </table>
+
+  <h3>Notifications administrateur</h3>
+  <p>Les administrateurs reçoivent des notifications pour :</p>
+  <ul>
+    <li>📝 Nouvelle inscription d'utilisateur</li>
+    <li>🏪 Création d'une nouvelle boutique</li>
+    <li>⚠️ Signalements utilisateurs</li>
+  </ul>
+</div>
+
+<!-- 15. NOTIFICATIONS EMAIL -->
+<div class="section">
+  <h2><span class="icon">📧</span> 15. Notifications par email</h2>
+  
+  <table>
+    <tr><th>Événement</th><th>Destinataire</th></tr>
+    <tr><td>Nouvelle inscription</td><td>Administrateurs</td></tr>
+    <tr><td>Commande passée</td><td>Vendeur + Acheteur</td></tr>
+    <tr><td>Commande confirmée</td><td>Acheteur</td></tr>
+    <tr><td>Commande livrée</td><td>Acheteur</td></tr>
+    <tr><td>Nouveau message</td><td>Destinataire</td></tr>
+    <tr><td>Boutique approuvée</td><td>Vendeur</td></tr>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 16. SUPPORT -->
+<div class="section">
+  <h2><span class="icon">💡</span> 16. Support et FAQ</h2>
+
+  <h3>Contacter le support</h3>
+  <ul>
+    <li>💬 Via la <strong>messagerie intégrée</strong> (contacter l'administration)</li>
+    <li>📧 Via le <strong>formulaire de contact</strong> dans l'application</li>
+  </ul>
+
+  <h3>Signaler un problème</h3>
+  <div class="step">
+    <strong>1.</strong> Allez sur la page du produit ou de la boutique<br>
+    <strong>2.</strong> Cliquez sur <span class="badge badge-orange">Signaler</span><br>
+    <strong>3.</strong> Choisissez le motif :<br>
+    &nbsp;&nbsp;• Produit inapproprié<br>
+    &nbsp;&nbsp;• Vendeur suspect<br>
+    &nbsp;&nbsp;• Prix abusif<br>
+    &nbsp;&nbsp;• Contenu frauduleux<br>
+    <strong>4.</strong> Ajoutez un commentaire et validez
+  </div>
+
+  <h3>❓ Questions fréquentes</h3>
+
+  <p><strong>Comment modifier mon adresse email ?</strong><br>
+  Allez dans <strong>Mon compte</strong> → <strong>Profil</strong> → <strong>Modifier</strong>.</p>
+
+  <p><strong>Puis-je annuler une commande ?</strong><br>
+  Oui, tant que le vendeur ne l'a pas encore confirmée.</p>
+
+  <p><strong>Comment devenir vendeur ?</strong><br>
+  Inscrivez-vous avec le rôle <strong>"Vendeur"</strong> lors de l'inscription.</p>
+
+  <p><strong>Les paiements sont-ils sécurisés ?</strong><br>
+  Oui, les transactions Mobile Money passent par les API officielles des opérateurs.</p>
+
+  <p><strong>Comment contacter un vendeur ?</strong><br>
+  Depuis la fiche produit, cliquez sur <strong>"Contacter le vendeur"</strong>.</p>
+
+  <p><strong>Puis-je avoir plusieurs adresses de livraison ?</strong><br>
+  Oui, vous pouvez enregistrer plusieurs adresses dans votre profil.</p>
+
+  <p><strong>Les photos des produits sont-elles modifiables ?</strong><br>
+  Oui, le vendeur peut modifier les photos de ses produits à tout moment.</p>
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">
+  <p><strong>Dschang Market</strong> — Guide Utilisateur v1.0</p>
+  <p>Juillet 2026 &middot; Document confidentiel</p>
+  <p style="margin-top:5px;color:#2ea86a;">dschang-market.vercel.app</p>
+</div>
+
+<!-- ===== PRINT BUTTON ===== -->
+<div id="print-btn" onclick="window.print()" style="position:fixed;bottom:30px;right:30px;z-index:9999;background:linear-gradient(135deg,#0f4c2e,#2ea86a);color:white;border:none;border-radius:50px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(46,168,106,0.4);display:flex;align-items:center;gap:10px;transition:transform 0.2s;font-family:'Inter',sans-serif;">
+  <span style="font-size:20px;">🖨️</span>
+  Imprimer / PDF
+</div>
+
+<script>
+  // Close button when printing
+  (function() {
+    var btn = document.getElementById('print-btn');
+    if (btn) {
+      btn.onmouseover = function() { this.style.transform = 'scale(1.05)'; };
+      btn.onmouseout = function() { this.style.transform = 'scale(1)'; };
+    }
+    window.onbeforeprint = function() {
+      if (btn) btn.style.display = 'none';
+    };
+    window.onafterprint = function() {
+      if (btn) btn.style.display = 'flex';
+    };
+  })();
+</script>
+
+<style media="print">
+  @page { 
+    margin: 1.5cm 1.2cm; 
+    size: A4;
+  }
+  body { 
+    background: white; 
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .cover { 
+    min-height: 90vh; 
+    border-radius: 0; 
+    margin: -40px -30px 0 -30px; 
+    padding: 100px 60px;
+  }
+  .section { 
+    box-shadow: none; 
+    border: 1px solid #f0f0f0; 
+    page-break-inside: avoid; 
+    break-inside: avoid;
+  }
+  .toc { box-shadow: none; border: 1px solid #f0f0f0; }
+  #print-btn { display: none !important; }
+  .page-break { page-break-before: always; }
+  .section h2 .icon { -webkit-print-color-adjust: exact !important; }
+</style>
+</body>
+</html>

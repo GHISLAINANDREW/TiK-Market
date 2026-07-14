@@ -78,6 +78,7 @@ data class ApiCreateOrderBody(
     val phone: String,
     val notes: String = "",
     @SerialName("payment_method") val paymentMethod: String = "Mobile Money",
+    @SerialName("payment_type") val paymentType: String = "delivery",
     val items: List<ApiCartItemBody> = emptyList()
 )
 
@@ -460,10 +461,15 @@ object ApiClient {
         phone: String,
         notes: String? = null,
         paymentMethod: String = "Mobile Money",
+        paymentType: String = "delivery",
         items: List<ApiCartItemBody> = emptyList()
     ): ApiOrder {
-        val body = json.encodeToString(ApiCreateOrderBody(shippingAddress, phone, notes ?: "", paymentMethod, items))
+        val body = json.encodeToString(ApiCreateOrderBody(shippingAddress, phone, notes ?: "", paymentMethod, paymentType, items))
         return safeRequest<ApiOrder>("POST", Endpoints.ORDERS, body)
+    }
+
+    suspend fun deleteOrder(orderId: Int) {
+        delete("${Endpoints.ORDERS}?id=$orderId")
     }
 
     // ── Payments ──

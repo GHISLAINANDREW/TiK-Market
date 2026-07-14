@@ -28,13 +28,12 @@ fun CheckoutScreen(
     items: List<CartItem>,
     totalAmount: Double,
     onBack: () -> Unit,
-    onPlaceOrder: (shippingAddress: String, phone: String, notes: String, paymentMethod: String) -> Unit
+    onPlaceOrder: (shippingAddress: String, phone: String, notes: String, paymentMethod: String, paymentType: String) -> Unit
 ) {
     var address by remember { mutableStateOf("Dschang, Cameroun") }
     var phone by remember { mutableStateOf("+237 6") }
     var notes by remember { mutableStateOf("") }
     var selectedPayment by remember { mutableStateOf("Orange Money") }
-    var showPaymentMenu by remember { mutableStateOf(false) }
     var placing by remember { mutableStateOf(false) }
     var promoCode by remember { mutableStateOf("") }
     var promoDiscount by remember { mutableStateOf(0) }
@@ -43,9 +42,11 @@ fun CheckoutScreen(
     var promoError by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
+    // Payment type: 'delivery' or 'direct'
+    var paymentType by remember { mutableStateOf("delivery") }
+
     val effectiveTotal = (totalAmount - promoDiscount).coerceAtLeast(0.0)
     
-    // Delivery fee simulation
     val deliveryFee = when {
         address.lowercase().contains("dschang") -> 500
         address.lowercase().contains("keleng") || address.lowercase().contains("foto") -> 700
@@ -55,7 +56,13 @@ fun CheckoutScreen(
     
     val finalTotal = effectiveTotal + deliveryFee
 
-    val paymentMethods = listOf("Orange Money", "MTN Mobile Money", "Paiement à la livraison")
+    // Group vendors for direct payment display
+    val vendors = remember(items) {
+        items.map { it.product }
+            .distinctBy { it.vendorId }
+            .map { prod -> prod.shopName to prod.vendorPhone }
+            .filter { (_, phone) -> phone.isNotBlank() }
+    }
 
     BoxWithConstraints {
         val isCompact = maxWidth < 480.dp
@@ -77,7 +84,7 @@ fun CheckoutScreen(
                 Button(
                     onClick = {
                         placing = true
-                        onPlaceOrder(address, phone, notes, selectedPayment)
+                        onPlaceOrder(address, phone, notes, selectedPayment, paymentType)
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.height(50.dp),
@@ -85,13 +92,18 @@ fun CheckoutScreen(
                     enabled = !placing && address.isNotBlank() && phone.isNotBlank()
                 ) {
                     if (placing) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Text("Commander", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    else {
+                        Text(
+                            if (paymentType == "direct") "Commander & payer" else "Commander",
+                            fontWeight = FontWeight.Bold, fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5)).verticalScroll(rememberScrollState())) {
-            // Delivery address
+            // ── Address ──
             Surface(Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -113,47 +125,132 @@ fun CheckoutScreen(
                 }
             }
 
-            // Payment method
+            // ── Payment type ──
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CreditCard, null, Modifier.size(20.dp), tint = Green)
                         Spacer(Modifier.width(8.dp))
-                        Text("Moyen de paiement", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Mode de paiement", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                     Spacer(Modifier.height(12.dp))
-                    paymentMethods.forEach { method ->
-                        val isSelected = selectedPayment == method
-                        Surface(
-                            onClick = { selectedPayment = method },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) GreenSurface else Color(0xFFFAFAFA),
-                            border = if (isSelected) BorderStroke(1.dp, Green) else null
-                        ) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                RadioButton(selected = isSelected, onClick = { selectedPayment = method },
-                                    colors = RadioButtonDefaults.colors(selectedColor = Green))
-                                Spacer(Modifier.width(8.dp))
-                                val icon = when {
-                                    method.contains("Orange") -> Icons.Default.PhoneAndroid
-                                    method.contains("MTN") -> Icons.Default.PhoneIphone
-                                    else -> Icons.Default.Payments
+
+                    // Option: Paiement à la livraison
+                    Surface(
+                        onClick = { paymentType = "delivery" },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (paymentType == "delivery") GreenSurface else Color(0xFFFAFAFA),
+                        border = if (paymentType == "delivery") BorderStroke(1.dp, Green) else null
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = paymentType == "delivery", onClick = { paymentType = "delivery" },
+                                colors = RadioButtonDefaults.colors(selectedColor = Green))
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.Default.MoneyOff, null, Modifier.size(24.dp), tint = if (paymentType == "delivery") Green else Color.Gray)
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Paiement à la livraison", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                Text("Vous payez en espèces à la réception", fontSize = 11.sp, color = Color.Gray)
+                            }
+                            if (paymentType == "delivery") Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), tint = Green)
+                        }
+                    }
+
+                    // Option: Paiement direct au vendeur
+                    Surface(
+                        onClick = { paymentType = "direct" },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (paymentType == "direct") GreenSurface else Color(0xFFFAFAFA),
+                        border = if (paymentType == "direct") BorderStroke(1.dp, Green) else null
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = paymentType == "direct", onClick = { paymentType = "direct" },
+                                colors = RadioButtonDefaults.colors(selectedColor = Green))
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.Default.PhoneAndroid, null, Modifier.size(24.dp), tint = if (paymentType == "direct") Green else Color.Gray)
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Paiement direct au vendeur", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                Text("Vous payez le vendeur par Mobile Money", fontSize = 11.sp, color = Color.Gray)
+                            }
+                            if (paymentType == "direct") Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), tint = Green)
+                        }
+                    }
+                }
+            }
+
+            // ── Vendor info for direct payment ──
+            if (paymentType == "direct") {
+                Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF8E1)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, null, Modifier.size(20.dp), tint = Color(0xFFF57F17))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Instructions de paiement", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFF57F17))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Transférez le montant de ${finalTotal.toInt()} FCFA sur le compte Mobile Money du vendeur ci-dessous, puis cliquez sur \"Commander & payer\". Le vendeur validera votre paiement.",
+                            fontSize = 13.sp,
+                            color = Color(0xFF5D4037),
+                            lineHeight = 20.sp
+                        )
+                        Spacer(Modifier.height(12.dp))
+
+                        vendors.forEach { (shopName, vendorPhone) ->
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White,
+                                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            ) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(shopName, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1C1C1C))
+                                    Spacer(Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Phone, null, Modifier.size(18.dp), tint = Green)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(vendorPhone, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF075E54))
+                                        Spacer(Modifier.weight(1f))
+                                        OutlinedButton(
+                                            onClick = { /* TODO: copy to clipboard */ },
+                                            shape = RoundedCornerShape(8.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                        ) {
+                                            Icon(Icons.Default.ContentCopy, null, Modifier.size(16.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Copier", fontSize = 12.sp)
+                                        }
+                                    }
+                                    Spacer(Modifier.height(2.dp))
+                                    Text("Montant à transférer : ${finalTotal.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
                                 }
-                                Icon(icon, null, Modifier.size(24.dp), tint = if (isSelected) Green else Color.Gray)
-                                Spacer(Modifier.width(8.dp))
-                                Text(method, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal)
-                                if (isSelected) Spacer(Modifier.weight(1f))
-                                if (isSelected) Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), tint = Green)
                             }
                         }
                     }
                 }
             }
 
+            // ── Payment methods (only for delivery) ──
+            if (paymentType == "delivery") {
+                Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.ShoppingCart, null, Modifier.size(20.dp), tint = Green)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Moyen de paiement", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Espèces à la livraison", fontSize = 14.sp, color = Color.Gray)
+                    }
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
 
-            // Promo code
+            // ── Promo code ──
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -168,8 +265,7 @@ fun CheckoutScreen(
                             onValueChange = { promoCode = it.uppercase(); promoError = ""; promoValid = false; promoDiscount = 0 },
                             label = { Text("Entrez votre code") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true, shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = if (promoValid) Green else if (promoError.isNotBlank()) Color.Red else Green,
                                 focusedLabelColor = Green
@@ -184,17 +280,11 @@ fun CheckoutScreen(
                                         try {
                                             val result = ApiClient.validatePromoCode(promoCode, totalAmount)
                                             if (result.valid && result.promotion != null) {
-                                                promoValid = true
-                                                promoDiscount = result.discount
-                                                promoError = ""
+                                                promoValid = true; promoDiscount = result.discount; promoError = ""
                                             } else {
-                                                promoValid = false
-                                                promoDiscount = 0
-                                                promoError = result.error ?: "Code invalide"
+                                                promoValid = false; promoDiscount = 0; promoError = result.error ?: "Code invalide"
                                             }
-                                        } catch (_: Exception) {
-                                            promoError = "Erreur de validation"
-                                        }
+                                        } catch (_: Exception) { promoError = "Erreur de validation" }
                                         promoChecking = false
                                     }
                                 }
@@ -203,25 +293,18 @@ fun CheckoutScreen(
                             enabled = promoCode.isNotBlank() && !promoChecking,
                             colors = ButtonDefaults.buttonColors(containerColor = Green)
                         ) {
-                            if (promoChecking) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text("Appliquer", fontSize = 12.sp)
-                            }
+                            if (promoChecking) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            else Text("Appliquer", fontSize = 12.sp)
                         }
                     }
-                    if (promoValid) {
-                        Text("✅ Réduction de $promoDiscount FCFA appliquée !", fontSize = 12.sp, color = Green, modifier = Modifier.padding(top = 4.dp))
-                    }
-                    if (promoError.isNotBlank()) {
-                        Text("❌ $promoError", fontSize = 12.sp, color = Color.Red, modifier = Modifier.padding(top = 4.dp))
-                    }
+                    if (promoValid) Text("✅ Réduction de $promoDiscount FCFA appliquée !", fontSize = 12.sp, color = Green, modifier = Modifier.padding(top = 4.dp))
+                    if (promoError.isNotBlank()) Text("❌ $promoError", fontSize = 12.sp, color = Color.Red, modifier = Modifier.padding(top = 4.dp))
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Order items summary
+            // ── Order items summary ──
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -260,7 +343,7 @@ fun CheckoutScreen(
                 }
             }
 
-            // Notes
+            // ── Notes ──
             Surface(Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
