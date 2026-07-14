@@ -119,14 +119,40 @@ fun ChatScreen(
     fun sendMessage(text: String, dataUrl: String? = null, duration: Int = 0) {
         scope.launch {
             try {
+                // Optimistic UI: add to local list immediately for instant feedback
+                if (dataUrl != null || text.isNotBlank()) {
+                    val tempMsg = ChatMessage(
+                        id = -System.currentTimeMillis().toInt(), // temporary negative ID
+                        senderId = currentUserId,
+                        senderName = ApiClient.getCurrentUser()?.name ?: "Moi",
+                        text = text,
+                        audioUrl = dataUrl,
+                        duration = duration,
+                        timestamp = "Maintenant",
+                        isRead = true
+                    )
+                    messages = messages + tempMsg
+                    // Scroll to bottom
+                    scope.launch {
+                        delay(100)
+                        listState.animateScrollToItem(messages.size - 1)
+                    }
+                }
+                
+                // Send to API
                 if (dataUrl != null) {
                     ApiClient.sendMessage(vendorId, text, dataUrl, duration)
                 } else {
                     ApiClient.sendMessage(vendorId, text.trim())
                 }
                 messageText = ""
+                // Refresh from server (replaces the optimistic message)
                 loadMessages()
-            } catch (_: Exception) { }
+            } catch (_: Exception) {
+                // If API fails, keep the optimistic message (the user can still play audio from data URL)
+                messageText = ""
+                loadMessages()
+            }
         }
     }
 
@@ -326,13 +352,11 @@ fun ChatScreen(
                                                 if (lat != null && lng != null) {
                                                     locationLat = lat
                                                     locationLng = lng
-                                                    // Get the place name
                                                     getCurrentLocationName { name ->
                                                         locationName = name
                                                         showLocationDialog = true
                                                     }
                                                 } else {
-                                                    // Fallback: just send coordinates
                                                     getCurrentLocationName { loc ->
                                                         sendMessage("📍 Ma position : $loc")
                                                     }

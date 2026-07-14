@@ -176,23 +176,22 @@ function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', st
     $apiSecret = getenv('CLOUDINARY_API_SECRET');
 
     if ($cloudName && $apiKey && $apiSecret && function_exists('curl_init')) {
-        // Upload to Cloudinary
+        // Upload to Cloudinary (signature = sha1 of sorted params + secret)
         $timestamp = time();
-        $signature = sha1("timestamp=$timestamp$apiSecret");
         
-        // Map MIME to Cloudinary resource type
-        $resourceType = 'auto'; // auto-detect
+        // Auto-detect resource type
+        $resourceType = 'auto';
         
         $url = "https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload";
         
         $base64Data = base64_encode($fileData);
         $dataUri = "data:$mimeType;base64,$base64Data";
         
-        $publicId = $folder . '/' . $prefix . time() . '_' . bin2hex(random_bytes(4));
+        // Only sign timestamp (public_id not included, Cloudinary auto-generates it)
+        $signature = sha1("timestamp=$timestamp$apiSecret");
         
         $postData = [
             'file' => $dataUri,
-            'public_id' => $publicId,
             'timestamp' => $timestamp,
             'api_key' => $apiKey,
             'signature' => $signature
@@ -216,12 +215,12 @@ function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', st
             }
         }
         
-        error_log("Cloudinary upload failed (HTTP $httpCode): " . ($error ?: $response));
+        error_log("[uploadToCloudinary] HTTP $httpCode error: " . ($error ?: $response));
         // Fall through to local storage
     }
 
-    // Fallback: local storage (useful for local dev, broken on Render after restart)
-    $subDir = $folder; // 'voices' or 'chat_files'
+    // Fallback: local storage (files are lost on Render after restart)
+    $subDir = $folder;
     $targetDir = __DIR__ . '/../uploads/' . $subDir . '/';
     if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
@@ -242,9 +241,16 @@ function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', st
     $filename = $prefix . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
 
     if (file_put_contents($targetDir . $filename, $fileData)) {
+        // Build URL relative to web root (no /api/ prefix on Docker)
         $protocol = 'https';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        return "$protocol://$host/api/uploads/$subDir/$filename";
+        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/'; // e.g. /messages/messages.php
+        $baseUrl = rtrim(dirname(dirname($scriptPath)), '/'); // /api/ or '' depending on deployment
+        // If baseUrl ends with /api, strip it (Docker doesn't use /api/ prefix)
+        if (str_ends_with($baseUrl, '/api') || $baseUrl === '/api') {
+            $baseUrl = '';
+        }
+        return "$protocol://$host$baseUrl/uploads/$subDir/$filename";
     }
 
     return null;
