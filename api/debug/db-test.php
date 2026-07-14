@@ -112,7 +112,7 @@ try {
 // ── Test the SAME DSN as database.php ──
 try {
     $name = getenv('DB_NAME') ?: 'defaultdb';
-    $dsn2 = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4;connect_timeout=5";
+    $dsn2 = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
     $pdo2 = new PDO($dsn2, getenv('DB_USER') ?: 'root', getenv('DB_PASS') ?: '', [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -122,6 +122,19 @@ try {
     $stmt2 = $pdo2->query('SELECT COUNT(*) as cnt FROM products');
     $row2 = $stmt2->fetch();
     $result['same_dsn_test'] = 'SUCCESS - ' . json_encode($row2);
+    
+    // Test products JOIN query (same as products.php)
+    $joinStmt = $pdo2->prepare('
+        SELECT p.id, p.title, p.image, p.images, s.name AS shop_name
+        FROM products p
+        JOIN shops s ON p.shop_id = s.id
+        JOIN users u ON s.vendor_id = u.id
+        WHERE p.is_active = 1 AND s.status = "active" AND u.status = "active"
+        LIMIT 5
+    ');
+    $joinStmt->execute();
+    $products = $joinStmt->fetchAll();
+    $result['products_sample'] = $products;
 } catch (Exception $e) {
     $result['same_dsn_test'] = 'FAILED: ' . $e->getMessage();
 }

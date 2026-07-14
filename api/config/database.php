@@ -59,7 +59,13 @@ function rewriteUrls($data) {
     $newBase = getenv('APP_URL') ?: ('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 
     if (is_string($data)) {
-        return str_replace($oldBase, $newBase, $data);
+        // Replace old local IP with new Render URL
+        $data = str_replace($oldBase, $newBase, $data);
+        // Also fix relative upload paths (e.g. "uploads/..." becomes "https://.../uploads/...")
+        if (str_starts_with($data, 'uploads/') || str_starts_with($data, '/uploads/')) {
+            $data = $newBase . '/' . ltrim($data, '/');
+        }
+        return $data;
     }
     if (is_array($data)) {
         foreach ($data as $key => $value) {
