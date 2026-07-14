@@ -122,7 +122,7 @@ fun ChatScreen(
                 // Optimistic UI: add to local list immediately for instant feedback
                 if (dataUrl != null || text.isNotBlank()) {
                     val tempMsg = ChatMessage(
-                        id = -System.currentTimeMillis().toInt(), // temporary negative ID
+                        id = -(kotlin.random.Random.nextLong()).toInt(),
                         senderId = currentUserId,
                         senderName = ApiClient.getCurrentUser()?.name ?: "Moi",
                         text = text,
@@ -203,9 +203,10 @@ fun ChatScreen(
         }
     }
 
+    // Poll every second for instant message reception
     LaunchedEffect(Unit) {
         while (true) {
-            delay(5000)
+            delay(1000)
             loadMessages()
         }
     }
