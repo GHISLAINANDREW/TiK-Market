@@ -50,17 +50,17 @@ try {
     $userId = (int)$db->lastInsertId();
     $token = generateToken($userId, $email);
 
-    // Notifier les admins pour une nouvelle inscription vendeur
-    if ($role === 'vendor') {
-        try {
-            $stmtAdmin = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
-            $stmtAdmin->execute();
-            $admins = $stmtAdmin->fetchAll();
-            foreach ($admins as $admin) {
-                sendNotification((int)$admin['id'], "Nouveau vendeur inscrit", "$name ($email) s'est inscrit en tant que vendeur.", 'system', $userId);
-            }
-        } catch (Exception $e) {}
-    }
+    // Notifier les admins pour toute nouvelle inscription
+    try {
+        $stmtAdmin = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
+        $stmtAdmin->execute();
+        $admins = $stmtAdmin->fetchAll();
+        $title = $role === 'vendor' ? 'Nouveau vendeur inscrit' : 'Nouvel acheteur inscrit';
+        $message = "$name ($email) s'est inscrit" . ($role === 'vendor' ? ' en tant que vendeur.' : '.');
+        foreach ($admins as $admin) {
+            sendNotification((int)$admin['id'], $title, $message, 'system', $userId);
+        }
+    } catch (Exception $e) {}
 
     json(201, [
         'token' => $token,
