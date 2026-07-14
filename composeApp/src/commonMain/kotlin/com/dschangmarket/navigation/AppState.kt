@@ -42,6 +42,8 @@ class AppState(
     var chatVendorName by mutableStateOf("")
     var chatVendorAvatar by mutableStateOf<String?>(null)
     var chatProductTitle by mutableStateOf<String?>(null)
+    var chatProductImage by mutableStateOf<String?>(null)
+    var chatProductPrice by mutableStateOf<String?>(null)
     var chatVendorId by mutableStateOf(0)
     var chatVendorIsOnline by mutableStateOf(false)
     var unreadMessages by mutableStateOf(unreadMessagesInitial)

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Cahier de Charge - Dschang Market</title>
+<style>
+  @page { 
+    size: 21cm 29.7cm; 
+    margin: 2.5cm 2cm; 
+    mso-page-orientation: portrait;
+  }
+  
+  body { 
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; 
+    font-size: 11pt; 
+    line-height: 1.5;
+    color: #1a1a2e;
+  }
+  
+  h1 { 
+    font-size: 26pt; 
+    color: #0f4c2e; 
+    border-bottom: 3px solid #FF9800; 
+    padding-bottom: 8px; 
+    margin: 30px 0 15px;
+    font-weight: 700;
+  }
+  h2 { 
+    font-size: 18pt; 
+    color: #1a7a4c; 
+    margin: 25px 0 12px;
+    border-left: 5px solid #FF9800;
+    padding-left: 10px;
+  }
+  h3 { 
+    font-size: 14pt; 
+    color: #2ea86a; 
+    margin: 18px 0 8px;
+  }
+  h4 { font-size: 12pt; color: #333; margin: 12px 0 6px; }
+  
+  p { margin: 6px 0; text-align: justify; }
+  
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  th { 
+    background: #0f4c2e; 
+    color: white; 
+    padding: 8px 10px; 
+    text-align: left;
+    font-weight: 600;
+  }
+  td { 
+    padding: 7px 10px; 
+    border: 1px solid #ddd; 
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8faf8; }
+  
+  .cover-page {
+    text-align: center;
+    padding: 120px 40px 80px;
+    margin-bottom: 40px;
+    border-bottom: none;
+  }
+  .cover-page h1 { font-size: 36pt; color: #0f4c2e; border: none; margin-bottom: 5px; }
+  .cover-page .subtitle { font-size: 20pt; color: #2ea86a; margin: 10px 0; }
+  .cover-page .info { font-size: 12pt; color: #666; margin-top: 40px; }
+  .cover-page .line { width: 80px; height: 4px; background: #FF9800; margin: 20px auto; }
+  
+  .page-break { page-break-before: always; }
+  
+  ul, ol { margin: 6px 0 6px 20px; }
+  li { margin: 4px 0; }
+  
+  .code-block {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-left: 4px solid #0f4c2e;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    color: #333;
+  }
+  
+  .note {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 10pt;
+  }
+  .warning {
+    background: #fff3e0;
+    border-left: 4px solid #FF9800;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 10pt;
+  }
+  .success {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 10pt;
+  }
+  
+  img { max-width: 100%; margin: 10px 0; border: 1px solid #ddd; }
+  
+  .toc { margin: 20px 0; }
+  .toc a { color: #0f4c2e; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  
+  .footer {
+    text-align: center;
+    color: #999;
+    font-size: 9pt;
+    margin-top: 40px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== PAGE DE GARDE ===== -->
+<div class="cover-page">
+  <h1>🛍️ DSCHANG MARKET</h1>
+  <p class="subtitle">Cahier de Charge Technique &amp; Fonctionnel</p>
+  <div class="line"></div>
+  <p class="info">
+    <strong>Version :</strong> 1.0<br>
+    <strong>Date :</strong> Juillet 2026<br>
+    <strong>Plateformes :</strong> Web (WasmJS) + Android (APK)<br>
+    <strong>Backend :</strong> PHP 8.2 + MySQL (Aiven)<br>
+    <strong>Frontend :</strong> Kotlin Multiplatform + Compose<br>
+    <strong>Hébergement :</strong> Render (API) + Vercel (Web)<br>
+    <strong>Médias :</strong> Cloudinary
+  </p>
+</div>
+
+<!-- ===== SOMMAIRE ===== -->
+<div class="page-break"></div>
+<h1>📑 Sommaire</h1>
+<div class="toc">
+  <ol>
+    <li><a href="#s1">Présentation du projet</a></li>
+    <li><a href="#s2">Analyse des besoins</a></li>
+    <li><a href="#s3">Architecture technique</a></li>
+    <li><a href="#s4">Stack technologique</a></li>
+    <li><a href="#s5">Modèle de données</a></li>
+    <li><a href="#s6">Cycle de vie de l'APK</a></li>
+    <li><a href="#s7">Étapes de conception</a></li>
+    <li><a href="#s8">Captures d'écran</a></li>
+    <li><a href="#s9">Extraits de code</a></li>
+    <li><a href="#s10">Difficultés rencontrées</a></li>
+    <li><a href="#s11">Perspectives d'évolution</a></li>
+    <li><a href="#s12">Conclusion</a></li>
+  </ol>
+</div>
+
+<!-- ===== 1. PRÉSENTATION ===== -->
+<div class="page-break"></div>
+<h1 id="s1">1. Présentation du projet</h1>
+
+<h2>1.1 Contexte</h2>
+<p>Dschang Market est une plateforme de commerce en ligne destinée aux habitants et commerçants de Dschang (Ouest-Cameroun) et ses environs. L'objectif est de faciliter les échanges commerciaux locaux en proposant une solution moderne, accessible depuis le web et les appareils Android.</p>
+
+<h2>1.2 Objectifs</h2>
+<ul>
+  <li><strong>Faciliter l'achat local</strong> — permettre aux habitants d'acheter des produits auprès des commerçants locaux</li>
+  <li><strong>Digitaliser les commerces</strong> — offrir aux vendeurs une vitrine en ligne</li>
+  <li><strong>Paiements Mobile Money</strong> — intégrer Orange Money et MTN Mobile Money</li>
+  <li><strong>Multi-plateforme</strong> — accessible depuis le web et les appareils Android</li>
+</ul>
+
+<h2>1.3 Équipe</h2>
+<table>
+  <tr><th>Rôle</th><th>Description</th></tr>
+  <tr><td>Développeur Full-Stack</td><td>GHISLAINANDREW</td></tr>
+  <tr><td>Technologies</td><td>Kotlin Multiplatform, Compose, PHP, MySQL, Vercel, Render</td></tr>
+</table>
+
+<!-- ===== 2. ANALYSE ===== -->
+<div class="page-break"></div>
+<h1 id="s2">2. Analyse des besoins</h1>
+
+<h2>2.1 Fonctionnalités</h2>
+
+<table>
+  <tr><th>Module</th><th>Fonctionnalités</th><th>Utilisateur</th></tr>
+  <tr><td>🔐 Authentification</td><td>Inscription, connexion, profil, OTP</td><td>Tous</td></tr>
+  <tr><td>🛒 Achats</td><td>Catalogue, recherche, filtres, favoris</td><td>Acheteur</td></tr>
+  <tr><td>🛍️ Commandes</td><td>Panier, commande, suivi, historique</td><td>Acheteur</td></tr>
+  <tr><td>💳 Paiements</td><td>Mobile Money, livraison, wallet fidélité</td><td>Acheteur</td></tr>
+  <tr><td>🏪 Boutique</td><td>Création, produits, stocks, commandes</td><td>Vendeur</td></tr>
+  <tr><td>💬 Messagerie</td><td>Chat texte, audio, photos</td><td>Tous</td></tr>
+  <tr><td>⭐ Avis</td><td>Notes, commentaires, réponses</td><td>Acheteur</td></tr>
+  <tr><td>👑 Administration</td><td>Utilisateurs, boutiques, stats, notifications</td><td>Admin</td></tr>
+  <tr><td>🔔 Notifications</td><td>Push, email, système</td><td>Tous</td></tr>
+  <tr><td>🎯 Fidélité</td><td>Wallet, points, coupons, group buying</td><td>Acheteur</td></tr>
+</table>
+
+<h2>2.2 Contraintes techniques</h2>
+<table>
+  <tr><th>Contrainte</th><th>Solution</th></tr>
+  <tr><td>Budget nul (0 FCFA)</td><td>Hébergement gratuit : Render + Vercel + Cloudinary (gratuit)</td></tr>
+  <tr><td>Base de données distante</td><td>Aiven MySQL 8.0 (plan gratuit)</td></tr>
+  <tr><td>Domaine</td><td>URL Vercel gratuite (dschang-market.vercel.app)</td></tr>
+  <tr><td>Multi-plateforme</td><td>Kotlin Multiplatform (KMP) + Compose</td></tr>
+  <tr><td>Build local (Windows)</td><td>JAVA_HOME configuré, Gradle Wrapper</td></tr>
+  <tr><td>Stockage images</td><td>Cloudinary (cloud_name: bkmghmxf)</td></tr>
+  <tr><td>Mode ANSI_QUOTES MySQL</td><td>Toutes les chaînes SQL en guillemets simples</td></tr>
+</table>
+
+<!-- ===== 3. ARCHITECTURE ===== -->
+<div class="page-break"></div>
+<h1 id="s3">3. Architecture technique</h1>
+
+<h2>3.1 Architecture globale</h2>
+
+<div class="code-block">
+┌──────────────────────────────────────────────────────────┐
+│                    CLIENTS                                │
+│  ┌─────────────┐  ┌──────────────────┐  ┌───────────┐   │
+│  │ 🌍 Web      │  │ 📱 Android APK   │  │ 🧪 Tests  │   │
+│  │ (WasmJS)    │  │ (Compose/Kotlin) │  │ (Postman) │   │
+│  └──────┬──────┘  └────────┬─────────┘  └─────┬─────┘   │
+└─────────┼──────────────────┼──────────────────┼──────────┘
+          │                  │                  │
+          │           ┌──────┴──────┐           │
+          │           │   HTTPS 🌐   │           │
+          │           └──────┬──────┘           │
+          ▼                  ▼                  ▼
+┌──────────────────────────────────────────────────────────┐
+│              🌐 API REST (Render)                         │
+│  ┌─────────────┐  ┌──────────────────┐  ┌───────────┐   │
+│  │ Auth        │  │ Produits/Shops   │  │ Commandes │   │
+│  │ Paiements   │  │ Messagerie/Avis  │  │ Admin     │   │
+│  │ Upload      │  │ Wallet/Coupons   │  │ GroupBuy  │   │
+│  └──────┬──────┘  └────────┬─────────┘  └─────┬─────┘   │
+└─────────┼──────────────────┼──────────────────┼──────────┘
+          ▼                  ▼                  ▼
+┌──────────────────────────────────────────────────────────┐
+│              🗄️ Base de données Aiven                     │
+│              MySQL 8.0 (18 tables)                       │
+└──────────────────────────────────────────────────────────┘
+</div>
+
+<h2>3.2 Architecture du frontend (KMP)</h2>
+
+<div class="code-block">
+┌──────────────────────────────────────────────────────────┐
+│  shared/ (composeApp/src/commonMain)                     │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  📱 UI (Compose Multiplatform)                    │  │
+│  │  ├── Screens (Accueil, Produits, Panier, Profil)   │  │
+│  │  ├── Components (Cartes, Listes, Formulaires)     │  │
+│  │  └── Navigation (NavHost, BottomBar)               │  │
+│  ├────────────────────────────────────────────────────┤  │
+│  │  🔗 API Client (Ktor/HttpEngine)                   │  │
+│  │  ├── ApiClient.kt (Singleton HTTP)                 │  │
+│  │  ├── Endpoints (20+ routes API)                    │  │
+│  │  └── Data Models (DTOs sérialisables)              │  │
+│  ├────────────────────────────────────────────────────┤  │
+│  │  📦 Data Layer                                     │  │
+│  │  ├── Models (Product, Shop, Order, User...)        │  │
+│  │  ├── Repositories (accès API)                      │  │
+│  │  └── TokenStorage (localStorage/Settings)          │  │
+│  └────────────────────────────────────────────────────┘  │
+├──────────────────────────────────────────────────────────┤
+│  wasmJs/ (Compilateur Kotlin → WebAssembly)              │
+│  └── build/web/dist-prod/ (Déploiement Vercel)          │
+├──────────────────────────────────────────────────────────┤
+│  android/ (Compilateur Kotlin → APK)                    │
+│  └── build/outputs/apk/debug/ (APK 17,8 Mo)             │
+└──────────────────────────────────────────────────────────┘
+</div>
+
+<h2>3.3 Architecture du backend (PHP)</h2>
+
+<div class="code-block">
+api/
+├── config/
+│   ├── database.php      # Connexion MySQL (non-SSL + fallback SSL)
+│   ├── cors.php          # Headers CORS
+│   └── email.php         # Mail helper
+├── auth/                 # Login, register, OTP, me
+├── products/             # CRUD produits + recherche
+├── shops/                # CRUD boutiques
+├── orders/               # Commandes (acheteur + vendeur)
+├── payments/             # Paiements Mobile Money
+├── cart/                 # Panier
+├── messages/             # Messagerie
+├── reviews/              # Avis et notes
+├── wishlist/             # Favoris
+├── favorites/            # Boutiques favorites
+├── promotions/           # Codes promo
+├── wallet/               # Porte-monnaie fidélité
+├── coupons/              # Coupons de réduction
+├── group-buy/            # Achats groupés
+├── notifications/        # Notifications push/système
+├── admin/                # Dashboard, users, shops
+├── uploads/              # Upload Cloudinary
+├── vendor/               # Stats et interactions
+└── debug/                # Tests et diagnostics
+</div>
+
+<h2>3.4 Flux des données</h2>
+<ol>
+  <li><strong>Client</strong> (Web/Android) émet une requête HTTP(S) vers <code>https://dschang-market.onrender.com</code></li>
+  <li><strong>API PHP</strong> (Render) reçoit la requête, valide l'authentification (JWT Bearer)</li>
+  <li><strong>Base Aiven</strong> (MySQL 8.0) exécute la requête SQL</li>
+  <li><strong>Réponse JSON</strong> renvoyée au client</li>
+  <li>Les images sont stockées sur <strong>Cloudinary</strong> et servies via CDN</li>
+</ol>
+
+<div class="note">📌 Toutes les réponses API utilisent le format JSON. Authentification par token JWT (Bearer).</div>
+
+<!-- ===== 4. STACK ===== -->
+<div class="page-break"></div>
+<h1 id="s4">4. Stack technologique</h1>
+
+<table>
+  <tr><th>Couche</th><th>Technologie</th><th>Version</th><th>Rôle</th></tr>
+  <tr>
+    <td>🎨 Frontend Web</td>
+    <td>Kotlin/Compose Multiplatform</td>
+    <td>Kotlin 2.x / Compose 1.7+</td>
+    <td>Application web via WebAssembly (WasmJS)</td>
+  </tr>
+  <tr>
+    <td>📱 Frontend Android</td>
+    <td>Kotlin/Compose Multiplatform</td>
+    <td>Même code source</td>
+    <td>Application Android native (APK)</td>
+  </tr>
+  <tr>
+    <td>⚙️ Backend API</td>
+    <td>PHP</td>
+    <td>8.2.32</td>
+    <td>API REST : auth, produits, commandes, etc.</td>
+  </tr>
+  <tr>
+    <td>🗄️ Base de données</td>
+    <td>MySQL (Aiven)</td>
+    <td>8.0</td>
+    <td>Stockage persistant (18 tables)</td>
+  </tr>
+  <tr>
+    <td>☁️ Hébergement API</td>
+    <td>Render</td>
+    <td>—</td>
+    <td>Déploiement PHP via Git</td>
+  </tr>
+  <tr>
+    <td>▲ Hébergement Web</td>
+    <td>Vercel</td>
+    <td>—</td>
+    <td>Fichiers statiques WasmJS</td>
+  </tr>
+  <tr>
+    <td>📷 Images</td>
+    <td>Cloudinary</td>
+    <td>—</td>
+    <td>Stockage et optimisation d'images</td>
+  </tr>
+  <tr>
+    <td>🔧 Build</td>
+    <td>Gradle Wrapper</td>
+    <td>8.x</td>
+    <td>Compilation Kotlin Multiplatform</td>
+  </tr>
+  <tr>
+    <td>☕ JDK</td>
+    <td>Java (Temurin)</td>
+    <td>23</td>
+    <td>Compilation Gradle/Kotlin</td>
+  </tr>
+  <tr>
+    <td>🌐 CI/CD</td>
+    <td>GitHub Actions</td>
+    <td>—</td>
+    <td>Build + déploiement automatique</td>
+  </tr>
+  <tr>
+    <td>🎯 Versionning</td>
+    <td>Git + GitHub</td>
+    <td>2.45.2</td>
+    <td>Code source GHISLAINANDREW/dschang-market</td>
+  </tr>
+</table>
+
+<!-- ===== 5. MODÈLE DE DONNÉES ===== -->
+<div class="page-break"></div>
+<h1 id="s5">5. Modèle de données</h1>
+
+<h2>5.1 Liste des tables (18 tables)</h2>
+
+<table>
+  <tr><th>#</th><th>Table</th><th>Description</th></tr>
+  <tr><td>1</td><td><code>users</code></td><td>Utilisateurs (acheteurs, vendeurs, admins)</td></tr>
+  <tr><td>2</td><td><code>shops</code></td><td>Boutiques des vendeurs</td></tr>
+  <tr><td>3</td><td><code>products</code></td><td>Produits avec prix, stock, image</td></tr>
+  <tr><td>4</td><td><code>categories</code></td><td>Catégories de produits</td></tr>
+  <tr><td>5</td><td><code>orders</code></td><td>Commandes (adresse, statut, total)</td></tr>
+  <tr><td>6</td><td><code>order_items</code></td><td>Lignes de commande</td></tr>
+  <tr><td>7</td><td><code>cart</code></td><td>Panier utilisateur</td></tr>
+  <tr><td>8</td><td><code>reviews</code></td><td>Avis et notes sur les produits</td></tr>
+  <tr><td>9</td><td><code>messages</code></td><td>Messages entre utilisateurs</td></tr>
+  <tr><td>10</td><td><code>conversations</code></td><td>Conversations (regroupement messages)</td></tr>
+  <tr><td>11</td><td><code>wishlist</code></td><td>Favoris utilisateur</td></tr>
+  <tr><td>12</td><td><code>favorite_shops</code></td><td>Boutiques favorites</td></tr>
+  <tr><td>13</td><td><code>payments</code></td><td> Transactions de paiement</td></tr>
+  <tr><td>14</td><td><code>notifications</code></td><td>Notifications système</td></tr>
+  <tr><td>15</td><td><code>notification_preferences</code></td><td>Préférences de notifications</td></tr>
+  <tr><td>16</td><td><code>notification_tokens</code></td><td>Tokens de notification push</td></tr>
+  <tr><td>17</td><td><code>wallet</code></td><td>Porte-monnaie fidélité</td></tr>
+  <tr><td>18</td><td><code>wallet_transactions</code></td><td>Transactions du wallet</td></tr>
+  <tr><td>19</td><td><code>coupons</code></td><td>Coupons de réduction</td></tr>
+  <tr><td>20</td><td><code>group_buys</code></td><td>Achats groupés</td></tr>
+  <tr><td>21</td><td><code>promotions</code></td><td>Promotions et codes promo</td></tr>
+  <tr><td>22</td><td><code>reports</code></td><td>Signalements utilisateurs</td></tr>
+</table>
+
+<h2>5.2 Schéma relationnel (extrait)</h2>
+
+<div class="code-block">
+┌──────────┐     ┌──────────┐     ┌────────────┐
+│  users   │1──n│  shops   │1──n│  products   │
+│──────────│     │──────────│     │────────────│
+│ id (PK)  │     │ id (PK)  │     │ id (PK)    │
+│ name     │     │ name     │     │ title      │
+│ email    │     │ vendor_id│────→│ shop_id(FK)│
+│ phone    │     │ location │     │ price      │
+│ password │     │ category │     │ stock      │
+│ role     │     │ verified │     │ image_url  │
+│ status   │     │ featured │     │ category   │
+└──────────┘     └──────────┘     └────────────┘
+     │1                                  │
+     │                                   │
+     │1                                  │n
+┌──────────┐                       ┌──────────┐
+│  orders  │                       │ reviews  │
+│──────────│                       │──────────│
+│ id (PK)  │                       │ id (PK)  │
+│ buyer_id─┤                       │ product─ │
+│ total    │                       │  id(FK)  │
+│ status   │                       │ user_id  │
+│ address  │                       │ rating   │
+│ phone    │                       │ comment  │
+└──────────┘                       └──────────┘
+</div>
+
+<h2>5.3 Exemple de création de table</h2>
+
+<div class="code-block">CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('buyer', 'vendor', 'admin') DEFAULT 'buyer',
+    status ENUM('active', 'banned') DEFAULT 'active',
+    avatar VARCHAR(500) DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);</div>
+
+<div class="warning">⚠️ Important : Aiven MySQL fonctionne en mode ANSI_QUOTES. Les guillemets doubles (") sont interprétés comme des identifiants SQL, pas des chaînes. Toutes les chaînes doivent utiliser des guillemets simples (').</div>
+
+<!-- ===== 6. CYCLE DE VIE APK ===== -->
+<div class="page-break"></div>
+<h1 id="s6">6. Cycle de vie de l'APK Android</h1>
+
+<h2>6.1 De la source à l'APK</h2>
+
+<ol>
+  <li><strong>Écriture du code</strong> Kotlin/Compose dans <code>composeApp/src/commonMain/</code></li>
+  <li><strong>Compilation Gradle</strong> avec la tâche <code>:composeApp:assembleDebug</code></li>
+  <li><strong>Génération de l'APK</strong> dans <code>composeApp/build/outputs/apk/debug/composeApp-debug.apk</code></li>
+  <li><strong>Signature</strong> (debug signé automatiquement par le SDK Android)</li>
+  <li><strong>Installation</strong> manuelle sur l'appareil Android</li>
+</ol>
+
+<h2>6.2 Tâches Gradle importantes</h2>
+<table>
+  <tr><th>Commande</th><th>Action</th></tr>
+  <tr><td><code>wasmJsProductionExecutableCompileSync</code></td><td>Build Web WasmJS</td></tr>
+  <tr><td><code>assembleDebug</code></td><td>Build APK Android debug</td></tr>
+  <tr><td><code>assembleRelease</code></td><td>Build APK Android release</td></tr>
+</table>
+
+<div class="note">📦 La compilation utilise <code>java -jar gradle/wrapper/gradle-wrapper.jar</code> à cause de problèmes PowerShell sur Windows.</div>
+
+<h2>6.3 Environnement de build</h2>
+<table>
+  <tr><th>Variable</th><th>Valeur</th></tr>
+  <tr><td><code>JAVA_HOME</code></td><td><code>C:\Program Files\Java\jdk-23</code></td></tr>
+  <tr><td>Plateforme</td><td>Windows 10/11</td></tr>
+  <tr><td>Android SDK</td><td>Configuré via local.properties</td></tr>
+  <tr><td>APK taille</td><td>~17,8 Mo</td></tr>
+</table>
+
+<h2>6.4 Déploiement Web</h2>
+<ol>
+  <li>Build WasmJS via Gradle → <code>composeApp/build/web/dist-prod/</code></li>
+  <li>Fix import map (copie de js-joda.esm.js à la racine)</li>
+  <li>Déploiement Vercel via CLI : <code>vercel deploy ... --prod</code></li>
+  <li>Auto-déploiement GitHub Actions (optionnel)</li>
+</ol>
+
+<!-- ===== 7. ÉTAPES DE CONCEPTION ===== -->
+<div class="page-break"></div>
+<h1 id="s7">7. Étapes de conception</h1>
+
+<table>
+  <tr><th>Phase</th><th>Description</th><th>Durée</th></tr>
+  <tr>
+    <td><strong>1. Analyse &amp; Modélisation</strong></td>
+    <td>Définition des besoins, création du modèle de données (schéma MySQL), wireframes</td>
+    <td>1 semaine</td>
+  </tr>
+  <tr>
+    <td><strong>2. Backend PHP</strong></td>
+    <td>Création de l'API REST : auth, produits, boutiques, commandes, paiements, messagerie, admin</td>
+    <td>2 semaines</td>
+  </tr>
+  <tr>
+    <td><strong>3. Frontend KMP</strong></td>
+    <td>Développement de l'interface utilisateur avec Compose Multiplatform : écrans, navigation, composants</td>
+    <td>3 semaines</td>
+  </tr>
+  <tr>
+    <td><strong>4. Intégration API</strong></td>
+    <td>Connexion du frontend à l'API : ApiClient.kt, gestion des tokens, états de chargement</td>
+    <td>1 semaine</td>
+  </tr>
+  <tr>
+    <td><strong>5. Déploiement API</strong></td>
+    <td>Mise en ligne sur Render (PHP 8.2), connexion Aiven MySQL</td>
+    <td>2 jours</td>
+  </tr>
+  <tr>
+    <td><strong>6. Build Web</strong></td>
+    <td>Compilation WasmJS, correction des problèmes d'import map, déploiement Vercel</td>
+    <td>3 jours</td>
+  </tr>
+  <tr>
+    <td><strong>7. Build Android</strong></td>
+    <td>Compilation APK, test sur appareil, correction des bugs spécifiques</td>
+    <td>2 jours</td>
+  </tr>
+  <tr>
+    <td><strong>8. Cloudinary</strong></td>
+    <td>Configuration du stockage d'images, upload depuis l'API</td>
+    <td>1 jour</td>
+  </tr>
+  <tr>
+    <td><strong>9. Auto-déploiement</strong></td>
+    <td>GitHub Actions workflow, Vercel Git integration, scripts de build</td>
+    <td>1 jour</td>
+  </tr>
+  <tr>
+    <td><strong>10. Documentation</strong></td>
+    <td>Guide utilisateur, cahier de charge, manuel technique</td>
+    <td>1 jour</td>
+  </tr>
+</table>
+
+<!-- ===== 8. CAPTURES ===== -->
+<div class="page-break"></div>
+<h1 id="s8">8. Captures d'écran</h1>
+
+<h2>8.1 Application Web</h2>
+<p><em>(Les captures d'écran de l'application sont disponibles dans le dossier du projet)</em></p>
+
+<p>L'application web est accessible à : <strong>https://dschang-market.vercel.app</strong></p>
+
+<p>Elle affiche :</p>
+<ul>
+  <li>🌸 Page d'accueil avec les produits en vedette</li>
+  <li>🔍 Barre de recherche et catégories</li>
+  <li>🛒 Interface de panier et commande</li>
+  <li>👤 Profil utilisateur et paramètres</li>
+  <li>🏪 Gestion de boutique (vendeur)</li>
+  <li>👑 Dashboard administrateur</li>
+</ul>
+
+<h2>8.2 Application Android (APK)</h2>
+<p>L'APK Android compile le même code source Kotlin/Compose et offre la même expérience utilisateur.</p>
+<p><strong>Fichier :</strong> composeApp/build/outputs/apk/debug/composeApp-debug.apk (17,8 Mo)</p>
+
+<h2>8.3 Page d'accueil (rendu)</h2>
+<p><em>Voici une description détaillée de l'interface :</em></p>
+<ul>
+  <li><strong>Couleur dominante :</strong> Vert forêt (#1B5E20 / #2E7D32) avec accents orange (#FF9800)</li>
+  <li><strong>Typographie :</strong> System UI / Inter</li>
+  <li><strong>Barre inférieure :</strong> Accueil, Recherche, Panier, Favoris, Profil</li>
+  <li><strong>Chargement :</strong> Écran de chargement avec spinner orange sur fond vert</li>
+</ul>
+
+<!-- ===== 9. EXTRAITS DE CODE ===== -->
+<div class="page-break"></div>
+<h1 id="s9">9. Extraits de code</h1>
+
+<h2>9.1 Connexion à la base de données (database.php)</h2>
+<div class="code-block">&lt;?php
+function getDB() {
+    $host = 'mysql-dschang-market-dschang-market.l.aivencloud.com';
+    $port = 10180;
+    $db   = 'defaultdb';
+    $user = 'avnadmin';
+    $pass = 'AVNS_PLACEHOLDER';
+
+    try {
+        // Tentative sans SSL (fonctionne sur Render)
+        $pdo = new PDO(
+            "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4",
+            $user, $pass,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        return $pdo;
+    } catch (PDOException $e) {
+        // Fallback SSL
+        $pdo = new PDO(
+            "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4",
+            $user, $pass,
+            [PDO::MYSQL_ATTR_SSL_CA => true,
+             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        return $pdo;
+    }
+}</div>
+
+<h2>9.2 Singleton API Client (ApiClient.kt)</h2>
+<div class="code-block">object ApiClient {
+    private var _baseUrl: String = "https://dschang-market.onrender.com"
+    var baseUrl: String
+        get() = _baseUrl
+        set(value) { _baseUrl = value.trimEnd('/') }
+
+    private var sessionToken: String? = null
+    private var sessionUser: ApiUser? = null
+
+    private suspend fun request(
+        method: String, path: String, body: String? = null
+    ): String {
+        val url = if (path.startsWith("http")) path else "$baseUrl$path"
+        val response = HttpEngine.request(method, url, buildHeaders(), body)
+        return response
+    }
+    // 50+ méthodes API (auth, produits, commandes, etc.)
+}</div>
+
+<h2>9.3 Import map (fix post-build)</h2>
+<div class="code-block">&lt;script type="importmap"&gt;
+{
+    "imports": {
+        "@js-joda/core": "./js-joda.esm.js"
+    }
+}
+&lt;/script&gt;</div>
+
+<div class="note">Le fichier js-joda.esm.js est copié de node_modules/@js-joda/core/ vers la racine du dossier dist-prod/ pour éviter les problèmes de résolution de modules.</div>
+
+<h2>9.4 Vercel configuration (vercel.json)</h2>
+<div class="code-block">{
+    "version": 2,
+    "public": true,
+    "buildCommand": null,
+    "installCommand": null,
+    "outputDirectory": "composeApp/build/web/dist-prod",
+    "rewrites": [
+        { "source": "/([^.]*)", "destination": "/index.html" }
+    ],
+    "headers": [{
+        "source": "/(.*).wasm",
+        "headers": [
+            { "key": "Content-Type", "value": "application/wasm" },
+            { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+        ]
+    }]
+}</div>
+
+<!-- ===== 10. DIFFICULTÉS ===== -->
+<div class="page-break"></div>
+<h1 id="s10">10. Difficultés rencontrées</h1>
+
+<h2>10.1 🔴 Mode ANSI_QUOTES de MySQL (Aiven)</h2>
+<table>
+  <tr><th>Problème</th><td>MySQL d'Aiven fonctionne en mode ANSI_QUOTES : les guillemets doubles sont des identifiants SQL, pas des chaînes</td></tr>
+  <tr><th>Impact</th><td>Toutes les requêtes SQL avec <code>"active"</code>, <code>"admin"</code>, etc. échouaient</td></tr>
+  <tr><th>Solution</th><td>Remplacer systématiquement tous les guillemets doubles par des guillemets simples dans les requêtes SQL</td></tr>
+  <tr><th>Fichiers touchés</th><td>products.php, shops.php, payments.php, register.php, fix_admin_role.php</td></tr>
+</table>
+
+<h2>10.2 🔴 SSL Aiven non fonctionnel sur Render</h2>
+<table>
+  <tr><th>Problème</th><td>La connexion SSL à Aiven via PDO échouait sur Render PHP 8.2.32</td></tr>
+  <tr><th>Impact</th><td>L'API ne pouvait pas se connecter à la base de données</td></tr>
+  <tr><th>Solution</th><td>Fallback non-SSL dans <code>database.php</code> : d'abord tentative sans SSL, si échec tentative SSL</td></tr>
+</table>
+
+<h2>10.3 🔴 Import map dupliquée (Web WasmJS)</h2>
+<table>
+  <tr><th>Problème</th><td>Le fichier <code>index.html</code> généré contenait deux objets JSON dans le même <code>&lt;script type="importmap"&gt;</code></td></tr>
+  <tr><th>Impact</th><td>Le navigateur ne pouvait pas parser l'import map, le chargement du module échouait</td></tr>
+  <tr><th>Solution</th><td>Suppression du doublon dans index.html</td></tr>
+</table>
+
+<h2>10.4 🔴 Chemin erroné de js-joda dans l'import map</h2>
+<table>
+  <tr><th>Problème</th><td>L'import map pointait vers <code>./node_modules/@js-joda/core/dist/js-joda.esm.js</code> mais le dossier <code>dist/</code> n'existe pas</td></tr>
+  <tr><th>Impact</th><td>Le module js-joda était introuvable (404), l'application ne se chargeait pas</td></tr>
+  <tr><th>Solution</th><td>Copie de <code>js-joda.esm.js</code> à la racine et mise à jour du chemin dans l'import map</td></tr>
+</table>
+
+<h2>10.5 🔴 Rewrite Vercel trop large</h2>
+<table>
+  <tr><th>Problème</th><td>La règle <code>/(.*)</code> dans vercel.json attrapait tous les chemins, y compris <code>node_modules/...</code></td></tr>
+  <tr><th>Impact</th><td>Les fichiers JS dans node_modules étaient servis comme index.html (SPA catch-all)</td></tr>
+  <tr><th>Solution</th><td>Remplacé par <code>/([^.]*)</code> qui ne matche que les routes sans extension de fichier</td></tr>
+</table>
+
+<h2>10.6 🔴 Vercel ignore node_modules/ lors du déploiement</h2>
+<table>
+  <tr><th>Problème</th><td>Vercel n'uploadait pas le dossier <code>node_modules/</code> (exclu par défaut)</td></tr>
+  <tr><th>Impact</th><td>Le fichier js-joda.esm.js n'était pas disponible sur le déploiement</td></tr>
+  <tr><th>Solution</th><td>Copie du fichier à la racine du projet (hors node_modules)</td></tr>
+</table>
+
+<h2>10.7 🔴 Gitignore empêchant le tracking de dist-prod/</h2>
+<table>
+  <tr><th>Problème</th><td>Le pattern <code>composeApp/build/</code> dans .gitignore empêchait le tracking des fichiers de dist-prod/ car le dossier parent était exclu</td></tr>
+  <tr><th>Impact</th><td>Les fichiers pré-buildés ne pouvaient pas être commités pour l'auto-déploiement</td></tr>
+  <tr><th>Solution</th><td>Restructuration du .gitignore pour exclure les dossiers de build un par un plutôt que le dossier parent</td></tr>
+</table>
+
+<h2>10.8 🟡 PowerShell non fonctionnel</h2>
+<table>
+  <tr><th>Problème</th><td>PowerShell sur Windows ne reconnaissait plus les cmdlets de base (New-Item, Select-String, Start-Sleep, etc.)</td></tr>
+  <tr><th>Impact</th><td>Impossible d'utiliser des commandes PowerShell classiques</td></tr>
+  <tr><th>Solution</th><td>Utilisation systématique de <code>cmd.exe /c</code> pour les commandes shell, et <code>java -jar gradlew</code> au lieu de <code>./gradlew</code></td></tr>
+</table>
+
+<h2>10.9 🟡 Domaine gratuit .cf non disponible</h2>
+<table>
+  <tr><th>Problème</th><td>Les domaines .cf, .ga, .ml, .gq ne sont plus gratuits</td></tr>
+  <tr><th>Impact</th><td>Pas de nom de domaine personnalisé pour le site</td></tr>
+  <tr><th>Solution actuelle</th><td>Utilisation de l'URL Vercel gratuite : <strong>dschang-market.vercel.app</strong></td></tr>
+  <tr><th>Alternative payante</th><td>Achat d'un domaine .com pour ~2-3€/an</td></tr>
+</table>
+
+<h2>10.10 🟡 Page.printToPDF non disponible dans l'Electron OpenWork</h2>
+<table>
+  <tr><th>Problème</th><td>La commande CDP <code>Page.printToPDF</code> n'est pas exposée par l'application OpenWork</td></tr>
+  <tr><th>Impact</th><td>Impossible de générer des PDF automatiquement depuis l'outil</td></tr>
+  <tr><th>Solution</th><td>Génération HTML avec bouton d'impression → l'utilisateur utilise Ctrl+P (navigateur) pour sauvegarder en PDF</td></tr>
+</table>
+
+<h2>10.11 🟡 npm install lent / timeout</h2>
+<table>
+  <tr><th>Problème</th><td>Les commandes <code>npm install</code> échouent ou timeout sur cet environnement</td></tr>
+  <tr><th>Impact</th><td>Impossible d'installer des dépendances Node.js (puppeteer, pdfkit, etc.)</td></tr>
+  <tr><th>Solution</th><td>Utilisation de scripts en Node.js natif (sans dépendances externes) ou utilisation du browser intégré</td></tr>
+</table>
+
+<!-- ===== 11. PERSPECTIVES ===== -->
+<div class="page-break"></div>
+<h1 id="s11">11. Perspectives d'évolution</h1>
+
+<table>
+  <tr><th>Fonctionnalité</th><th>Priorité</th><th>Description</th></tr>
+  <tr><td>🌐 Domaine personnalisé</td><td>Haute</td><td>Achat d'un domaine .com (dschangmarket.com) et configuration DNS</td></tr>
+  <tr><td>📱 Play Store</td><td>Haute</td><td>Signature APK, création compte développeur, publication sur Google Play</td></tr>
+  <tr><td>💳 Paiement Orange Money API</td><td>Haute</td><td>Intégration API officielle Orange Money pour les paiements automatiques</td></tr>
+  <tr><td>🚚 Livraison</td><td>Haute</td><td>Suivi de livraison en temps réel, intégration coursiers locaux</td></tr>
+  <tr><td>📊 Analytics</td><td>Moyenne</td><td>Tableau de bord avancé avec graphiques et statistiques</td></tr>
+  <tr><td>🔒 Version Release (APK signé)</td><td>Moyenne</td><td>Build de production avec signature et optimisation ProGuard</td></tr>
+  <tr><td>🌍 Multi-langue</td><td>Moyenne</td><td>Anglais, français, langues locales</td></tr>
+  <tr><td>📱 iOS</td><td>Faible</td><td>Portage vers iOS via KMP (Swift UI)</td></tr>
+  <tr><td>🤖 Chatbot IA</td><td>Faible</td><td>Assistant virtuel pour l'aide à l'achat</td></tr>
+  <tr><td>🔔 Notifications push Firebase</td><td>Moyenne</td><td>Implémentation FCM pour les notifications en temps réel</td></tr>
+</table>
+
+<!-- ===== 12. CONCLUSION ===== -->
+<div class="page-break"></div>
+<h1 id="s12">12. Conclusion</h1>
+
+<p>Le projet <strong>Dschang Market</strong> est une plateforme de commerce en ligne complète, bâtie avec des technologies modernes et entièrement gratuites.</p>
+
+<h2>12.1 Chiffres clés</h2>
+<table>
+  <tr><th>Métrique</th><th>Valeur</th></tr>
+  <tr><td>💰 Coût total du projet</td><td>0 FCFA (tout gratuit)</td></tr>
+  <tr><td>📦 Taille APK</td><td>17,8 Mo</td></tr>
+  <tr><td>🗄️ Tables base de données</td><td>18+ tables</td></tr>
+  <tr><td>📡 Endpoints API</td><td>50+ routes</td></tr>
+  <tr><td>🔧 Lignes de code (estimé)</td><td>5000+ (Kotlin) + 3000+ (PHP)</td></tr>
+  <tr><td>🌐 Plateformes</td><td>Web (WasmJS) + Android (APK)</td></tr>
+  <tr><td>☁️ Hébergeurs</td><td>Render + Vercel + Cloudinary + Aiven</td></tr>
+</table>
+
+<h2>12.2 Accès</h2>
+<ul>
+  <li><strong>Site web :</strong> <a href="https://dschang-market.vercel.app">https://dschang-market.vercel.app</a></li>
+  <li><strong>API :</strong> <a href="https://dschang-market.onrender.com">https://dschang-market.onrender.com</a></li>
+  <li><strong>Code source :</strong> <a href="https://github.com/GHISLAINANDREW/dschang-market">github.com/GHISLAINANDREW/dschang-market</a></li>
+  <li><strong>APK :</strong> composeApp/build/outputs/apk/debug/composeApp-debug.apk</li>
+</ul>
+
+<h2>12.3 Remerciements</h2>
+<p>Ce projet a été réalisé avec les technologies suivantes, que nous remercions :</p>
+<ul>
+  <li><strong>JetBrains</strong> — Kotlin Multiplatform, Compose</li>
+  <li><strong>Render</strong> — Hébergement API gratuit</li>
+  <li><strong>Vercel</strong> — Hébergement web statique gratuit</li>
+  <li><strong>Aiven</strong> — Base de données MySQL gratuite</li>
+  <li><strong>Cloudinary</strong> — Stockage d'images gratuit</li>
+  <li><strong>GitHub</strong> — Hébergement du code source + CI/CD</li>
+</ul>
+
+<div class="footer">
+  <p><strong>Dschang Market</strong> — Cahier de Charge v1.0 — Juillet 2026</p>
+  <p><em>Document rédigé dans le cadre du développement de la plateforme de commerce en ligne de Dschang</em></p>
+</div>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 package com.dschangmarket.ui.orders
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,10 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,15 +36,21 @@ fun OrdersScreen(
     val scope = rememberCoroutineScope()
     var orders by remember { mutableStateOf<List<ApiOrder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var snackbarHostState by remember { mutableStateOf(SnackbarHostState()) }
 
-    LaunchedEffect(Unit) {
-        try {
-            orders = ApiClient.fetchOrders()
-        } catch (_: Exception) { }
-        isLoading = false
+    fun refreshOrders() {
+        scope.launch {
+            try {
+                orders = ApiClient.fetchOrders()
+            } catch (_: Exception) { }
+            isLoading = false
+        }
     }
 
+    LaunchedEffect(Unit) { refreshOrders() }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Mes commandes", fontWeight = FontWeight.SemiBold, color = Color.White) },
@@ -66,7 +70,22 @@ fun OrdersScreen(
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5))) {
                 items(orders) { order ->
-                    OrderCard(order = order, onPay = { onPay(order) }, onContactVendor = onContactVendor)
+                    OrderCard(
+                        order = order,
+                        onPay = { onPay(order) },
+                        onContactVendor = onContactVendor,
+                        onCancel = {
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteOrder(order.id)
+                                    snackbarHostState.showSnackbar("Commande annulée")
+                                    refreshOrders()
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: "impossible d'annuler"}")
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -74,8 +93,34 @@ fun OrdersScreen(
 }
 
 @Composable
-private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int) -> Unit = {}) {
+private fun OrderCard(
+    order: ApiOrder,
+    onPay: () -> Unit,
+    onContactVendor: (Int) -> Unit = {},
+    onCancel: () -> Unit = {}
+) {
     var expanded by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) }
+    val isDirect = order.paymentType == "direct"
+    val canCancel = order.status == "pending"
+
+    // Cancel confirmation dialog
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Annuler la commande ?") },
+            text = { Text("Êtes-vous sûr de vouloir annuler la commande ${order.orderNumber} ?") },
+            confirmButton = {
+                Button(
+                    onClick = { showCancelDialog = false; onCancel() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
+                ) { Text("Oui, annuler") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showCancelDialog = false }) { Text("Non") }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -86,8 +131,21 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("Commande ${order.orderNumber}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Commande ${order.orderNumber}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        if (isDirect) {
+                            Spacer(Modifier.width(6.dp))
+                            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFFF8E1)) {
+                                Text("Virement", fontSize = 9.sp, color = Color(0xFFF57F17), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        } else {
+                            Spacer(Modifier.width(6.dp))
+                            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9)) {
+                                Text("Livraison", fontSize = 9.sp, color = Green, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(order.createdAt.take(10), fontSize = 11.sp, color = Color.Gray)
                         if (order.status == "delivering") {
@@ -109,13 +167,14 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        when (order.status) {
-                            "pending" -> "À payer"
-                            "confirmed" -> "Confirmée"
-                            "preparing" -> "Préparation"
-                            "delivering" -> "En livraison"
-                            "delivered" -> "Livrée"
-                            "cancelled" -> "Annulée"
+                        when {
+                            order.status == "pending" && isDirect -> "En attente"
+                            order.status == "pending" && !isDirect -> "En attente"
+                            order.status == "confirmed" -> "Confirmée"
+                            order.status == "preparing" -> "Préparation"
+                            order.status == "delivering" -> "En livraison"
+                            order.status == "delivered" -> "Livrée"
+                            order.status == "cancelled" -> "Annulée"
                             else -> order.status
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
@@ -133,7 +192,6 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
 
             Spacer(Modifier.height(16.dp))
 
-            // Visual Tracking Bar - now shown for all statuses
             OrderProgressBar(currentStatus = order.status, modifier = Modifier.padding(vertical = 8.dp))
 
             if (expanded) {
@@ -141,10 +199,42 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
                 HorizontalDivider(color = Color(0xFFF5F5F5))
                 Spacer(Modifier.height(12.dp))
 
-                // Timeline détaillée
+                // ── Vendor info for direct payment ──
+                if (isDirect && order.status == "pending" && order.vendorInfo != null) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFFF8E1),
+                        border = BorderStroke(1.dp, Color(0xFFFFE082))
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("📱 Paiement direct au vendeur", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF57F17))
+                            Spacer(Modifier.height(8.dp))
+                            Text("Transférez le montant sur le compte Mobile Money du vendeur, puis attendez sa validation.", fontSize = 12.sp, color = Color(0xFF5D4037), lineHeight = 18.sp)
+                            Spacer(Modifier.height(8.dp))
+                            order.vendorInfo!!.forEach { vendor ->
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Column(Modifier.padding(10.dp)) {
+                                        Text(vendor.shopName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Spacer(Modifier.height(4.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Phone, null, Modifier.size(16.dp), tint = Green)
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(vendor.vendorPhone.ifBlank { vendor.vendorPhoneUser }, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF075E54))
+                                        }
+                                        Spacer(Modifier.height(2.dp))
+                                        Text("Montant : ${order.totalAmount.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                // Timeline
                 val timelineSteps = listOf(
                     Triple("pending", "Commande créée", order.createdAt),
-                    Triple("confirmed", "Paiement confirmé", order.createdAt),
+                    Triple("confirmed", if (isDirect) "Paiement validé" else "Commande confirmée", order.createdAt),
                     Triple("preparing", "En préparation", order.createdAt),
                     Triple("delivering", "En cours de livraison", order.createdAt),
                     Triple("delivered", "Livrée", order.createdAt)
@@ -179,7 +269,24 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
                 }
 
                 Spacer(Modifier.height(12.dp))
-                // Bouton contacter le vendeur
+
+                // Cancel button for pending orders
+                if (canCancel) {
+                    OutlinedButton(
+                        onClick = { showCancelDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828)),
+                        border = BorderStroke(1.dp, Color(0xFFC62828))
+                    ) {
+                        Icon(Icons.Default.Close, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Annuler la commande", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                // Contact vendor button
                 order.items?.firstOrNull()?.let { firstItem ->
                     Button(
                         onClick = { onContactVendor(firstItem.productId) },
@@ -217,7 +324,6 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Paiement désactivé pour le moment
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -231,7 +337,6 @@ private fun OrderCard(order: ApiOrder, onPay: () -> Unit, onContactVendor: (Int)
     }
 }
 
-/** Simple date manipulation: adds days to a "2026-01-15" string */
 private fun addDays(dateStr: String, days: Int): String {
     try {
         val parts = dateStr.split("-")
