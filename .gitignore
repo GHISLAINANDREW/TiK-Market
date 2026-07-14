@@ -1,8 +1,27 @@
 # Gradle
 .gradle/
-build/
-composeApp/build/
+/build/
+composeApp/build/android/
+composeApp/build/js/
+composeApp/build/kotlin/
+composeApp/build/wasmJs/
+composeApp/build/outputs/
+composeApp/build/.transforms/
+composeApp/build/classes/
+composeApp/build/dist/
+composeApp/build/extracted/
+composeApp/build/generated/
+composeApp/build/reports/
+composeApp/build/tmp/
+composeApp/build/klib/
+composeApp/build/kotlin-multiplatform-resources/
+composeApp/build/processedResources/
+composeApp/build/intermediates/
+composeApp/build/compileSync/
+composeApp/build/compose/
+composeApp/build/web/*/
 !composeApp/build/web/dist-prod/
+composeApp/build/web/*.*
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
@@ -21,7 +40,7 @@ local.properties
 node_modules/
 package-lock.json
 package.json
-web/
+/web/
 
 # Logs
 *.log

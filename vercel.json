@@ -1,29 +1,19 @@
 {
   "version": 2,
   "public": true,
-  "name": "dschang-market-web",
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": "composeApp/build/web/dist-prod",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/([^.]*)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/(.*).wasm",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        },
-        {
-          "key": "Cross-Origin-Embedder-Policy",
-          "value": "require-corp"
-        },
-        {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin"
-        }
+        { "key": "Content-Type", "value": "application/wasm" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
       ]
     }
   ]
