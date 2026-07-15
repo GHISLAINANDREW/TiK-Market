@@ -710,28 +710,24 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
             onClick = {
                 if (isPlaying) {
                     isPlaying = false
+                    // We don't have a stopAudio yet, but we could add one.
+                    // For now, re-playing another one stops the previous.
                 } else {
                     scope.launch {
                         if (!isMe) {
                             isDownloading = true
-                            delay(1200) // Simulate downloading/buffering for UX
+                            delay(800) // Visual feedback
                             isDownloading = false
                         }
                         isPlaying = true
-                        playAudio(audioUrl)
-                        if (duration > 0) {
-                            val stepMs = 50L
-                            val totalSteps = duration * 1000L / stepMs
-                            for (i in 1..totalSteps) {
-                                if (!isPlaying) break
-                                progress = i.toFloat() / totalSteps
-                                delay(stepMs)
+                        playAudio(
+                            url = audioUrl,
+                            onProgress = { progress = it },
+                            onCompletion = { 
+                                isPlaying = false
+                                progress = 0f 
                             }
-                            isPlaying = false
-                            progress = 1f
-                            delay(200)
-                            progress = 0f
-                        }
+                        )
                     }
                 }
             },

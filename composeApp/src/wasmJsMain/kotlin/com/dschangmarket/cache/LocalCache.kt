@@ -1,236 +1,92 @@
 package com.dschangmarket.cache
 
 import kotlinx.browser.localStorage
-import kotlinx.browser.window
-import org.khronos.webgl.get
-import org.khronos.webgl.set
-import kotlin.js.Promise
 
-// ── JS interop for IndexedDB ──
+@JsFun("() => Date.now()")
+private external fun jsNow(): Double
 
-private external val indexedDB: dynamic
+private val now: Long get() = jsNow().toLong()
 
-private external class IDBRequest : Promise<dynamic> {
-    val result: dynamic
-    val error: Any?
-}
-
-private external class IDBOpenDBRequest : Promise<dynamic> {
-    val result: dynamic
-    val error: Any?
-}
-
-private external class IDBDatabase {
-    fun transaction(storeNames: String, mode: String): IDBTransaction
-    fun close()
-}
-
-private external class IDBTransaction {
-    val objectStore: (String) -> IDBObjectStore
-    fun complete: Promise<Unit>
-}
-
-private external class IDBObjectStore {
-    fun put(value: dynamic, key: String): IDBRequest
-    fun get(key: String): IDBRequest
-    fun delete(key: String): IDBRequest
-    fun getAll(): IDBRequest
-    fun count(): IDBRequest
-    fun clear(): IDBRequest
-}
-
-private fun openDB(): Promise<IDBDatabase> {
-    return Promise { resolve, reject ->
-        val request = indexedDB.open("DschangMarketCache", 1)
-        request.onerror = { reject(request.error) }
-        request.onsuccess = { resolve(request.result as IDBDatabase) }
-        request.onupgradeneeded = {
-            val db = request.result as IDBDatabase
-            if (!db.objectStoreNames.contains("messages")) {
-                db.createObjectStore("messages", dynamic(keyPath = "id"))
-            }
-            if (!db.objectStoreNames.contains("media")) {
-                db.createObjectStore("media", dynamic(keyPath = "url"))
-            }
-            if (!db.objectStoreNames.contains("api_cache")) {
-                db.createObjectStore("api_cache", dynamic(keyPath = "key"))
-            }
-        }
-    }
-}
-
-private fun putInStore(storeName: String, value: dynamic, key: String): Promise<Unit> {
-    return openDB().then { db ->
-        Promise { resolve, reject ->
-            try {
-                val tx = db.transaction(storeName, "readwrite")
-                val store = tx.objectStore(storeName)
-                val req = store.put(value, key)
-                req.onerror = { reject(req.error) }
-                tx.complete.then { resolve(Unit) }.catch { reject(it) }
-            } catch (e: dynamic) {
-                reject(e)
-            } finally {
-                db.close()
-            }
-        }
-    }
-}
-
-private fun getFromStore(storeName: String, key: String): Promise<dynamic?> {
-    return openDB().then { db ->
-        Promise { resolve, reject ->
-            try {
-                val tx = db.transaction(storeName, "readonly")
-                val store = tx.objectStore(storeName)
-                val req = store.get(key)
-                req.onerror = { reject(req.error) }
-                req.onsuccess = { resolve(req.result) }
-            } catch (e: dynamic) {
-                reject(e)
-            } finally {
-                db.close()
-            }
-        }
-    }
-}
-
-private fun deleteFromStore(storeName: String, key: String): Promise<Unit> {
-    return openDB().then { db ->
-        Promise { resolve, reject ->
-            try {
-                val tx = db.transaction(storeName, "readwrite")
-                val store = tx.objectStore(storeName)
-                val req = store.delete(key)
-                req.onerror = { reject(req.error) }
-                tx.complete.then { resolve(Unit) }.catch { reject(it) }
-            } catch (e: dynamic) {
-                reject(e)
-            } finally {
-                db.close()
-            }
-        }
-    }
-}
-
-// ── Public API ──
-
+/**
+ * Local cache for web (WasmJs target).
+ * Uses localStorage for simple key-value storage.
+ * Relies on the service worker for media (images, audio) caching.
+ */
 object LocalCache {
 
-    private const val LS_PREFIX = "dc_"
-    private var useIndexedDB: Boolean = true
+    private const val PREFIX = "dc_"
 
-    init {
-        try {
-            // Test if IndexedDB is available
-            useIndexedDB = js("typeof indexedDB !== 'undefined'") as Boolean
-        } catch (_: dynamic) {
-            useIndexedDB = false
-        }
-    }
-
-    // ── Simple key-value (localStorage fallback) ──
+    // ── Simple key-value ──
 
     fun putString(key: String, value: String) {
         try {
-            localStorage.setItem("$LS_PREFIX$key", value)
-        } catch (_: dynamic) {}
+            localStorage.setItem("$PREFIX$key", value)
+        } catch (_: Exception) {}
     }
 
     fun getString(key: String): String? {
         return try {
-            localStorage.getItem("$LS_PREFIX$key")
-        } catch (_: dynamic) { null }
+            localStorage.getItem("$PREFIX$key")
+        } catch (_: Exception) { null }
     }
 
     fun removeString(key: String) {
         try {
-            localStorage.removeItem("$LS_PREFIX$key")
-        } catch (_: dynamic) {}
+            localStorage.removeItem("$PREFIX$key")
+        } catch (_: Exception) {}
+    }
+
+    // ── JSON cache with TTL ──
+
+    fun putJson(key: String, json: String, ttlMinutes: Int = 10) {
+        try {
+            val expiryMs = now + ttlMinutes * 60_000L
+            val entry = """{"data":${json},"expires":$expiryMs}"""
+            localStorage.setItem("$PREFIX$key", entry)
+        } catch (_: Exception) {}
+    }
+
+    fun getJson(key: String): String? {
+        return try {
+            val raw = localStorage.getItem("$PREFIX$key") ?: return null
+            // Simple manual JSON parsing to avoid js() calls
+            val dataMatch = raw.split("\"expires\":")
+            if (dataMatch.size < 2) return raw // backward compat
+            val expiresStr = dataMatch[1].trimEnd('}')
+            val expires = expiresStr.toLongOrNull() ?: return raw
+            if (now > expires) {
+                localStorage.removeItem("$PREFIX$key")
+                return null
+            }
+            // Extract data field
+            val prefix = "\"data\":"
+            val dataStart = raw.indexOf(prefix)
+            if (dataStart < 0) return raw
+            val afterData = raw.substring(dataStart + prefix.length)
+            // Find the matching "," before "expires"
+            val commaPos = afterData.lastIndexOf(',')
+            if (commaPos < 0) return raw
+            afterData.substring(0, commaPos)
+        } catch (_: Exception) { null }
     }
 
     // ── Messages cache ──
 
-    fun cacheMessage(messageJson: String) {
-        if (!useIndexedDB) return
-        try {
-            val obj = js("JSON.parse(messageJson)")
-            obj.cached_at = js("Date.now()")
-            putInStore("messages", obj, obj.id.toString()).catch { _ -> }
-        } catch (_: dynamic) {}
+    fun cacheMessages(conversationPartnerId: Int, messagesJson: String) {
+        putJson("msgs_$conversationPartnerId", messagesJson, 30) // 30 min TTL
     }
 
-    fun cacheMessages(messagesJson: String) {
-        if (!useIndexedDB) return
-        try {
-            val arr = js("JSON.parse(messagesJson)") as Array<dynamic>
-            val now = js("Date.now()")
-            arr.forEach { obj ->
-                obj.cached_at = now
-                putInStore("messages", obj, obj.id.toString()).catch { _ -> }
-            }
-        } catch (_: dynamic) {}
+    fun getCachedMessages(conversationPartnerId: Int): String? {
+        return getJson("msgs_$conversationPartnerId")
     }
 
-    fun getCachedMessage(messageId: Int, callback: (String?) -> Unit) {
-        if (!useIndexedDB) { callback(null); return }
-        getFromStore("messages", messageId.toString()).then { result ->
-            if (result != null) {
-                callback(js("JSON.stringify(result)") as String)
-            } else {
-                callback(null)
-            }
-        }.catch { callback(null) }
-    }
-
-    // ── Media cache (track which URLs have been cached) ──
-
-    fun markMediaCached(url: String, type: String = "image") {
-        if (!useIndexedDB) return
-        val entry = js("{ url: url, type: type, cached_at: Date.now() }")
-        putInStore("media", entry, url).catch { _ -> }
-    }
-
-    fun isMediaCached(url: String, callback: (Boolean) -> Unit) {
-        if (!useIndexedDB) { callback(false); return }
-        getFromStore("media", url).then { result ->
-            callback(result != null)
-        }.catch { callback(false) }
-    }
-
-    // ── API Response cache (10 min) ──
-
-    fun cacheApiResponse(endpoint: String, jsonResponse: String) {
-        if (!useIndexedDB) return
-        val entry = js("{ key: endpoint, data: jsonResponse, cached_at: Date.now() }")
-        putInStore("api_cache", entry, endpoint).catch { _ -> }
-    }
-
-    fun getCachedApiResponse(endpoint: String, callback: (String?) -> Unit) {
-        if (!useIndexedDB) { callback(null); return }
-        getFromStore("api_cache", endpoint).then { result ->
-            if (result != null) {
-                val cachedAt = (result.cached_at as? Number)?.toLong() ?: 0
-                val now = js("Date.now()") as Long
-                if (now - cachedAt < 600_000) { // 10 min
-                    callback(result.data as? String)
-                } else {
-                    deleteFromStore("api_cache", endpoint).catch { _ -> }
-                    callback(null)
-                }
-            } else {
-                callback(null)
-            }
-        }.catch { callback(null) }
-    }
-
-    // ── Conversational partner list (simple JSON in localStorage) ──
+    // ── Conversations list ──
 
     fun cacheConversations(json: String) {
-        putString("conversations", json)
+        putJson("conversations", json, 5) // 5 min TTL
     }
 
-    fun getCachedConversations(): String? = getString("conversations")
+    fun getCachedConversations(): String? = getJson("conversations")
 
     // ── Unread count ──
 
@@ -239,4 +95,40 @@ object LocalCache {
     }
 
     fun getCachedUnreadCount(): Int = getString("unread")?.toIntOrNull() ?: 0
+
+    // ── API responses ──
+
+    fun cacheApiResponse(endpoint: String, json: String) {
+        putJson("api_${endpoint.hashCode()}", json, 10) // 10 min TTL
+    }
+
+    fun getCachedApiResponse(endpoint: String): String? {
+        return getJson("api_${endpoint.hashCode()}")
+    }
+
+    // ── Media cache tracking ──
+
+    fun markMediaCached(url: String) {
+        try {
+            localStorage.setItem("${PREFIX}media_${url.hashCode()}", "1")
+        } catch (_: Exception) {}
+    }
+
+    fun isMediaCached(url: String): Boolean {
+        return try {
+            localStorage.getItem("${PREFIX}media_${url.hashCode()}") != null
+        } catch (_: Exception) { false }
+    }
+
+    // ── Auth token ──
+
+    fun cacheToken(token: String) {
+        putString("token", token)
+    }
+
+    fun getCachedToken(): String? = getString("token")
+
+    fun clearToken() {
+        removeString("token")
+    }
 }
