@@ -73,6 +73,7 @@ data class ApiCartItemBody(
     val title: String = ""
 )
 
+@Serializable
 data class ApiCreateOrderBody(
     @SerialName("shipping_address") val shippingAddress: String,
     val phone: String,
@@ -453,7 +454,12 @@ object ApiClient {
     // ── Orders ──
 
     suspend fun fetchOrders(): List<ApiOrder> {
-        return safeRequest("GET", Endpoints.ORDERS)
+        return try {
+            val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS)
+            resp.orders
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     suspend fun createOrder(
@@ -465,7 +471,7 @@ object ApiClient {
         items: List<ApiCartItemBody> = emptyList()
     ): ApiOrder {
         val body = json.encodeToString(ApiCreateOrderBody(shippingAddress, phone, notes ?: "", paymentMethod, paymentType, items))
-        return safeRequest<ApiOrder>("POST", Endpoints.ORDERS, body)
+        return safeRequest<ApiOrderResponse>("POST", Endpoints.ORDERS, body).order
     }
 
     suspend fun deleteOrder(orderId: Int) {
@@ -586,7 +592,8 @@ object ApiClient {
 
     suspend fun fetchVendorOrders(): List<ApiOrder> {
         return try {
-            safeRequest("GET", Endpoints.ORDERS_VENDOR)
+            val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS_VENDOR)
+            resp.orders
         } catch (_: Exception) {
             emptyList()
         }

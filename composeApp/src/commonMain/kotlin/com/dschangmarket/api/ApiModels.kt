@@ -120,6 +120,15 @@ data class ApiOrder(
 )
 
 @Serializable
+data class ApiOrderResponse(val order: ApiOrder)
+
+@Serializable
+data class ApiOrdersResponse(
+    val orders: List<ApiOrder> = emptyList(),
+    val shop: ApiShop? = null
+)
+
+@Serializable
 data class ApiOrderItem(
     @SerialName("product_id") val productId: Int = 0,
     val title: String = "",
