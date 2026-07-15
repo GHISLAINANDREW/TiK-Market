@@ -103,6 +103,8 @@ try {
             $label = $statusLabels[$newStatus] ?? $newStatus;
             sendNotification((int)$orderOwner['user_id'], "Commande #$orderId $label", "Votre commande #$orderId est maintenant $label.", 'order', $orderId);
         }
+
+        json(200, ['success' => true, 'message' => "Statut mis à jour : $newStatus"]);
     }
 
     json(405, ['error' => 'Méthode non autorisée']);
