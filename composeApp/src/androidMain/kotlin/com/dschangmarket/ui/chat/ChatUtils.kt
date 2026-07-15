@@ -25,6 +25,7 @@ private var mediaPlayer: MediaPlayer? = null
 
 actual fun playAudio(url: String) {
     try {
+        val activity = AndroidChatContext.currentActivity ?: return
         mediaPlayer?.release()
         mediaPlayer = null
 
@@ -33,24 +34,25 @@ actual fun playAudio(url: String) {
             return
         }
 
-        val dataSource = if (url.startsWith("data:")) {
-            // Write data URL to a temp file and play it
-            val base64 = url.substringAfter(",")
-            val bytes = Base64.decode(base64, Base64.DEFAULT)
-            val ext = if (url.contains("audio/mp4")) ".mp4" else if (url.contains("audio/webm")) ".webm" else ".mp4"
-            val tempFile = File.createTempFile("audio_", ext)
-            tempFile.writeBytes(bytes)
-            tempFile.absolutePath
-        } else {
-            url
-        }
-
         mediaPlayer = MediaPlayer().apply {
             try {
-                setDataSource(dataSource)
-                setOnPreparedListener { 
-                    start() 
+                if (url.startsWith("data:")) {
+                    val base64 = url.substringAfter(",")
+                    val bytes = Base64.decode(base64, Base64.DEFAULT)
+                    val tempFile = File.createTempFile("audio_", ".mp4")
+                    tempFile.writeBytes(bytes)
+                    setDataSource(tempFile.absolutePath)
+                } else {
+                    // Fix for Tunnels (Localtunnel/Cloudflare)
+                    if (url.contains("loca.lt") || url.contains("trycloudflare.com")) {
+                        val headers = mapOf("bypass-tunnel-reminder" to "true")
+                        setDataSource(activity, Uri.parse(url), headers)
+                    } else {
+                        setDataSource(url)
+                    }
                 }
+
+                setOnPreparedListener { start() }
                 setOnErrorListener { _, what, extra ->
                     val errorMsg = when (what) {
                         MediaPlayer.MEDIA_ERROR_UNKNOWN -> "Format audio non supporté"

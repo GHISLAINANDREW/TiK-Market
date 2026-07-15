@@ -278,9 +278,9 @@ fun PollingManager(appState: AppState) {
                 previousUnreadNotifications = unreadNotifs
                 appState.unreadNotifications = unreadNotifs
                 
-                delay(15000) // Poll every 15s when logged in
+                delay(3000) // Reduced from 15s to 3s for better interactivity
             } catch (_: Exception) {
-                delay(30000)
+                delay(10000)
             }
         }
     }
