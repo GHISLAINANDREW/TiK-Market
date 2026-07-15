@@ -276,7 +276,7 @@ fun StoryViewerScreen(
                     IconButton(
                         onClick = {
                             if (replyText.isNotBlank() && currentStory.product != null) {
-                                val msg = replyText.trim()
+                                val msg = "📲 Story: ${currentStory.product.title}\n${replyText.trim()}"
                                 replyText = ""
                                 onReply?.invoke(msg, currentStory.product)
                             }

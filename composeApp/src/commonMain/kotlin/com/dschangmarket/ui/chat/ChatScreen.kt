@@ -47,7 +47,9 @@ data class ChatMessage(
     val audioUrl: String? = null,
     val duration: Int = 0,
     val timestamp: String = "",
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val productId: Int? = null,
+    val productTitle: String? = null
 )
 
 data class ProductShare(
@@ -105,7 +107,9 @@ fun ChatScreen(
                         audioUrl = msg.audioUrl,
                         duration = msg.duration,
                         timestamp = msg.createdAt,
-                        isRead = msg.isRead
+                        isRead = msg.isRead,
+                        productId = msg.productId,
+                        productTitle = msg.productTitle
                     )
                 }
                 if (newMessages.size != messages.size || newMessages.lastOrNull()?.id != messages.lastOrNull()?.id) {
@@ -586,6 +590,37 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
                 shadowElevation = 0.5.dp
             ) {
                 Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    // Story/Product Reference (Reply context)
+                    if (msg.productId != null) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp)
+                                .clip(RoundedCornerShape(6.dp)),
+                            color = Color.Black.copy(alpha = 0.05f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                VerticalDivider(color = Orange, thickness = 3.dp, modifier = Modifier.height(30.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Story", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Orange)
+                                    Text(msg.productTitle ?: "Produit", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                // Story product image preview
+                                val productImg = remember(msg.productId) {
+                                    // In a real app, we'd fetch the product details or have the image URL in the message
+                                    // For now, if it's the product we just came from, we might have it in memory.
+                                    // But since we don't store image_url in messages yet, we'll skip the image for now
+                                    // to avoid making too many API calls per bubble.
+                                    null
+                                }
+                            }
+                        }
+                    }
+
                     // Content
                     if (msg.audioUrl != null) {
                         val url = msg.audioUrl
@@ -660,6 +695,7 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
 @Composable
 private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
     var isPlaying by remember { mutableStateOf(false) }
+    var isDownloading by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
     val scope = rememberCoroutineScope()
     val fgColor = if (isMe) Color(0xFF1C1C1C) else Color(0xFF075E54)
@@ -675,10 +711,15 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
                 if (isPlaying) {
                     isPlaying = false
                 } else {
-                    isPlaying = true
-                    playAudio(audioUrl)
-                    if (duration > 0) {
-                        scope.launch {
+                    scope.launch {
+                        if (!isMe) {
+                            isDownloading = true
+                            delay(1200) // Simulate downloading/buffering for UX
+                            isDownloading = false
+                        }
+                        isPlaying = true
+                        playAudio(audioUrl)
+                        if (duration > 0) {
                             val stepMs = 50L
                             val totalSteps = duration * 1000L / stepMs
                             for (i in 1..totalSteps) {
@@ -699,12 +740,20 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
             modifier = Modifier.size(36.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    null,
-                    tint = if (isPlaying) accentColor else Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (isDownloading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        null,
+                        tint = if (isPlaying) accentColor else Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 

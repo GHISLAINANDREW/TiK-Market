@@ -68,6 +68,10 @@ try {
         $sort_by = $_GET['sort_by'] ?? 'newest';
 
         $where = ['p.is_active = 1', "s.status = 'active'", "u.status = 'active'"];
+
+        // stories expire after 24h
+        $where[] = '(p.is_story = 0 OR p.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR))';
+
         $params = [];
 
         if ($category !== '') {
