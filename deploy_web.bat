@@ -1,9 +1,6 @@
 @echo off
-chcp 65001 >nul
-setlocal enabledelayedexpansion
-
-echo [BUILD] Compilation de la version Web (WasmJS)...
-java -jar gradle/wrapper/gradle-wrapper.jar :composeApp:wasmJsProductionExecutableCompileSync
+echo [BUILD] Compilation de la version Web (Wasm)...
+call gradlew :composeApp:wasmJsBrowserDistribution
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] La compilation a echoue.
@@ -11,18 +8,15 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-echo [FIX] Correction de l'import map (chemin js-joda)...
-set DIST_DIR=composeApp\build\web\dist-prod
+set DIST_DIR=composeApp\build\dist\wasmJs\productionExecutable
 
-:: Copier js-joda.esm.js hors de node_modules
-copy "%DIST_DIR%\node_modules\@js-joda\core\js-joda.esm.js" "%DIST_DIR%\js-joda.esm.js" /Y >nul
-
-:: Corriger l'import map dans index.html
-powershell -Command "(Get-Content '%DIST_DIR%\index.html') -replace '\./node_modules/@js-joda/core/dist/js-joda\.esm\.js', './js-joda.esm.js' | Set-Content '%DIST_DIR%\index.html'"
+echo [PREPARE] Configuration des fichiers pour Vercel...
+copy vercel.json %DIST_DIR%\ /Y
+copy web\index.html %DIST_DIR%\ /Y
 
 echo [DEPLOY] Envoi vers Vercel...
-cd /d "%DIST_DIR%"
-vercel --prod --yes
+cd %DIST_DIR%
+npx vercel --prod --yes
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Le deploiement a echoue.
@@ -31,6 +25,6 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [SUCCES] DschangMarket Web : https://dschang-market.vercel.app
-echo [NOTE] N'oubliez pas de commit et push pour l'auto-deploiement !
+echo [SUCCES] Votre application DschangMarket Web est mise a jour !
+echo URL: https://dschang-market-web.vercel.app
 pause
