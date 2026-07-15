@@ -123,7 +123,8 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareText = "🚀 Découvre ${product.title} sur DschangMarket\nPrix : ${FormatUtils.formatPrice(product.price)}\nVendeur : ${product.shopName}"
+                        val shareUrl = "https://dschang-market-web.vercel.app/?p=${product.id}"
+                        val shareText = "🚀 Découvre ${product.title} sur DschangMarket\nPrix : ${FormatUtils.formatPrice(product.price)}\n\nLien : $shareUrl"
                         shareText(shareText, "DschangMarket - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
                     var showMenu by remember { mutableStateOf(false) }

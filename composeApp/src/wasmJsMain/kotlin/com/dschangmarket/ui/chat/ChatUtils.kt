@@ -37,22 +37,32 @@ private external fun playChatSoundJs()
             alert('Fichier audio introuvable');
             return;
         }
-        const audio = new Audio(url);
-        audio.onerror = () => {
-            console.error('Audio play error - file may be missing or format unsupported:', url);
-            alert('Impossible de lire ce message vocal. Le fichier est peut-être introuvable.');
-        };
-        audio.play().catch(e => {
-            console.error('Audio play error:', e);
-            if (e.name === 'NotAllowedError') {
-                alert('Cliquez sur la page puis réessayez (autoplay bloqué)');
-            } else {
-                alert('Erreur de lecture audio: ' + e.message);
-            }
-        });
+        
+        // Use fetch to include bypass header for Tunnels
+        fetch(url, { headers: { 'bypass-tunnel-reminder': 'true' } })
+            .then(response => {
+                if (!response.ok) throw new Error('HTTP error ' + response.status);
+                return response.blob();
+            })
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                const audio = new Audio(blobUrl);
+                audio.onerror = () => {
+                    alert('Impossible de lire ce message vocal.');
+                };
+                audio.play().catch(e => {
+                    if (e.name === 'NotAllowedError') {
+                        alert('Cliquez sur la page puis réessayez (autoplay bloqué)');
+                    }
+                });
+            })
+            .catch(e => {
+                console.error('Audio fetch error:', e);
+                // Fallback to direct play if fetch fails
+                new Audio(url).play().catch(() => {});
+            });
     } catch (e) {
         console.error('Audio creation error:', e);
-        alert('Erreur audio: ' + e.message);
     }
 }""")
 private external fun playAudioJs(url: String)

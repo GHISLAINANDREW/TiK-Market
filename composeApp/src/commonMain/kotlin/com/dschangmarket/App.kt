@@ -131,6 +131,16 @@ fun App(onExit: () -> Unit = {}) {
                     } catch (_: Exception) {}
                 }
 
+                // Check for Deep Link (Product)
+                val productId = com.dschangmarket.utils.getStartupParameter("p")
+                if (productId != null) {
+                    try {
+                        val p = ApiClient.fetchProduct(productId.toInt()).toProduct()
+                        appState.selectedProduct = p
+                        appState.navigateTo(NavScreen.ProductDetail)
+                    } catch (_: Exception) {}
+                }
+
                 delay(500)
                 isAppReady = true
             }
