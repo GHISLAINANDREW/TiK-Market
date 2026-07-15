@@ -14,7 +14,7 @@ kotlin {
         moduleName = "dschangmarket"
         browser {
             commonWebpackConfig {
-                outputFileName = "dschangmarket.js"
+                outputFileName = "dschangmarket.mjs"
             }
             runTask {
                 devServer = devServer.copy(

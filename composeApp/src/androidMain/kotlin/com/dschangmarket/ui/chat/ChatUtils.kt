@@ -36,6 +36,14 @@ actual fun playAudio(url: String) {
 
         mediaPlayer = MediaPlayer().apply {
             try {
+                // Set audio attributes for faster streaming start
+                setAudioAttributes(
+                    android.media.AudioAttributes.Builder()
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+
                 if (url.startsWith("data:")) {
                     val base64 = url.substringAfter(",")
                     val bytes = Base64.decode(base64, Base64.DEFAULT)
@@ -43,16 +51,16 @@ actual fun playAudio(url: String) {
                     tempFile.writeBytes(bytes)
                     setDataSource(tempFile.absolutePath)
                 } else {
-                    // Fix for Tunnels (Localtunnel/Cloudflare)
-                    if (url.contains("loca.lt") || url.contains("trycloudflare.com")) {
-                        val headers = mapOf("bypass-tunnel-reminder" to "true")
-                        setDataSource(activity, Uri.parse(url), headers)
-                    } else {
-                        setDataSource(url)
-                    }
+                    // Optimized for tunnels and remote servers
+                    val headers = mutableMapOf<String, String>()
+                    headers["bypass-tunnel-reminder"] = "true"
+                    setDataSource(activity, Uri.parse(url), headers)
                 }
 
-                setOnPreparedListener { start() }
+                setOnPreparedListener { 
+                    start() 
+                }
+
                 setOnErrorListener { _, what, extra ->
                     val errorMsg = when (what) {
                         MediaPlayer.MEDIA_ERROR_UNKNOWN -> "Format audio non supporté"
@@ -64,10 +72,12 @@ actual fun playAudio(url: String) {
                     mediaPlayer = null
                     true
                 }
+
                 setOnCompletionListener {
                     mediaPlayer?.release()
                     mediaPlayer = null
                 }
+
                 prepareAsync()
             } catch (e: Exception) {
                 showToast("Impossible de lire ce message vocal")
