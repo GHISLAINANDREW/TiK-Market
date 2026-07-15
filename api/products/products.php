@@ -7,10 +7,15 @@ $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 try {
     $db = getDB();
 
-    // Auto-migration: add is_story column if not exists
+    // Auto-migration: ensure is_story column exists
     try {
-        $db->exec("ALTER TABLE products ADD COLUMN is_story TINYINT(1) DEFAULT 0 AFTER total_sales");
-    } catch (Exception $e) { /* Already exists */ }
+        $check = $db->query("SHOW COLUMNS FROM products LIKE 'is_story'")->fetch();
+        if (!$check) {
+            $db->exec("ALTER TABLE products ADD COLUMN is_story TINYINT(1) DEFAULT 0 AFTER total_sales");
+        }
+    } catch (Exception $e) {
+        error_log("Migration error (is_story): " . $e->getMessage());
+    }
 
     if ($method === 'GET') {
         if ($id) {
@@ -53,7 +58,7 @@ try {
             $product['total_sales'] = (int)$product['total_sales'];
             $product['is_active'] = (bool)$product['is_active'];
             $product['is_verified'] = (bool)$product['is_verified'];
-            $product['is_story'] = (bool)$product['is_story'];
+            $product['is_story'] = (bool)($product['is_story'] ?? false);
             json(200, $product);
         }
 
@@ -69,7 +74,7 @@ try {
 
         $where = ['p.is_active = 1', "s.status = 'active'", "u.status = 'active'"];
 
-        // stories expire after 24h
+        // Stories expire after 24h
         $where[] = '(p.is_story = 0 OR p.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR))';
 
         $params = [];
@@ -168,7 +173,10 @@ try {
         $image_url = trim($input['image_url'] ?? '');
         $stock = (int)($input['stock'] ?? 0);
         $unit = trim($input['unit'] ?? 'pièce');
-        $is_story = isset($input['is_story']) ? ($input['is_story'] ? 1 : 0) : 0;
+
+        // Handle boolean or string or int for is_story
+        $is_story_input = $input['is_story'] ?? false;
+        $is_story = ($is_story_input === true || $is_story_input === 1 || $is_story_input === 'true') ? 1 : 0;
 
         if ($shop_id <= 0 || $title === '' || $price === null || $stock < 0) {
             json(400, ['error' => 'Champs obligatoires manquants (shop_id, title, price, stock)']);
@@ -228,8 +236,8 @@ try {
             if (array_key_exists($f, $input)) {
                 $fields[] = "$f = ?";
                 if ($f === 'is_story') {
-                    // Convert "true"/"false" string to int 1/0
-                    $params[] = $input[$f] ? 1 : 0;
+                    $val = $input[$f];
+                    $params[] = ($val === true || $val === 1 || $val === 'true') ? 1 : 0;
                 } elseif ($f === 'compare_price') {
                     $params[] = $input[$f] ?: null;
                 } else {
@@ -262,7 +270,7 @@ try {
 
     json(405, ['error' => 'Méthode non autorisée']);
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur serveur']);
+    json(500, ['error' => 'Erreur serveur: ' . $e->getMessage()]);
 } catch (\Throwable $e) {
-    json(500, ['error' => 'Erreur serveur']);
+    json(500, ['error' => 'Erreur serveur: ' . $e->getMessage()]);
 }

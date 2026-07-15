@@ -13,6 +13,7 @@ import androidx.core.app.ActivityCompat
 import com.dschangmarket.AndroidChatContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import kotlinx.coroutines.*
 
 actual fun playChatSound() {
     try {
@@ -22,12 +23,15 @@ actual fun playChatSound() {
 }
 
 private var mediaPlayer: MediaPlayer? = null
+private var progressJob: Job? = null
 
-actual fun playAudio(url: String) {
+actual fun playAudio(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit) {
     try {
         val activity = AndroidChatContext.currentActivity ?: return
         mediaPlayer?.release()
         mediaPlayer = null
+        progressJob?.cancel()
+        progressJob = null
 
         if (url.isBlank()) {
             showToast("Fichier audio introuvable")
@@ -36,7 +40,6 @@ actual fun playAudio(url: String) {
 
         mediaPlayer = MediaPlayer().apply {
             try {
-                // Set audio attributes for faster streaming start
                 setAudioAttributes(
                     android.media.AudioAttributes.Builder()
                         .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
@@ -51,7 +54,6 @@ actual fun playAudio(url: String) {
                     tempFile.writeBytes(bytes)
                     setDataSource(tempFile.absolutePath)
                 } else {
-                    // Optimized for tunnels and remote servers
                     val headers = mutableMapOf<String, String>()
                     headers["bypass-tunnel-reminder"] = "true"
                     setDataSource(activity, Uri.parse(url), headers)
@@ -59,34 +61,43 @@ actual fun playAudio(url: String) {
 
                 setOnPreparedListener { 
                     start() 
+                    // Start progress tracking
+                    progressJob = CoroutineScope(Dispatchers.Main).launch {
+                        while (isActive && isPlaying) {
+                            val current = currentPosition.toFloat()
+                            val total = duration.toFloat()
+                            if (total > 0) onProgress(current / total)
+                            delay(100)
+                        }
+                    }
                 }
 
                 setOnErrorListener { _, what, extra ->
-                    val errorMsg = when (what) {
-                        MediaPlayer.MEDIA_ERROR_UNKNOWN -> "Format audio non supporté"
-                        MediaPlayer.MEDIA_ERROR_SERVER_DIED -> "Erreur du serveur audio"
-                        else -> "Erreur de lecture ($what/$extra)"
-                    }
-                    showToast(errorMsg)
+                    showToast("Erreur de lecture audio ($what)")
+                    onCompletion()
                     mediaPlayer?.release()
                     mediaPlayer = null
                     true
                 }
 
                 setOnCompletionListener {
+                    onProgress(1f)
+                    onCompletion()
+                    progressJob?.cancel()
                     mediaPlayer?.release()
                     mediaPlayer = null
                 }
 
                 prepareAsync()
             } catch (e: Exception) {
-                showToast("Impossible de lire ce message vocal")
+                showToast("Impossible de lire ce message")
+                onCompletion()
                 release()
                 mediaPlayer = null
             }
         }
     } catch (e: Exception) {
-        showToast("Erreur audio: ${e.message ?: "inconnue"}")
+        onCompletion()
     }
 }
 
@@ -105,7 +116,6 @@ private var startTime: Long = 0
 actual fun startVoiceRecording() {
     val activity = AndroidChatContext.currentActivity ?: return
 
-    // Check RECORD_AUDIO permission - if not granted, request it (async)
     if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO)
         != PackageManager.PERMISSION_GRANTED
     ) {
@@ -114,7 +124,7 @@ actual fun startVoiceRecording() {
             arrayOf(Manifest.permission.RECORD_AUDIO),
             200
         )
-        return // The user will need to re-press after granting
+        return
     }
 
     try {
@@ -150,13 +160,11 @@ actual fun stopVoiceRecording(onResult: (String?, Int) -> Unit) {
         val bytes = audioFile?.readBytes()
         if (bytes != null) {
             val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-            // Return a proper data URL so the API handles it the same as web
             onResult("data:audio/mp4;base64,$base64", duration)
         } else {
             onResult(null, 0)
         }
 
-        // Cleanup temp file
         try { audioFile?.delete() } catch (_: Exception) {}
         audioFile = null
     } catch (e: Exception) {
@@ -165,17 +173,14 @@ actual fun stopVoiceRecording(onResult: (String?, Int) -> Unit) {
 }
 
 actual fun pickImage(onResult: (String?) -> Unit) {
-    // No-op: use rememberImagePickerLauncher composable instead
     onResult(null)
 }
 
 actual fun takePhoto(onResult: (String?) -> Unit) {
-    // No-op: use rememberTakePhotoLauncher composable instead
     onResult(null)
 }
 
 actual fun pickFile(onResult: (String?) -> Unit) {
-    // No-op: use rememberPickFileLauncher composable instead
     onResult(null)
 }
 

@@ -4,8 +4,8 @@ actual fun playChatSound() {
     playChatSoundJs()
 }
 
-actual fun playAudio(url: String) {
-    playAudioJs(url)
+actual fun playAudio(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit) {
+    playAudioJs(url, onProgress, onCompletion)
 }
 
 actual fun startVoiceRecording() {
@@ -31,41 +31,52 @@ actual fun pickFile(onResult: (String?) -> Unit) {
 @JsFun("() => { new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3').play().catch(() => {}); }")
 private external fun playChatSoundJs()
 
-@JsFun("""(url) => {
+@JsFun("""(url, onProgress, onCompletion) => {
     try {
         if (!url || url === '') {
-            alert('Fichier audio introuvable');
+            onCompletion();
             return;
         }
         
-        // Use fetch to include bypass header for Tunnels
         fetch(url, { headers: { 'bypass-tunnel-reminder': 'true' } })
             .then(response => {
-                if (!response.ok) throw new Error('HTTP error ' + response.status);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.blob();
             })
             .then(blob => {
                 const blobUrl = URL.createObjectURL(blob);
                 const audio = new Audio(blobUrl);
-                audio.onerror = () => {
-                    alert('Impossible de lire ce message vocal.');
-                };
-                audio.play().catch(e => {
-                    if (e.name === 'NotAllowedError') {
-                        alert('Cliquez sur la page puis réessayez (autoplay bloqué)');
+                
+                audio.ontimeupdate = () => {
+                    if (audio.duration > 0) {
+                        onProgress(audio.currentTime / audio.duration);
                     }
+                };
+                
+                audio.onended = () => {
+                    onProgress(1.0);
+                    onCompletion();
+                    URL.revokeObjectURL(blobUrl);
+                };
+                
+                audio.onerror = () => {
+                    onCompletion();
+                };
+                
+                audio.play().catch(e => {
+                    onCompletion();
                 });
             })
             .catch(e => {
                 console.error('Audio fetch error:', e);
-                // Fallback to direct play if fetch fails
-                new Audio(url).play().catch(() => {});
+                onCompletion();
             });
     } catch (e) {
         console.error('Audio creation error:', e);
+        onCompletion();
     }
 }""")
-private external fun playAudioJs(url: String)
+private external fun playAudioJs(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit)
 
 @JsFun("""() => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -79,7 +90,6 @@ private external fun playAudioJs(url: String)
             window.startTime = Date.now();
         }).catch(e => {
             console.error('getUserMedia error:', e);
-            // Try without specific mimeType
             navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
                 window.mediaRecorder = new MediaRecorder(stream);
                 window.audioChunks = [];
@@ -106,7 +116,6 @@ private external fun startVoiceRecordingJs()
                 const dataUrl = reader.result;
                 const duration = Math.round((Date.now() - window.startTime) / 1000);
                 callback(dataUrl, duration);
-                // Cleanup
                 try {
                     window.mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 } catch(e) {}
