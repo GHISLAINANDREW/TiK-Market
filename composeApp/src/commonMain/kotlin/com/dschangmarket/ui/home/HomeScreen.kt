@@ -326,10 +326,10 @@ fun HomeScreen(
                     }
                 }
 
-                // Arrivages du jour (Stories) — only show when stories exist
+                // Arrivages du jour (Stories) — show if stories exist OR if user is a vendor
                 val stories = apiProducts.filter { it.isStory }
                 
-                if (stories.isNotEmpty()) {
+                if (stories.isNotEmpty() || userRole == "vendor") {
                     item {
                         Column(Modifier.padding(vertical = 4.dp)) {
                             Row(
