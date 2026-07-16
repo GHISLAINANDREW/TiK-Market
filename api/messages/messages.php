@@ -10,6 +10,7 @@ try {
     try {
         $db->exec("ALTER TABLE messages ADD COLUMN audio_url TEXT NULL AFTER text");
         $db->exec("ALTER TABLE messages ADD COLUMN duration INT DEFAULT 0 AFTER audio_url");
+        $db->exec("ALTER TABLE messages ADD COLUMN product_image_url TEXT NULL AFTER product_id");
     } catch (Exception $e) { /* Already exists */ }
 
     $userId = getAuthUserId();
@@ -36,6 +37,7 @@ try {
                 if ($m['product_id']) $m['product_id'] = (int)$m['product_id'];
                 $m['is_read'] = (bool)$m['is_read'];
                 $m['duration'] = (int)($m['duration'] ?? 0);
+                $m['product_image_url'] = $m['product_image_url'] ?? null;
             }
             unset($m);
 
@@ -101,6 +103,7 @@ try {
 
         $receiver_id = (int)($input['receiver_id'] ?? 0);
         $product_id = isset($input['product_id']) ? (int)$input['product_id'] : null;
+        $product_image_url = $input['product_image_url'] ?? null;
         $text = trim($input['text'] ?? '');
         $audio_url = $input['audio_url'] ?? null;
         $duration = (int)($input['duration'] ?? 0);
@@ -147,8 +150,8 @@ try {
             if (!$stmt->fetch()) json(404, ['error' => 'Produit non trouvé']);
         }
 
-        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $text, $audio_url, $duration]);
+        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, product_image_url, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $product_image_url, $text, $audio_url, $duration]);
         $messageId = (int)$db->lastInsertId();
 
         // Notifier le destinataire
@@ -172,8 +175,25 @@ try {
         $message['receiver_id'] = (int)$message['receiver_id'];
         if ($message['product_id']) $message['product_id'] = (int)$message['product_id'];
         $message['is_read'] = (bool)$message['is_read'];
+        $message['product_image_url'] = $message['product_image_url'] ?? null;
 
         json(201, ['message' => $message]);
+    }
+
+    if ($method === 'DELETE') {
+        $messageId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($messageId <= 0) json(400, ['error' => 'ID du message requis']);
+
+        // Only the sender can delete their own message
+        $stmt = $db->prepare('SELECT sender_id FROM messages WHERE id = ?');
+        $stmt->execute([$messageId]);
+        $msg = $stmt->fetch();
+        if (!$msg) json(404, ['error' => 'Message non trouvé']);
+        if ((int)$msg['sender_id'] !== $userId) json(403, ['error' => 'Vous ne pouvez supprimer que vos propres messages']);
+
+        $stmt = $db->prepare('DELETE FROM messages WHERE id = ?');
+        $stmt->execute([$messageId]);
+        json(200, ['success' => true, 'message' => 'Message supprimé']);
     }
 
     json(405, ['error' => 'Méthode non autorisée']);

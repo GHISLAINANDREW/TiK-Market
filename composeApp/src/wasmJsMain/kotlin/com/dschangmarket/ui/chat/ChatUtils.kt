@@ -5,7 +5,12 @@ actual fun playChatSound() {
 }
 
 actual fun playAudio(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit) {
+    stopAudio() // Stop previous playback before starting new one
     playAudioJs(url, onProgress, onCompletion)
+}
+
+actual fun stopAudio() {
+    stopAudioJs()
 }
 
 actual fun startVoiceRecording() {
@@ -46,25 +51,37 @@ private external fun playChatSoundJs()
             .then(blob => {
                 const blobUrl = URL.createObjectURL(blob);
                 const audio = new Audio(blobUrl);
+                window.__currentAudio = audio;
+                let ended = false;
                 
                 audio.ontimeupdate = () => {
+                    if (ended) return;
                     if (audio.duration > 0) {
                         onProgress(audio.currentTime / audio.duration);
                     }
                 };
                 
                 audio.onended = () => {
+                    if (ended) return;
+                    ended = true;
                     onProgress(1.0);
                     onCompletion();
                     URL.revokeObjectURL(blobUrl);
+                    if (window.__currentAudio === audio) window.__currentAudio = null;
                 };
                 
                 audio.onerror = () => {
+                    if (ended) return;
+                    ended = true;
                     onCompletion();
+                    if (window.__currentAudio === audio) window.__currentAudio = null;
                 };
                 
                 audio.play().catch(e => {
+                    if (ended) return;
+                    ended = true;
                     onCompletion();
+                    if (window.__currentAudio === audio) window.__currentAudio = null;
                 });
             })
             .catch(e => {
@@ -77,6 +94,17 @@ private external fun playChatSoundJs()
     }
 }""")
 private external fun playAudioJs(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit)
+
+@JsFun("""() => {
+    if (window.__currentAudio) {
+        try {
+            window.__currentAudio.pause();
+            window.__currentAudio.src = '';
+        } catch(e) {}
+        window.__currentAudio = null;
+    }
+}""")
+private external fun stopAudioJs()
 
 @JsFun("""() => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
