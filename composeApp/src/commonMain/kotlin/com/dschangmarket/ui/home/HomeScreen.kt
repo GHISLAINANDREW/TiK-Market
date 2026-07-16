@@ -64,7 +64,7 @@ fun HomeScreen(
     onSearchQuerySubmit: (String) -> Unit = {},
     isLoggedIn: Boolean = false,
     userRole: String = "buyer",
-    onStoryClick: (List<Pair<String, String>>, Int) -> Unit = { _, _ -> },
+    onStoryClick: (List<Product>, Int) -> Unit = { _, _ -> },
     onAddStory: (String, String) -> Unit = { _, _ -> },
     refreshSignal: Int = 0
 ) {
@@ -154,6 +154,7 @@ fun HomeScreen(
     val displayProducts = apiProducts
 
     val filteredProducts = displayProducts.filter { p ->
+        !p.isStory &&
         (selectedShopName == null || p.shopName == selectedShopName) &&
         (selectedCategory == null || p.category == selectedCategory) &&
         (searchQuery.isBlank() || p.title.contains(searchQuery, ignoreCase = true) || p.shopName.contains(searchQuery, ignoreCase = true))
@@ -372,13 +373,10 @@ fun HomeScreen(
                                     }
                                 }
                                 
-                                val storyItems = stories.map { p ->
-                                    Pair(p.title, p.images.firstOrNull() ?: "")
-                                }
                                 stories.forEachIndexed { index, product ->
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { onStoryClick(storyItems, index) }
+                                        modifier = Modifier.clickable { onStoryClick(stories, index) }
                                     ) {
                                         Box(
                                             Modifier

@@ -34,7 +34,9 @@ fun StoryViewerScreen(
     initialIndex: Int = 0,
     onBack: () -> Unit,
     onProductClick: (Product) -> Unit,
-    onReply: ((String, Product) -> Unit)? = null
+    onReply: ((String, Product) -> Unit)? = null,
+    onDeleteStory: ((Product) -> Unit)? = null,
+    currentUserId: Int = 0
 ) {
     var currentIndex by remember { mutableStateOf(initialIndex.coerceIn(0, stories.lastIndex)) }
     var progress by remember { mutableStateOf(0f) }
@@ -237,6 +239,14 @@ fun StoryViewerScreen(
                         )
                     }
                 }
+                
+                // Delete button for owner
+                if (currentStory.product != null && currentStory.product.vendorId.toIntOrNull() == currentUserId) {
+                    IconButton(onClick = { onDeleteStory?.invoke(currentStory.product) }) {
+                        Icon(Icons.Default.Delete, "Supprimer", tint = Color.White)
+                    }
+                }
+
                 Spacer(Modifier.width(8.dp))
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.Close, null, tint = Color.White)
