@@ -11,25 +11,50 @@ try {
         $db->exec("ALTER TABLE messages ADD COLUMN audio_url TEXT NULL AFTER text");
         $db->exec("ALTER TABLE messages ADD COLUMN duration INT DEFAULT 0 AFTER audio_url");
         $db->exec("ALTER TABLE messages ADD COLUMN product_image_url TEXT NULL AFTER product_id");
+        $db->exec("ALTER TABLE messages ADD COLUMN replied_to_id INT DEFAULT NULL AFTER product_image_url");
+        $db->exec("CREATE TABLE IF NOT EXISTS message_reactions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            message_id INT NOT NULL,
+            user_id INT NOT NULL,
+            emoji VARCHAR(32) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_reaction (message_id, user_id, emoji),
+            FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
     } catch (Exception $e) { /* Already exists */ }
 
     $userId = getAuthUserId();
 
     if ($method === 'GET') {
         $conversationWith = isset($_GET['conversation_with']) ? (int)$_GET['conversation_with'] : 0;
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
         if ($conversationWith > 0) {
-            $stmt = $db->prepare('
-                SELECT m.*, u.name AS sender_name
+            $sql = '
+                SELECT m.*, u.name AS sender_name,
+                       r.text AS replied_text
                 FROM messages m
                 JOIN users u ON m.sender_id = u.id
+                LEFT JOIN messages r ON m.replied_to_id = r.id
                 WHERE (m.sender_id = ? AND m.receiver_id = ?)
                    OR (m.sender_id = ? AND m.receiver_id = ?)
-                ORDER BY m.created_at ASC
-            ');
-            $stmt->execute([$userId, $conversationWith, $conversationWith, $userId]);
+            ';
+            $params = [$userId, $conversationWith, $conversationWith, $userId];
+
+            if ($search !== '') {
+                $sql .= ' AND m.text LIKE ?';
+                $params[] = "%$search%";
+            }
+
+            $sql .= ' ORDER BY m.created_at ASC';
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             $messages = $stmt->fetchAll();
 
+            // For each message, fetch reactions
+            $reactionStmt = $db->prepare('SELECT emoji, user_id FROM message_reactions WHERE message_id = ?');
             foreach ($messages as &$m) {
                 $m['id'] = (int)$m['id'];
                 $m['sender_id'] = (int)$m['sender_id'];
@@ -38,6 +63,19 @@ try {
                 $m['is_read'] = (bool)$m['is_read'];
                 $m['duration'] = (int)($m['duration'] ?? 0);
                 $m['product_image_url'] = $m['product_image_url'] ?? null;
+                $m['replied_to_id'] = $m['replied_to_id'] ? (int)$m['replied_to_id'] : null;
+                $m['replied_text'] = $m['replied_text'] ?? null;
+                // Fetch reactions
+                $reactionStmt->execute([$m['id']]);
+                $reactions_raw = $reactionStmt->fetchAll();
+                $reactions = [];
+                foreach ($reactions_raw as $r) {
+                    $emoji = $r['emoji'];
+                    if (!isset($reactions[$emoji])) $reactions[$emoji] = ['emoji' => $emoji, 'count' => 0, 'users' => []];
+                    $reactions[$emoji]['count']++;
+                    $reactions[$emoji]['users'][] = (int)$r['user_id'];
+                }
+                $m['reactions'] = array_values($reactions);
             }
             unset($m);
 
@@ -101,15 +139,30 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$input) json(400, ['error' => 'Corps de requête invalide']);
 
+        // ── Reaction: POST ?react=1 ──
+        if (isset($_GET['react'])) {
+            $messageId = (int)($input['message_id'] ?? 0);
+            $emoji = trim($input['emoji'] ?? '');
+            if (!$messageId || !$emoji) json(400, ['error' => 'message_id et emoji requis']);
+
+            // Verify message exists
+            $stmt = $db->prepare('SELECT id FROM messages WHERE id = ?');
+            $stmt->execute([$messageId]);
+            if (!$stmt->fetch()) json(404, ['error' => 'Message non trouvé']);
+
+            // Upsert reaction
+            $stmt = $db->prepare('INSERT IGNORE INTO message_reactions (message_id, user_id, emoji) VALUES (?, ?, ?)');
+            $stmt->execute([$messageId, $userId, $emoji]);
+            json(200, ['success' => true, 'emoji' => $emoji, 'message_id' => $messageId]);
+        }
+
         $receiver_id = (int)($input['receiver_id'] ?? 0);
         $product_id = isset($input['product_id']) ? (int)$input['product_id'] : null;
         $product_image_url = $input['product_image_url'] ?? null;
         $text = trim($input['text'] ?? '');
         $audio_url = $input['audio_url'] ?? null;
         $duration = (int)($input['duration'] ?? 0);
-
-        // If audio_url contains base64 data, upload it (Cloudinary preferred, local fallback)
-        if ($audio_url && (strpos($audio_url, 'data:') === 0 || strlen($audio_url) > 1000)) {
+        $replied_to_id = isset($input['replied_to_id']) ? (int)$input['replied_to_id'] : null;
             $base64 = $audio_url;
             $mimeType = 'audio/mp4'; // default for voice messages
 
@@ -150,8 +203,8 @@ try {
             if (!$stmt->fetch()) json(404, ['error' => 'Produit non trouvé']);
         }
 
-        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, product_image_url, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $product_image_url, $text, $audio_url, $duration]);
+        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, product_image_url, replied_to_id, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $product_image_url, $replied_to_id ?: null, $text, $audio_url, $duration]);
         $messageId = (int)$db->lastInsertId();
 
         // Notifier le destinataire
@@ -163,9 +216,10 @@ try {
         sendNotification($receiver_id, "Nouveau message de $senderName", $notifMessage, 'message', null);
 
         $stmt = $db->prepare('
-            SELECT m.*, u.name AS sender_name
+            SELECT m.*, u.name AS sender_name, r.text AS replied_text
             FROM messages m
             JOIN users u ON m.sender_id = u.id
+            LEFT JOIN messages r ON m.replied_to_id = r.id
             WHERE m.id = ?
         ');
         $stmt->execute([$messageId]);
@@ -176,11 +230,25 @@ try {
         if ($message['product_id']) $message['product_id'] = (int)$message['product_id'];
         $message['is_read'] = (bool)$message['is_read'];
         $message['product_image_url'] = $message['product_image_url'] ?? null;
+        $message['replied_to_id'] = $message['replied_to_id'] ? (int)$message['replied_to_id'] : null;
+        $message['replied_text'] = $message['replied_text'] ?? null;
+        $message['reactions'] = [];
 
         json(201, ['message' => $message]);
     }
 
     if ($method === 'DELETE') {
+        // ── Remove reaction: DELETE ?react=1&message_id=X&emoji=Y ──
+        if (isset($_GET['react'])) {
+            $messageId = isset($_GET['message_id']) ? (int)$_GET['message_id'] : 0;
+            $emoji = isset($_GET['emoji']) ? trim($_GET['emoji']) : '';
+            if ($messageId <= 0 || $emoji === '') json(400, ['error' => 'message_id et emoji requis']);
+
+            $stmt = $db->prepare('DELETE FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?');
+            $stmt->execute([$messageId, $userId, $emoji]);
+            json(200, ['success' => true, 'emoji' => $emoji, 'message_id' => $messageId]);
+        }
+
         $messageId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         if ($messageId <= 0) json(400, ['error' => 'ID du message requis']);
 
