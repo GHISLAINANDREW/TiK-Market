@@ -108,7 +108,8 @@ data class ApiSendMessageBody(
     @SerialName("audio_url") val audioUrl: String? = null,
     val duration: Int = 0,
     @SerialName("product_id") val productId: Int? = null,
-    @SerialName("product_image_url") val productImageUrl: String? = null
+    @SerialName("product_image_url") val productImageUrl: String? = null,
+    @SerialName("replied_to_id") val repliedToId: Int? = null
 )
 
 @Serializable
@@ -561,14 +562,30 @@ object ApiClient {
         audioUrl: String? = null,
         duration: Int = 0,
         productId: Int? = null,
-        productImageUrl: String? = null
+        productImageUrl: String? = null,
+        repliedToId: Int? = null
     ): ApiMessage {
-        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId, productImageUrl))
+        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId, productImageUrl, repliedToId))
         return safeRequest<ApiMessage>("POST", Endpoints.MESSAGES, body)
     }
 
     suspend fun deleteMessage(messageId: Int) {
         delete("${Endpoints.MESSAGES}?id=$messageId")
+    }
+
+    suspend fun addReaction(messageId: Int, emoji: String): Boolean {
+        return try {
+            val resp = post(Endpoints.MESSAGES + "?react=1", """{"message_id":$messageId,"emoji":"$emoji"}""")
+            json.decodeFromString<ApiSuccessResponse>(resp).success
+        } catch (_: Exception) { false }
+    }
+
+    suspend fun removeReaction(messageId: Int, emoji: String) {
+        delete("${Endpoints.MESSAGES}?react=1&message_id=$messageId&emoji=$emoji")
+    }
+
+    suspend fun searchMessages(contactId: Int, query: String): List<ApiMessage> {
+        return safeRequest<ApiMessagesResponse>("GET", "${Endpoints.MESSAGES}?conversation_with=$contactId&search=$query").messages
     }
 
     suspend fun markMessagesAsRead(contactId: Int) {

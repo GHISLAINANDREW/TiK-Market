@@ -14,7 +14,8 @@ data class ApiUser(
     val location: String = "",
     val avatar: String = "",
     @SerialName("last_seen") val lastSeen: String = "",
-    @SerialName("created_at") val createdAt: String = ""
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("referral_code") val referralCode: String? = null
 ) {
     val isOnline: Boolean get() {
         if (lastSeen.isBlank()) return false
@@ -116,7 +117,8 @@ data class ApiOrder(
     val notes: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     val items: List<ApiOrderItem>? = null,
-    @SerialName("vendor_info") val vendorInfo: List<ApiVendorInfo>? = null
+    @SerialName("vendor_info") val vendorInfo: List<ApiVendorInfo>? = null,
+    @SerialName("shop_total") val shopTotal: Double? = null
 )
 
 @Serializable
@@ -145,11 +147,21 @@ data class ApiMessage(
     @SerialName("product_id") val productId: Int? = null,
     @SerialName("product_title") val productTitle: String? = null,
     @SerialName("product_image_url") val productImageUrl: String? = null,
+    @SerialName("replied_to_id") val repliedToId: Int? = null,
+    @SerialName("replied_text") val repliedText: String? = null,
     val text: String = "",
     @SerialName("audio_url") val audioUrl: String? = null,
     val duration: Int = 0,
     @SerialName("is_read") val isRead: Boolean = false,
-    @SerialName("created_at") val createdAt: String = ""
+    @SerialName("created_at") val createdAt: String = "",
+    val reactions: List<ApiMessageReaction> = emptyList()
+)
+
+@Serializable
+data class ApiMessageReaction(
+    val emoji: String = "",
+    val count: Int = 0,
+    val users: List<Int> = emptyList()
 )
 
 @Serializable

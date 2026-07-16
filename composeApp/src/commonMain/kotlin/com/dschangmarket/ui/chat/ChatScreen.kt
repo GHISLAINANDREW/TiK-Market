@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
+import com.dschangmarket.api.ApiMessageReaction
 import com.dschangmarket.theme.*
 import com.dschangmarket.ui.components.rememberImagePickerLauncher
 import com.dschangmarket.ui.components.rememberTakePhotoLauncher
@@ -51,7 +52,10 @@ data class ChatMessage(
     val isRead: Boolean = false,
     val productId: Int? = null,
     val productTitle: String? = null,
-    val productImageUrl: String? = null
+    val productImageUrl: String? = null,
+    val repliedToId: Int? = null,
+    val repliedText: String? = null,
+    val reactions: List<ApiMessageReaction> = emptyList()
 )
 
 data class ProductShare(
@@ -86,6 +90,10 @@ fun ChatScreen(
     var previewImageUrl by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteTargetMsg by remember { mutableStateOf<ChatMessage?>(null) }
+    var replyToMsg by remember { mutableStateOf<ChatMessage?>(null) }
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<Int>?>(null) }
 
     // Product share message (WhatsApp style — appears as first message)
     val sharedProduct = remember(productTitle) {
@@ -114,7 +122,10 @@ fun ChatScreen(
                         isRead = msg.isRead,
                         productId = msg.productId,
                         productTitle = msg.productTitle,
-                        productImageUrl = msg.productImageUrl
+                        productImageUrl = msg.productImageUrl,
+                        repliedToId = msg.repliedToId,
+                        repliedText = msg.repliedText,
+                        reactions = msg.reactions
                     )
                 }
                 if (newMessages.size != messages.size || newMessages.lastOrNull()?.id != messages.lastOrNull()?.id) {
@@ -154,7 +165,9 @@ fun ChatScreen(
                         audioUrl = dataUrl,
                         duration = duration,
                         timestamp = "Maintenant",
-                        isRead = true
+                        isRead = true,
+                        repliedToId = replyToMsg?.id,
+                        repliedText = replyToMsg?.text
                     )
                     messages = messages + tempMsg
                     scope.launch {
@@ -163,14 +176,16 @@ fun ChatScreen(
                     }
                 }
                 if (dataUrl != null) {
-                    ApiClient.sendMessage(vendorId, text, dataUrl, duration)
+                    ApiClient.sendMessage(vendorId, text, dataUrl, duration, repliedToId = replyToMsg?.id)
                 } else {
-                    ApiClient.sendMessage(vendorId, text.trim())
+                    ApiClient.sendMessage(vendorId, text.trim(), repliedToId = replyToMsg?.id)
                 }
                 messageText = ""
+                replyToMsg = null
                 loadMessages()
             } catch (_: Exception) {
                 messageText = ""
+                replyToMsg = null
                 loadMessages()
             }
         }
@@ -289,7 +304,9 @@ fun ChatScreen(
                     },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
-                        IconButton(onClick = {}) { Icon(Icons.Outlined.Phone, null, tint = Color.White) }
+                        IconButton(onClick = { showSearch = !showSearch; if (!showSearch) { searchQuery = ""; searchResults = null } }) {
+                            Icon(if (showSearch) Icons.Default.Close else Icons.Outlined.Search, null, tint = Color.White)
+                        }
                         IconButton(onClick = {}) { Icon(Icons.Outlined.MoreVert, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -304,6 +321,51 @@ fun ChatScreen(
             Modifier.fillMaxSize().padding(padding).background(Color(0xFFECE5DD))
         ) {
             Column(Modifier.fillMaxSize()) {
+                // ── Search bar ──
+                AnimatedVisibility(visible = showSearch) {
+                    Surface(shadowElevation = 2.dp, color = Color.White) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Search, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { q ->
+                                    searchQuery = q
+                                    if (q.length >= 2) {
+                                        scope.launch {
+                                            try {
+                                                val results = ApiClient.searchMessages(vendorId, q)
+                                                searchResults = results.map { it.id }
+                                            } catch (_: Exception) {}
+                                        }
+                                    } else {
+                                        searchResults = null
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                placeholder = { Text("Rechercher...", fontSize = 14.sp) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = Color(0xFFF0F0F0),
+                                    unfocusedContainerColor = Color(0xFFF0F0F0),
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent
+                                ),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                            )
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = ""; searchResults = null }) {
+                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ── Messages list ──
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp),
@@ -339,13 +401,48 @@ fun ChatScreen(
                             ChatBubble(
                                 msg, isMe,
                                 onImageClick = { url -> previewImageUrl = url },
-                                onDeleteRequest = { m -> deleteTargetMsg = m; showDeleteConfirm = true }
+                                onDeleteRequest = { m -> deleteTargetMsg = m; showDeleteConfirm = true },
+                                onReply = { m -> replyToMsg = m },
+                                onReact = { messageId, emoji ->
+                                    scope.launch {
+                                        try {
+                                            ApiClient.addReaction(messageId, emoji)
+                                            loadMessages()
+                                        } catch (_: Exception) {}
+                                    }
+                                }
                             )
                             Spacer(Modifier.height(6.dp))
                         }
                     }
 
                     item { Spacer(Modifier.height(8.dp)) }
+                }
+
+                // ── Reply preview bar ──
+                AnimatedVisibility(visible = replyToMsg != null) {
+                    Surface(shadowElevation = 2.dp, color = Color(0xFFE8E8E8)) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(Modifier.width(3.dp).height(28.dp).background(Color(0xFF075E54), RoundedCornerShape(2.dp)))
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    if (replyToMsg?.senderId == currentUserId) "Vous" else replyToMsg?.senderName ?: "",
+                                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF075E54)
+                                )
+                                Text(
+                                    replyToMsg?.text?.let { if (it.length > 60) it.take(60) + "..." else it } ?: "Audio",
+                                    fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.Gray
+                                )
+                            }
+                            IconButton(onClick = { replyToMsg = null }) {
+                                Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
                 }
 
                 // ── Input bar (WhatsApp-style) ──
@@ -598,9 +695,19 @@ fun ChatScreen(
 }
 
 // ── WhatsApp-style Chat Bubble ──
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -> Unit = {}, onDeleteRequest: (ChatMessage) -> Unit = {}) {
+private fun ChatBubble(
+    msg: ChatMessage, isMe: Boolean,
+    onImageClick: (String) -> Unit = {},
+    onDeleteRequest: (ChatMessage) -> Unit = {},
+    onReply: (ChatMessage) -> Unit = {},
+    onReact: (Int, String) -> Unit = { _, _ -> }
+) {
+    var showContextMenu by remember { mutableStateOf(false) }
+    var showReactionPicker by remember { mutableStateOf(false) }
+    val quickEmojis = listOf("❤️", "👍", "😂", "😮", "😢", "🙏")
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -634,15 +741,31 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
                 ),
                 color = bubbleColor,
                 shadowElevation = 0.5.dp
-            ) {
+                ) {
                 Column(
                     modifier = Modifier
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                         .combinedClickable(
                             onClick = {},
-                            onLongClick = { if (isMe) onDeleteRequest(msg) }
+                            onLongClick = { showContextMenu = true }
                         )
                 ) {
+                    // ── Replied-to message preview ──
+                    if (msg.repliedToId != null && !msg.repliedText.isNullOrBlank()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).clip(RoundedCornerShape(4.dp)),
+                            color = if (isMe) Color(0xFF075E54).copy(alpha = 0.1f) else Color(0xFFE8E8E8)
+                        ) {
+                            Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.width(3.dp).height(24.dp).background(Color(0xFF25D366), RoundedCornerShape(2.dp)))
+                                Spacer(Modifier.width(6.dp))
+                                Column {
+                                    Text("Vous" /*will be fixed*/, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
+                                    Text(msg.repliedText, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (isMe) Color(0xFF1C1C1C).copy(alpha = 0.7f) else Color.Gray)
+                                }
+                            }
+                        }
+                    }
                     // Story/Product Reference (Reply context)
                     if (msg.productId != null) {
                         Surface(
@@ -761,6 +884,90 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
                             )
                         }
                     }
+
+                    // ── Reactions row ──
+                    if (msg.reactions.isNotEmpty()) {
+                        Spacer(Modifier.height(2.dp))
+                        Row(
+                            modifier = Modifier.align(if (isMe) Alignment.End else Alignment.Start),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            msg.reactions.forEach { reaction ->
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFFFF3E0),
+                                    shadowElevation = 0.5.dp,
+                                    border = BorderStroke(0.5.dp, Color(0xFFFFCC80).copy(alpha = 0.5f))
+                                ) {
+                                    Row(
+                                        Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(reaction.emoji, fontSize = 12.sp)
+                                        if (reaction.count > 1) {
+                                            Spacer(Modifier.width(2.dp))
+                                            Text(reaction.count.toString(), fontSize = 10.sp, color = Color(0xFF795548))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Context menu (Reply / React / Delete) ──
+                DropdownMenu(
+                    expanded = showContextMenu,
+                    onDismissRequest = { showContextMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Répondre") },
+                        onClick = { showContextMenu = false; onReply(msg) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Reply, null, Modifier.size(18.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Réagir") },
+                        onClick = { showContextMenu = false; showReactionPicker = true },
+                        leadingIcon = { Icon(Icons.Outlined.EmojiEmotions, null, Modifier.size(18.dp)) }
+                    )
+                    if (isMe) {
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Supprimer", color = Color(0xFFE53935)) },
+                            onClick = { showContextMenu = false; onDeleteRequest(msg) },
+                            leadingIcon = { Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = Color(0xFFE53935)) }
+                        )
+                    }
+                }
+
+                // ── Quick Reaction Picker (popup) ──
+                if (showReactionPicker) {
+                    AlertDialog(
+                        onDismissRequest = { showReactionPicker = false },
+                        title = { Text("Réagir au message") },
+                        text = {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                quickEmojis.forEach { emoji ->
+                                    Text(
+                                        emoji, fontSize = 28.sp,
+                                        modifier = Modifier
+                                            .clickable {
+                                                onReact(msg.id, emoji)
+                                                showReactionPicker = false
+                                            }
+                                            .padding(4.dp)
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {},
+                        dismissButton = {
+                            TextButton(onClick = { showReactionPicker = false }) { Text("Annuler") }
+                        }
+                    )
                 }
             }
         }
