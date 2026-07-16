@@ -231,7 +231,7 @@ fun AppBottomBar(appState: AppState, items: List<BottomNavItem>) {
             NavigationBarItem(
                 selected = selected,
                 onClick = {
-                    if (item.screen == NavScreen.Profile && !appState.isLoggedIn) {
+                    if ((item.screen == NavScreen.Profile || item.screen == NavScreen.Conversations) && !appState.isLoggedIn) {
                         appState.navigateTo(NavScreen.Auth)
                     } else {
                         appState.currentScreen = item.screen
@@ -355,9 +355,41 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     appState.storyIndex = index
                     appState.navigateTo(NavScreen.StoryViewer)
                 },
-                onAddStory = {
-                    appState.navigateTo(NavScreen.VendorDashboard)
-                }
+                onAddStory = { dataUrl, name ->
+                    scope.launch {
+                        try {
+                            val snackbarJob = launch {
+                                snackbarHostState.showSnackbar("Préparation de la story...", duration = SnackbarDuration.Indefinite)
+                            }
+                            
+                            val shop = ApiClient.fetchShopByVendor()
+                            if (shop != null) {
+                                val uploadedUrl = ApiClient.uploadImage(dataUrl, name)
+                                ApiClient.createProduct(
+                                    shopId = shop.id,
+                                    title = "Story de ${shop.name}",
+                                    description = "Story partagée via DschangMarket",
+                                    price = 0.0,
+                                    comparePrice = null,
+                                    category = "Stories",
+                                    stock = 1,
+                                    unit = "story",
+                                    imageUrl = uploadedUrl,
+                                    isStory = true
+                                )
+                                snackbarJob.cancel()
+                                appState.refreshSignal++
+                                snackbarHostState.showSnackbar("✅ Story publiée ! Elle disparaîtra dans 24h.")
+                            } else {
+                                snackbarJob.cancel()
+                                snackbarHostState.showSnackbar("❌ Créez une boutique d'abord.")
+                            }
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("❌ Erreur : ${e.message}")
+                        }
+                    }
+                },
+                refreshSignal = appState.refreshSignal
             )
             NavScreen.ProductDetail -> appState.selectedProduct?.let { product ->
                 ProductDetailScreen(
