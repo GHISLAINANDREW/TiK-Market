@@ -15,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +48,7 @@ fun ConversationsScreen(
 ) {
     var conversations by remember { mutableStateOf<List<Conversation>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -64,13 +67,15 @@ fun ConversationsScreen(
                     vendorUserId = apiConv.userId
                 )
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            errorMessage = e.message ?: "Erreur de chargement"
+        }
         isLoading = false
     }
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 2.dp) {
+            Box(Modifier.background(BrandGradient).shadow(2.dp)) {
                 TopAppBar(
                     title = { Text("Centre de messages", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) },
                     navigationIcon = { if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
@@ -78,7 +83,7 @@ fun ConversationsScreen(
                         IconButton(onClick = {}) { Icon(Icons.Default.FilterList, null, tint = Color.White) }
                         IconButton(onClick = {}) { Icon(Icons.Default.DoneAll, null, tint = Color.White) }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         }
@@ -90,6 +95,21 @@ fun ConversationsScreen(
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Green)
+                }
+            } else if (errorMessage != null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.ErrorOutline, null, Modifier.size(64.dp), tint = RedAccent)
+                        Spacer(Modifier.height(16.dp))
+                        Text(errorMessage!!, fontSize = 16.sp, color = RedAccent, textAlign = TextAlign.Center)
+                        Button(onClick = {
+                            scope.launch {
+                                isLoading = true
+                                errorMessage = null
+                                // Retry logic could be here, but simpler to just reload screen or use a refresh signal
+                            }
+                        }) { Text("Réessayer") }
+                    }
                 }
             } else if (conversations.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

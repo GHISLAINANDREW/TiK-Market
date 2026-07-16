@@ -65,7 +65,8 @@ fun HomeScreen(
     isLoggedIn: Boolean = false,
     userRole: String = "buyer",
     onStoryClick: (List<Pair<String, String>>, Int) -> Unit = { _, _ -> },
-    onAddStory: () -> Unit = {}
+    onAddStory: (String, String) -> Unit = { _, _ -> },
+    refreshSignal: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
@@ -82,6 +83,12 @@ fun HomeScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     var wishlistProductIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val scope = rememberCoroutineScope()
+
+    val pickMedia = rememberImagePickerLauncher { result ->
+        if (result != null) {
+            onAddStory(result.dataUrl, result.fileName)
+        }
+    }
 
     // Load from API
     suspend fun loadProducts() {
@@ -127,9 +134,9 @@ fun HomeScreen(
         }
     }
 
-    // Load from API on first composition
-    LaunchedEffect(Unit) {
-        println("[HomeScreen] Fetching products...")
+    // Load from API on first composition or refresh signal
+    LaunchedEffect(refreshSignal) {
+        println("[HomeScreen] Fetching products (signal=$refreshSignal)...")
         loadProducts()
         loadWishlist()
         isLoading = false
@@ -180,7 +187,7 @@ fun HomeScreen(
                 }
             },
             topBar = {
-                Surface(shadowElevation = 2.dp, color = BrandTopBarColor) {
+                Box(Modifier.background(BrandGradient).shadow(2.dp).statusBarsPadding()) {
                     Column(Modifier.fillMaxWidth()) {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
@@ -344,7 +351,7 @@ fun HomeScreen(
                                 if (userRole == "vendor") {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { onAddStory() }
+                                        modifier = Modifier.clickable { pickMedia() }
                                     ) {
                                         Box(
                                             Modifier
@@ -719,7 +726,7 @@ fun AnimatedHeroSection(screenWidth: Dp) {
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Green, Orange))))
+                    Box(Modifier.fillMaxSize().background(BrandGradient))
                 }
                 
                 // Overlay

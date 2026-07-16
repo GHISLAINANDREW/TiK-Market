@@ -13,8 +13,11 @@ try {
         if (!$check) {
             $db->exec("ALTER TABLE products ADD COLUMN is_story TINYINT(1) DEFAULT 0 AFTER total_sales");
         }
+
+        // AUTO-CLEANUP: Deactivate stories older than 24 hours
+        $db->exec("UPDATE products SET is_active = 0 WHERE is_story = 1 AND is_active = 1 AND created_at < NOW() - INTERVAL 1 DAY");
     } catch (Exception $e) {
-        error_log("Migration error (is_story): " . $e->getMessage());
+        error_log("Migration/Cleanup error (is_story): " . $e->getMessage());
     }
 
     if ($method === 'GET') {
