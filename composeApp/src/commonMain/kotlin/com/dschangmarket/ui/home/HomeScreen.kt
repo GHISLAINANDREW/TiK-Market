@@ -6,7 +6,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -65,7 +64,8 @@ fun HomeScreen(
     onSearchQuerySubmit: (String) -> Unit = {},
     isLoggedIn: Boolean = false,
     userRole: String = "buyer",
-    onStoryClick: (List<Pair<String, String>>, Int) -> Unit = { _, _ -> }
+    onStoryClick: (List<Pair<String, String>>, Int) -> Unit = { _, _ -> },
+    onAddStory: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
@@ -318,11 +318,10 @@ fun HomeScreen(
                     }
                 }
 
-                // Arrivages du jour (Stories)
+                // Arrivages du jour (Stories) — only show when stories exist
                 val stories = apiProducts.filter { it.isStory }
-                val displayStories = if (stories.isNotEmpty()) stories else emptyList()
                 
-                if (displayStories.isNotEmpty() || !isLoading) {
+                if (stories.isNotEmpty()) {
                     item {
                         Column(Modifier.padding(vertical = 4.dp)) {
                             Row(
@@ -341,50 +340,60 @@ fun HomeScreen(
                                     .padding(horizontal = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                if (displayStories.isEmpty()) {
-                                    // Static fallback if no dynamic stories
-                                    val staticStories = listOf(
-                                        Pair("Will Shop", "https://images.unsplash.com/photo-1542831371-29b0f74f9713"),
-                                        Pair("Marché A", "https://images.unsplash.com/photo-1488459711616-2474567ef63a"),
-                                        Pair("Bio Dschang", "https://images.unsplash.com/photo-1543083506-44439c2354a5"),
-                                        Pair("Épices", "https://images.unsplash.com/photo-1532336414038-cf19250c5757"),
-                                        Pair("Textiles", "https://images.unsplash.com/photo-1523381210434-271e8be1f52b")
-                                    )
-                                    staticStories.forEachIndexed { i, (name, url) ->
-                                        StaticStoryItem(name, url, onClick = { onStoryClick(staticStories, i) })
-                                    }
-                                } else {
-                                    val storyItems = displayStories.map { p ->
-                                        Pair(p.title, p.images.firstOrNull() ?: "")
-                                    }
-                                    displayStories.forEachIndexed { index, product ->
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.clickable { onStoryClick(storyItems, index) }
+                                // "Add story" button for vendors
+                                if (userRole == "vendor") {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.clickable { onAddStory() }
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .width(68.dp)
+                                                .height(90.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Green.copy(alpha = 0.15f)),
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            Box(
-                                                Modifier
-                                                    .size(68.dp)
-                                                    .border(2.dp, Brush.linearGradient(listOf(Orange, Green)), CircleShape)
-                                                    .padding(3.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color.LightGray)
-                                            ) {
-                                                var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                                                LaunchedEffect(product.images.firstOrNull()) {
-                                                    product.images.firstOrNull()?.let { bitmap = loadImageFromUrl(it) }
-                                                }
-                                                if (bitmap != null) {
-                                                    Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                                } else {
-                                                    Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
-                                                        Text(product.title.take(1), fontWeight = FontWeight.Bold, color = Color.White)
-                                                    }
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Default.Add, null, tint = Green, modifier = Modifier.size(24.dp))
+                                                Spacer(Modifier.height(2.dp))
+                                                Text("Story", fontSize = 9.sp, color = Green, fontWeight = FontWeight.Medium)
+                                            }
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Ajouter", fontSize = 9.sp, fontWeight = FontWeight.Medium, color = Green)
+                                    }
+                                }
+                                
+                                val storyItems = stories.map { p ->
+                                    Pair(p.title, p.images.firstOrNull() ?: "")
+                                }
+                                stories.forEachIndexed { index, product ->
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.clickable { onStoryClick(storyItems, index) }
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .width(68.dp)
+                                                .height(90.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color.LightGray)
+                                        ) {
+                                            var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                                            LaunchedEffect(product.images.firstOrNull()) {
+                                                product.images.firstOrNull()?.let { bitmap = loadImageFromUrl(it) }
+                                            }
+                                            if (bitmap != null) {
+                                                Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                            } else {
+                                                Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
+                                                    Text(product.title.take(1), fontWeight = FontWeight.Bold, color = Color.White)
                                                 }
                                             }
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(product.title, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.width(68.dp), textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
                                         }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(product.title, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.width(68.dp), textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
                             }
@@ -638,28 +647,6 @@ fun HomeScreen(
             }
         }
         }
-    }
-}
-
-@Composable
-fun StaticStoryItem(name: String, url: String, onClick: () -> Unit = {}) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
-        Box(
-            Modifier
-                .size(68.dp)
-                .border(2.dp, Brush.linearGradient(listOf(Orange, Green)), CircleShape)
-                .padding(3.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-        ) {
-            var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-            LaunchedEffect(url) { bitmap = com.dschangmarket.ui.components.loadImageFromUrl(url) }
-            if (bitmap != null) {
-                Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(name, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 

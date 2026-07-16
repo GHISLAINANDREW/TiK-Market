@@ -112,6 +112,7 @@ fun App(onExit: () -> Unit = {}) {
                         appState.isLoggedIn = true
                         appState.userName = user.name
                         appState.userRole = user.role
+                        appState.currentUser = user
                         if (user.role == "vendor") {
                             val shop = ApiClient.fetchShopByVendor()
                             appState.vendorShopName = shop?.name ?: ""
@@ -353,6 +354,9 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     appState.storyItems = items
                     appState.storyIndex = index
                     appState.navigateTo(NavScreen.StoryViewer)
+                },
+                onAddStory = {
+                    appState.navigateTo(NavScreen.VendorDashboard)
                 }
             )
             NavScreen.ProductDetail -> appState.selectedProduct?.let { product ->

@@ -32,6 +32,7 @@ class AppState(
     var isLoggedIn by mutableStateOf(isLoggedInInitial)
     var userName by mutableStateOf(userNameInitial)
     var userRole by mutableStateOf(userRoleInitial)
+    var currentUser by mutableStateOf<com.dschangmarket.api.ApiUser?>(null)
     var userToken by mutableStateOf(userTokenInitial)
     var vendorShopName by mutableStateOf(vendorShopNameInitial)
     var refreshSignal by mutableStateOf(0)

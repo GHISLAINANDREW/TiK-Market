@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiOrder
+import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.ui.components.OrderProgressBar
 import com.dschangmarket.theme.*
 import kotlinx.coroutines.launch
@@ -115,7 +116,8 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             // Progress Bar for Vendor
-            if (order.status != "cancelled" && order.status != "pending") {
+            val orderStatus = OrderStatus.fromCode(order.status)
+            if (orderStatus != OrderStatus.CANCELLED && orderStatus != OrderStatus.PENDING) {
                 OrderProgressBar(currentStatus = order.status, modifier = Modifier.padding(vertical = 8.dp))
                 Spacer(Modifier.height(12.dp))
             }
@@ -137,20 +139,23 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
             
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Total", fontWeight = FontWeight.Bold)
-                Text("${order.totalAmount.toInt()} FCFA", fontWeight = FontWeight.ExtraBold, color = Green, fontSize = 16.sp)
+                Text(if (order.shopTotal != null) "Part Boutique" else "Total", fontWeight = FontWeight.Bold)
+                val displayTotal = (order.shopTotal ?: order.totalAmount).toInt()
+                Text("$displayTotal FCFA", fontWeight = FontWeight.ExtraBold, color = Green, fontSize = 16.sp)
             }
             
             Spacer(Modifier.height(16.dp))
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (order.status) {
-                    "pending" -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { 
+                val currentStatus = OrderStatus.fromCode(order.status)
+                when (currentStatus) {
+                    OrderStatus.PENDING -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { 
                         Text("En attente de paiement", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Medium) 
                     }
-                    "confirmed" -> ActionButton("Commencer préparation", GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
-                    "preparing" -> ActionButton("Prêt pour livraison", Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
-                    "delivering" -> ActionButton("Confirmer réception", Green, Modifier.weight(1f)) { onUpdateStatus("delivered") }
+                    OrderStatus.CONFIRMED -> ActionButton("Commencer préparation", GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
+                    OrderStatus.PREPARING -> ActionButton("Prêt pour livraison", Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
+                    OrderStatus.DELIVERING -> ActionButton("Confirmer réception", Green, Modifier.weight(1f)) { onUpdateStatus("delivered") }
+                    else -> {}
                 }
             }
         }
@@ -171,16 +176,16 @@ private fun ActionButton(label: String, color: Color, modifier: Modifier = Modif
 
 @Composable
 private fun StatusBadgeV(status: String) {
-    val (bg, fg, label) = when (status) {
-        "pending" -> Triple(Color(0xFF9E9E9E), Color.White, "En attente")
-        "confirmed" -> Triple(Color(0xFF2196F3), Color.White, "Confirmée")
-        "preparing" -> Triple(GreenAccent, Color.White, "En préparation")
-        "delivering" -> Triple(Color(0xFF9C27B0), Color.White, "En livraison")
-        "delivered" -> Triple(Green, Color.White, "Livrée")
-        "cancelled" -> Triple(Color(0xFFF44336), Color.White, "Annulée")
-        else -> Triple(Color.Gray, Color.White, status)
+    val orderStatus = OrderStatus.fromCode(status)
+    val (bg, fg) = when (orderStatus) {
+        OrderStatus.PENDING -> Color(0xFF9E9E9E) to Color.White
+        OrderStatus.CONFIRMED -> Color(0xFF2196F3) to Color.White
+        OrderStatus.PREPARING -> GreenAccent to Color.White
+        OrderStatus.DELIVERING -> Color(0xFF9C27B0) to Color.White
+        OrderStatus.DELIVERED -> Green to Color.White
+        OrderStatus.CANCELLED -> Color(0xFFF44336) to Color.White
     }
     Surface(shape = RoundedCornerShape(16.dp), color = bg) {
-        Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = fg, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text(orderStatus.label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = fg, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
     }
 }

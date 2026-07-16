@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.data.models.Product
 import com.dschangmarket.data.models.SampleData
+import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.Green
 import com.dschangmarket.theme.GreenAccent
 import com.dschangmarket.theme.GreenAccentSurface
@@ -396,18 +397,19 @@ fun EmptyState(icon: ImageVector, title: String, subtitle: String = "") {
 
 @Composable
 fun OrderProgressBar(currentStatus: String, modifier: Modifier = Modifier) {
-    val statuses = listOf(
-        "pending" to "Payé",
-        "confirmed" to "Confirmé",
-        "preparing" to "Préparé",
-        "delivering" to "Livraison",
-        "delivered" to "Reçu"
+    val orderStatus = OrderStatus.fromCode(currentStatus)
+    val steps = listOf(
+        OrderStatus.PENDING to "Payé",
+        OrderStatus.CONFIRMED to "Confirmé",
+        OrderStatus.PREPARING to "Préparé",
+        OrderStatus.DELIVERING to "Livraison",
+        OrderStatus.DELIVERED to "Reçu"
     )
     
-    val currentIndex = when (currentStatus) {
-        "pending" -> -1  // Not yet paid
-        "cancelled" -> -1 // Cancelled
-        else -> statuses.indexOfFirst { it.first == currentStatus }.let { if (it == -1) 0 else it }
+    val currentIndex = when (orderStatus) {
+        OrderStatus.PENDING -> -1  // Not yet paid
+        OrderStatus.CANCELLED -> -1 // Cancelled
+        else -> steps.indexOfFirst { it.first == orderStatus }
     }
     
     Row(
@@ -415,18 +417,15 @@ fun OrderProgressBar(currentStatus: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        statuses.forEachIndexed { index, pair ->
-            val isCompleted = if (currentStatus == "cancelled") false else index <= currentIndex
+        steps.forEachIndexed { index, pair ->
+            val isCompleted = if (orderStatus == OrderStatus.CANCELLED) false else index <= currentIndex
             val isCurrent = index == currentIndex
             
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                 Box(
                     modifier = Modifier
                         .size(24.dp)
-                        .background(
-                            if (isCompleted) Green else Color.LightGray.copy(alpha = 0.5f),
-                            CircleShape
-                        ),
+                        .background(if (isCompleted) Green else Color(0xFFE0E0E0), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isCompleted && !isCurrent) {
@@ -438,20 +437,20 @@ fun OrderProgressBar(currentStatus: String, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     pair.second,
-                    fontSize = 8.sp,
-                    color = if (isCompleted) Green else Color.Gray,
+                    fontSize = 10.sp,
+                    color = if (isCompleted) Color.Black else Color.Gray,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center
                 )
             }
             
-            if (index < statuses.size - 1) {
+            if (index < steps.size - 1) {
                 Box(
                     modifier = Modifier
                         .height(2.dp)
                         .weight(0.5f)
-                        .offset(y = (-8).dp)
-                        .background(if (index < currentIndex) Green else Color.LightGray.copy(alpha = 0.5f))
+                        .offset(y = (-10).dp)
+                        .background(if (index < currentIndex) Green else Color(0xFFE0E0E0))
                 )
             }
         }

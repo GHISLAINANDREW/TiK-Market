@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiOrder
+import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.BrandTopBarColor
 import com.dschangmarket.ui.components.OrderProgressBar
 import com.dschangmarket.theme.Green
@@ -102,7 +103,8 @@ private fun OrderCard(
     var expanded by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
     val isDirect = order.paymentType == "direct"
-    val canCancel = order.status == "pending"
+    val orderStatus = OrderStatus.fromCode(order.status)
+    val canCancel = orderStatus == OrderStatus.PENDING
 
     // Cancel confirmation dialog
     if (showCancelDialog) {
@@ -158,32 +160,23 @@ private fun OrderCard(
                 }
 
                 Surface(
-                    color = when (order.status) {
-                        "pending" -> Color(0xFFFFF3E0)
-                        "delivered" -> Color(0xFFE8F5E9)
-                        "cancelled" -> Color(0xFFFFEBEE)
+                    color = when (orderStatus) {
+                        OrderStatus.PENDING -> Color(0xFFFFF3E0)
+                        OrderStatus.DELIVERED -> Color(0xFFE8F5E9)
+                        OrderStatus.CANCELLED -> Color(0xFFFFEBEE)
                         else -> Color(0xFFE3F2FD)
                     },
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        when {
-                            order.status == "pending" && isDirect -> "En attente"
-                            order.status == "pending" && !isDirect -> "En attente"
-                            order.status == "confirmed" -> "Confirmée"
-                            order.status == "preparing" -> "Préparation"
-                            order.status == "delivering" -> "En livraison"
-                            order.status == "delivered" -> "Livrée"
-                            order.status == "cancelled" -> "Annulée"
-                            else -> order.status
-                        },
+                        orderStatus.label,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = when (order.status) {
-                            "pending" -> Color(0xFFE65100)
-                            "delivered" -> Green
-                            "cancelled" -> Color(0xFFC62828)
+                        color = when (orderStatus) {
+                            OrderStatus.PENDING -> Color(0xFFE65100)
+                            OrderStatus.DELIVERED -> Green
+                            OrderStatus.CANCELLED -> Color(0xFFC62828)
                             else -> Color(0xFF1565C0)
                         }
                     )
@@ -200,7 +193,7 @@ private fun OrderCard(
                 Spacer(Modifier.height(12.dp))
 
                 // ── Vendor info for direct payment ──
-                if (isDirect && order.status == "pending" && order.vendorInfo != null) {
+                if (isDirect && orderStatus == OrderStatus.PENDING && order.vendorInfo != null) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color(0xFFFFF8E1),
@@ -233,13 +226,13 @@ private fun OrderCard(
 
                 // Timeline
                 val timelineSteps = listOf(
-                    Triple("pending", "Commande créée", order.createdAt),
-                    Triple("confirmed", if (isDirect) "Paiement validé" else "Commande confirmée", order.createdAt),
-                    Triple("preparing", "En préparation", order.createdAt),
-                    Triple("delivering", "En cours de livraison", order.createdAt),
-                    Triple("delivered", "Livrée", order.createdAt)
+                    Triple(OrderStatus.PENDING, "Commande créée", order.createdAt),
+                    Triple(OrderStatus.CONFIRMED, if (isDirect) "Paiement validé" else "Commande confirmée", order.createdAt),
+                    Triple(OrderStatus.PREPARING, "En préparation", order.createdAt),
+                    Triple(OrderStatus.DELIVERING, "En cours de livraison", order.createdAt),
+                    Triple(OrderStatus.DELIVERED, "Livrée", order.createdAt)
                 )
-                val currentStatusIndex = timelineSteps.indexOfFirst { it.first == order.status }
+                val currentStatusIndex = timelineSteps.indexOfFirst { it.first == orderStatus }
 
                 Text("Suivi de commande", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))

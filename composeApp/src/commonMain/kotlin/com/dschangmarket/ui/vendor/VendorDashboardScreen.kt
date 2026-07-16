@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.*
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.data.models.Product
+import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.*
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -221,26 +222,19 @@ fun VendorDashboardScreen(
                                     Text("Commandes par statut", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Spacer(Modifier.height(12.dp))
                                     val statusColors = mapOf(
-                                        "pending" to Color(0xFFFFA000),
-                                        "confirmed" to GreenAccent,
-                                        "preparing" to Color(0xFF1565C0),
-                                        "delivering" to Color(0xFF7B1FA2),
-                                        "delivered" to Green,
-                                        "cancelled" to Color.Gray
+                                        OrderStatus.PENDING to Color(0xFFFFA000),
+                                        OrderStatus.CONFIRMED to GreenAccent,
+                                        OrderStatus.PREPARING to Color(0xFF1565C0),
+                                        OrderStatus.DELIVERING to Color(0xFF7B1FA2),
+                                        OrderStatus.DELIVERED to Green,
+                                        OrderStatus.CANCELLED to Color.Gray
                                     )
-                                    val statusLabels = mapOf(
-                                        "pending" to "En attente",
-                                        "confirmed" to "Confirmée",
-                                        "preparing" to "Préparation",
-                                        "delivering" to "Livraison",
-                                        "delivered" to "Livrée",
-                                        "cancelled" to "Annulée"
-                                    )
-                                    ordersByStatus.entries.forEach { (status, count) ->
+                                    ordersByStatus.entries.forEach { (statusStr, count) ->
+                                        val status = OrderStatus.fromCode(statusStr)
                                         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Box(Modifier.size(10.dp).background(statusColors[status] ?: Color.Gray, RoundedCornerShape(2.dp)))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(statusLabels[status] ?: status, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                                            Text(status.label, fontSize = 13.sp, modifier = Modifier.weight(1f))
                                             Text("$count", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                         }
                                     }

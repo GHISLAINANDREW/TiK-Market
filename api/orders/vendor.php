@@ -50,15 +50,19 @@ try {
             ');
             $stmt2->execute([$order['id'], $shopId]);
             $items = $stmt2->fetchAll();
+
+            $shopTotal = 0;
             foreach ($items as &$item) {
                 $item['id'] = (int)$item['id'];
                 $item['product_id'] = (int)$item['product_id'];
                 $item['quantity'] = (int)$item['quantity'];
                 $item['price'] = (float)$item['price'];
                 $item['product_price'] = (float)$item['product_price'];
+                $shopTotal += ($item['price'] * $item['quantity']);
             }
             unset($item);
             $order['items'] = $items;
+            $order['shop_total'] = (float)$shopTotal; // Vendor specific total
         }
         unset($order);
 
@@ -66,10 +70,25 @@ try {
     }
 
     if ($method === 'PUT') {
+        // Accept params from query string or JSON body
         $orderId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $newStatus = trim($_GET['status'] ?? '');
-        $allowedStatuses = ['confirmed', 'preparing', 'delivering', 'delivered', 'cancelled'];
+        if (!$orderId || $newStatus === '') {
+            // Fallback: read from request body
+            $body = json_decode(file_get_contents('php://input'), true);
+            if ($body) {
+                $orderId = (int)($body['id'] ?? $body['order_id'] ?? 0);
+                $newStatus = trim($body['status'] ?? '');
+            }
+        }
+        // Also try QUERY_STRING directly as fallback
+        if (!$orderId || $newStatus === '') {
+            parse_str($_SERVER['QUERY_STRING'] ?? '', $qParams);
+            $orderId = (int)($qParams['id'] ?? $orderId);
+            $newStatus = trim($qParams['status'] ?? $newStatus);
+        }
 
+        $allowedStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered', 'cancelled'];
         if (!$orderId || !in_array($newStatus, $allowedStatuses)) {
             json(400, ['error' => 'ID commande et statut requis (confirmed|preparing|delivering|delivered|cancelled)']);
         }
