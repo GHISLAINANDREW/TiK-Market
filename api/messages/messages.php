@@ -53,8 +53,12 @@ try {
             $stmt->execute($params);
             $messages = $stmt->fetchAll();
 
-            // For each message, fetch reactions
-            $reactionStmt = $db->prepare('SELECT emoji, user_id FROM message_reactions WHERE message_id = ?');
+            // For each message, fetch reactions (with fallback if table doesn't exist yet)
+            try {
+                $reactionStmt = $db->prepare('SELECT emoji, user_id FROM message_reactions WHERE message_id = ?');
+            } catch (PDOException $e) {
+                $reactionStmt = null;
+            }
             foreach ($messages as &$m) {
                 $m['id'] = (int)$m['id'];
                 $m['sender_id'] = (int)$m['sender_id'];
@@ -65,17 +69,24 @@ try {
                 $m['product_image_url'] = $m['product_image_url'] ?? null;
                 $m['replied_to_id'] = $m['replied_to_id'] ? (int)$m['replied_to_id'] : null;
                 $m['replied_text'] = $m['replied_text'] ?? null;
-                // Fetch reactions
-                $reactionStmt->execute([$m['id']]);
-                $reactions_raw = $reactionStmt->fetchAll();
-                $reactions = [];
-                foreach ($reactions_raw as $r) {
-                    $emoji = $r['emoji'];
-                    if (!isset($reactions[$emoji])) $reactions[$emoji] = ['emoji' => $emoji, 'count' => 0, 'users' => []];
-                    $reactions[$emoji]['count']++;
-                    $reactions[$emoji]['users'][] = (int)$r['user_id'];
+                // Fetch reactions (gracefully handle missing table)
+                $m['reactions'] = [];
+                if ($reactionStmt) {
+                    try {
+                        $reactionStmt->execute([$m['id']]);
+                        $reactions_raw = $reactionStmt->fetchAll();
+                        $reactions = [];
+                        foreach ($reactions_raw as $r) {
+                            $emoji = $r['emoji'];
+                            if (!isset($reactions[$emoji])) $reactions[$emoji] = ['emoji' => $emoji, 'count' => 0, 'users' => []];
+                            $reactions[$emoji]['count']++;
+                            $reactions[$emoji]['users'][] = (int)$r['user_id'];
+                        }
+                        $m['reactions'] = array_values($reactions);
+                    } catch (PDOException $e) {
+                        $m['reactions'] = [];
+                    }
                 }
-                $m['reactions'] = array_values($reactions);
             }
             unset($m);
 

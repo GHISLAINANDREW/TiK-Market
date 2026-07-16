@@ -27,6 +27,7 @@ import com.dschangmarket.api.ApiOnlineUser
 import com.dschangmarket.api.ApiOnlineUsersResponse
 import com.dschangmarket.api.ApiPromoCreateBody
 import com.dschangmarket.data.models.SampleData
+import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.*
 import com.dschangmarket.ui.components.*
 import com.dschangmarket.utils.FormatUtils
@@ -1142,8 +1143,8 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
                             Modifier.fillMaxWidth().padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val label = when (status) { "pending" -> "En attente"; "confirmed" -> "Confirmée"; "preparing" -> "Préparation"; "delivering" -> "Livraison"; "delivered" -> "Livrée"; "cancelled" -> "Annulée"; else -> status }
-                            Text(label, style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(80.dp))
+                            val orderStatus = OrderStatus.fromCode(status)
+                            Text(orderStatus.label, style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(80.dp))
                             Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(4.dp)).background(GreenSurface)) {
                                 Box(Modifier.fillMaxHeight().fillMaxWidth(count / total).clip(RoundedCornerShape(4.dp)).background(Green))
                             }
