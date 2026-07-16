@@ -3,6 +3,7 @@ package com.dschangmarket.ui.chat
 expect fun playChatSound()
 
 expect fun playAudio(url: String, onProgress: (Float) -> Unit = {}, onCompletion: () -> Unit = {})
+expect fun stopAudio()
 
 expect fun startVoiceRecording()
 

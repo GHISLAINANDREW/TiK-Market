@@ -144,6 +144,7 @@ data class ApiMessage(
     @SerialName("sender_name") val senderName: String = "",
     @SerialName("product_id") val productId: Int? = null,
     @SerialName("product_title") val productTitle: String? = null,
+    @SerialName("product_image_url") val productImageUrl: String? = null,
     val text: String = "",
     @SerialName("audio_url") val audioUrl: String? = null,
     val duration: Int = 0,

@@ -796,7 +796,11 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     appState.chatVendorIsOnline = false
                     scope.launch {
                         try {
-                            ApiClient.sendMessage(appState.chatVendorId, msg.trim())
+                            ApiClient.sendMessage(
+                                receiverId = appState.chatVendorId,
+                                text = msg.trim(),
+                                productImageUrl = product.images.firstOrNull()
+                            )
                         } catch (_: Exception) { }
                         appState.navigateTo(NavScreen.Chat)
                     }

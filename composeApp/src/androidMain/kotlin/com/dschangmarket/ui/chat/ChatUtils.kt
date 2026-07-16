@@ -25,6 +25,18 @@ actual fun playChatSound() {
 private var mediaPlayer: MediaPlayer? = null
 private var progressJob: Job? = null
 
+actual fun stopAudio() {
+    try {
+        progressJob?.cancel()
+        progressJob = null
+        mediaPlayer?.apply {
+            if (isPlaying) stop()
+            release()
+        }
+        mediaPlayer = null
+    } catch (_: Exception) {}
+}
+
 actual fun playAudio(url: String, onProgress: (Float) -> Unit, onCompletion: () -> Unit) {
     try {
         val activity = AndroidChatContext.currentActivity ?: return

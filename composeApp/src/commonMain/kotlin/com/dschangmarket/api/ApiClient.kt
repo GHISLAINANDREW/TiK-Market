@@ -107,7 +107,8 @@ data class ApiSendMessageBody(
     val text: String,
     @SerialName("audio_url") val audioUrl: String? = null,
     val duration: Int = 0,
-    @SerialName("product_id") val productId: Int? = null
+    @SerialName("product_id") val productId: Int? = null,
+    @SerialName("product_image_url") val productImageUrl: String? = null
 )
 
 @Serializable
@@ -559,10 +560,15 @@ object ApiClient {
         text: String,
         audioUrl: String? = null,
         duration: Int = 0,
-        productId: Int? = null
+        productId: Int? = null,
+        productImageUrl: String? = null
     ): ApiMessage {
-        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId))
+        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId, productImageUrl))
         return safeRequest<ApiMessage>("POST", Endpoints.MESSAGES, body)
+    }
+
+    suspend fun deleteMessage(messageId: Int) {
+        delete("${Endpoints.MESSAGES}?id=$messageId")
     }
 
     suspend fun markMessagesAsRead(contactId: Int) {

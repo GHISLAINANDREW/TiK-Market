@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -49,7 +50,8 @@ data class ChatMessage(
     val timestamp: String = "",
     val isRead: Boolean = false,
     val productId: Int? = null,
-    val productTitle: String? = null
+    val productTitle: String? = null,
+    val productImageUrl: String? = null
 )
 
 data class ProductShare(
@@ -82,6 +84,8 @@ fun ChatScreen(
     var showPlusMenu by remember { mutableStateOf(false) }
     var showEmojiPicker by remember { mutableStateOf(false) }
     var previewImageUrl by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteTargetMsg by remember { mutableStateOf<ChatMessage?>(null) }
 
     // Product share message (WhatsApp style — appears as first message)
     val sharedProduct = remember(productTitle) {
@@ -109,7 +113,8 @@ fun ChatScreen(
                         timestamp = msg.createdAt,
                         isRead = msg.isRead,
                         productId = msg.productId,
-                        productTitle = msg.productTitle
+                        productTitle = msg.productTitle,
+                        productImageUrl = msg.productImageUrl
                     )
                 }
                 if (newMessages.size != messages.size || newMessages.lastOrNull()?.id != messages.lastOrNull()?.id) {
@@ -176,7 +181,12 @@ fun ChatScreen(
         if (sharedProduct != null && !productSentToApi) {
             val msg = "🛍️ ${sharedProduct.title}\n💰 ${sharedProduct.price}\n🏪 ${sharedProduct.shopName}"
             try {
-                ApiClient.sendMessage(vendorId, msg.trim())
+                ApiClient.sendMessage(
+                    receiverId = vendorId,
+                    text = msg.trim(),
+                    productId = null,
+                    productImageUrl = sharedProduct.imageUrl
+                )
                 productSentToApi = true
                 loadMessages()
             } catch (_: Exception) {}
@@ -326,7 +336,11 @@ fun ChatScreen(
 
                         item {
                             val isMe = msg.senderId == currentUserId
-                            ChatBubble(msg, isMe, onImageClick = { url -> previewImageUrl = url })
+                            ChatBubble(
+                                msg, isMe,
+                                onImageClick = { url -> previewImageUrl = url },
+                                onDeleteRequest = { m -> deleteTargetMsg = m; showDeleteConfirm = true }
+                            )
                             Spacer(Modifier.height(6.dp))
                         }
                     }
@@ -531,6 +545,37 @@ fun ChatScreen(
         FullScreenImagePreview(url = url, onDismiss = { previewImageUrl = null })
     }
 
+    // Delete message confirmation
+    if (showDeleteConfirm && deleteTargetMsg != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false; deleteTargetMsg = null },
+            title = { Text("Supprimer le message") },
+            text = { Text("Voulez-vous vraiment supprimer ce message ?") },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
+                    onClick = {
+                        scope.launch {
+                            try {
+                                ApiClient.deleteMessage(deleteTargetMsg!!.id)
+                            } catch (_: Exception) {}
+                            showDeleteConfirm = false
+                            deleteTargetMsg = null
+                            loadMessages()
+                        }
+                    }
+                ) {
+                    Text("Supprimer", color = Color.White)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirm = false; deleteTargetMsg = null }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+
     // Location preview dialog
     if (showLocationDialog && locationLat != null && locationLng != null) {
         LocationPreviewDialog(
@@ -553,8 +598,9 @@ fun ChatScreen(
 }
 
 // ── WhatsApp-style Chat Bubble ──
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -> Unit = {}) {
+private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -> Unit = {}, onDeleteRequest: (ChatMessage) -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -589,7 +635,14 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
                 color = bubbleColor,
                 shadowElevation = 0.5.dp
             ) {
-                Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { if (isMe) onDeleteRequest(msg) }
+                        )
+                ) {
                     // Story/Product Reference (Reply context)
                     if (msg.productId != null) {
                         Surface(
@@ -609,13 +662,36 @@ private fun ChatBubble(msg: ChatMessage, isMe: Boolean, onImageClick: (String) -
                                     Text("Story", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Orange)
                                     Text(msg.productTitle ?: "Produit", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
-                                // Story product image preview
-                                val productImg = remember(msg.productId) {
-                                    // In a real app, we'd fetch the product details or have the image URL in the message
-                                    // For now, if it's the product we just came from, we might have it in memory.
-                                    // But since we don't store image_url in messages yet, we'll skip the image for now
-                                    // to avoid making too many API calls per bubble.
-                                    null
+                                // Product image thumbnail in chat bubble
+                                if (!msg.productImageUrl.isNullOrBlank()) {
+                                    var thumbBitmap by remember(msg.productImageUrl) {
+                                        mutableStateOf<ImageBitmap?>(null)
+                                    }
+                                    LaunchedEffect(msg.productImageUrl) {
+                                        val cleanUrl = if (msg.productImageUrl.startsWith("http"))
+                                            msg.productImageUrl
+                                        else
+                                            "${ApiClient.baseUrl.trimEnd('/')}/${msg.productImageUrl.trimStart('/')}"
+                                        thumbBitmap = try {
+                                            loadImageFromUrl(cleanUrl)
+                                        } catch (_: Exception) { null }
+                                    }
+                                    if (thumbBitmap != null) {
+                                        Image(
+                                            bitmap = thumbBitmap!!,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(4.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Box(
+                                            Modifier.size(36.dp)
+                                                .background(Color.LightGray, RoundedCornerShape(4.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Image, null, Modifier.size(18.dp), tint = Color.Gray)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -714,6 +790,7 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
                     // For now, re-playing another one stops the previous.
                 } else {
                     scope.launch {
+                        stopAudio() // Stop any previous playback
                         if (!isMe) {
                             isDownloading = true
                             delay(800) // Visual feedback
