@@ -91,9 +91,6 @@ fun ChatScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteTargetMsg by remember { mutableStateOf<ChatMessage?>(null) }
     var replyToMsg by remember { mutableStateOf<ChatMessage?>(null) }
-    var showSearch by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var searchResults by remember { mutableStateOf<List<Int>?>(null) }
 
     // Product share message (WhatsApp style — appears as first message)
     val sharedProduct = remember(productTitle) {
@@ -304,9 +301,6 @@ fun ChatScreen(
                     },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
-                        IconButton(onClick = { showSearch = !showSearch; if (!showSearch) { searchQuery = ""; searchResults = null } }) {
-                            Icon(if (showSearch) Icons.Default.Close else Icons.Outlined.Search, null, tint = Color.White)
-                        }
                         IconButton(onClick = {}) { Icon(Icons.Outlined.MoreVert, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -321,51 +315,6 @@ fun ChatScreen(
             Modifier.fillMaxSize().padding(padding).background(Color(0xFFECE5DD))
         ) {
             Column(Modifier.fillMaxSize()) {
-                // ── Search bar ──
-                AnimatedVisibility(visible = showSearch) {
-                    Surface(shadowElevation = 2.dp, color = Color.White) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Outlined.Search, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { q ->
-                                    searchQuery = q
-                                    if (q.length >= 2) {
-                                        scope.launch {
-                                            try {
-                                                val results = ApiClient.searchMessages(vendorId, q)
-                                                searchResults = results.map { it.id }
-                                            } catch (_: Exception) {}
-                                        }
-                                    } else {
-                                        searchResults = null
-                                    }
-                                },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("Rechercher...", fontSize = 14.sp) },
-                                singleLine = true,
-                                shape = RoundedCornerShape(24.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color(0xFFF0F0F0),
-                                    unfocusedContainerColor = Color(0xFFF0F0F0),
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent
-                                ),
-                                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                            )
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = ""; searchResults = null }) {
-                                    Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-
                 // ── Messages list ──
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp),

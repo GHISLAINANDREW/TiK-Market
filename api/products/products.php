@@ -74,8 +74,7 @@ try {
 
         $where = ['p.is_active = 1', "s.status = 'active'", "u.status = 'active'"];
 
-        // Stories expire after 24h
-        $where[] = '(p.is_story = 0 OR p.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR))';
+        // Stories are always visible as products; filtering for stories section is done client-side
 
         $params = [];
 
