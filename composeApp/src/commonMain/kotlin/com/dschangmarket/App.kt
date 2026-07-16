@@ -345,10 +345,12 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 isLoggedIn = appState.isLoggedIn,
                 userRole = appState.userRole,
                 onStoryClick = { stories, index ->
-                    val items = stories.map { (name, url) ->
+                    val items = stories.map { product ->
                         com.dschangmarket.ui.story.StoryItem(
-                            title = name,
-                            imageUrl = url
+                            title = product.shopName,
+                            subtitle = product.title,
+                            imageUrl = product.images.firstOrNull() ?: "",
+                            product = product
                         )
                     }
                     appState.storyItems = items
@@ -835,12 +837,26 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                             ApiClient.sendMessage(
                                 receiverId = appState.chatVendorId,
                                 text = msg.trim(),
+                                productId = product.id.toIntOrNull(),
                                 productImageUrl = product.images.firstOrNull()
                             )
                         } catch (_: Exception) { }
                         appState.navigateTo(NavScreen.Chat)
                     }
-                }
+                },
+                onDeleteStory = { product ->
+                    scope.launch {
+                        try {
+                            ApiClient.deleteProduct(product.id.toInt())
+                            snackbarHostState.showSnackbar("Story supprimée")
+                            appState.refreshSignal++
+                            appState.goBack()
+                        } catch (e: Exception) {
+                            showError("Erreur lors de la suppression")
+                        }
+                    }
+                },
+                currentUserId = appState.currentUser?.id ?: 0
             )
             NavScreen.MyGroupBuys -> MyGroupBuysScreen(
                 onBack = { appState.goBack() },
