@@ -259,6 +259,68 @@ function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', st
     return null;
 }
 
+/**
+ * Award loyalty points to a user, creating wallet if needed.
+ * Used e.g. after a successful transaction (1 point per actor).
+ */
+function awardPoints(PDO $db, int $userId, int $points, string $description, string $referenceType = 'order', int $referenceId = 0): bool {
+    try {
+        // Ensure wallet exists
+        $stmt = $db->prepare('SELECT id, total_points FROM wallets WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $wallet = $stmt->fetch();
+
+        if (!$wallet) {
+            $stmt = $db->prepare('INSERT INTO wallets (user_id) VALUES (?)');
+            $stmt->execute([$userId]);
+            $walletId = (int)$db->lastInsertId();
+        } else {
+            $walletId = (int)$wallet['id'];
+        }
+
+        $db->beginTransaction();
+
+        $stmt = $db->prepare('
+            UPDATE wallets
+            SET total_points = total_points + ?,
+                current_points = current_points + ?
+            WHERE id = ?
+        ');
+        $stmt->execute([$points, $points, $walletId]);
+
+        // Record transaction
+        $stmt = $db->prepare('
+            INSERT INTO wallet_transactions (wallet_id, type, points, description, reference_type, reference_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ');
+        $stmt->execute([$walletId, 'bonus', $points, $description, $referenceType, $referenceId]);
+
+        // Check tier upgrade
+        $stmt = $db->prepare('SELECT total_points FROM wallets WHERE id = ?');
+        $stmt->execute([$walletId]);
+        $newTotal = (int)$stmt->fetchColumn();
+
+        $tiers = $db->query('SELECT name, min_points FROM loyalty_tiers ORDER BY min_points DESC')->fetchAll();
+        $newTier = 'bronze';
+        foreach ($tiers as $t) {
+            if ($newTotal >= (int)$t['min_points']) {
+                $newTier = $t['name'];
+                break;
+            }
+        }
+
+        $stmt = $db->prepare('UPDATE wallets SET tier = ? WHERE id = ?');
+        $stmt->execute([$newTier, $walletId]);
+
+        $db->commit();
+        return true;
+    } catch (Exception $e) {
+        if (isset($db) && $db->inTransaction()) $db->rollBack();
+        error_log("awardPoints error (user #$userId): " . $e->getMessage());
+        return false;
+    }
+}
+
 function sendNotification(?int $userId, string $title, string $message, string $type = 'system', ?int $relatedId = null): void {
     try {
         $db = getDB();

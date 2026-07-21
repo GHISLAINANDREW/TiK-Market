@@ -87,7 +87,8 @@ try {
             $where[] = 'p.is_active = 1';
         }
 
-        // Stories are always visible as products; filtering for stories section is done client-side
+        // Exclude legacy story-products from product listings
+        $where[] = 'p.is_story = 0';
 
         $params = [];
 
