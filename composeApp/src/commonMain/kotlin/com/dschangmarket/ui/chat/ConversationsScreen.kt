@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiConversation
 import com.dschangmarket.theme.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class Conversation(
@@ -57,26 +58,47 @@ fun ConversationsScreen(
         it.name.contains(searchQuery, ignoreCase = true) || it.lastMessage.contains(searchQuery, ignoreCase = true)
     }
 
-    LaunchedEffect(Unit) {
+    // Load conversations + periodic refresh
+    suspend fun refreshConversations() {
         try {
             val apiConvs = ApiClient.fetchConversations()
-            conversations = apiConvs.map { apiConv ->
-                Conversation(
-                    id = apiConv.userId.toString(),
-                    name = apiConv.userName,
-                    lastMessage = apiConv.lastMessage,
-                    isLastMessageFromMe = apiConv.lastSenderId == ApiClient.getCurrentUser()?.id,
-                    timestamp = apiConv.lastMessageAt,
-                    unreadCount = apiConv.unreadCount,
-                    isOnline = apiConv.isOnline, 
-                    productTitle = null, 
-                    vendorUserId = apiConv.userId
-                )
-            }
+            val sorted = apiConvs
+                // Sort by timestamp descending (most recent first)
+                .sortedByDescending { it.lastMessageAt }
+                .map { apiConv ->
+                    Conversation(
+                        id = apiConv.userId.toString(),
+                        name = apiConv.userName,
+                        lastMessage = apiConv.lastMessage,
+                        isLastMessageFromMe = apiConv.lastSenderId == ApiClient.getCurrentUser()?.id,
+                        timestamp = apiConv.lastMessageAt,
+                        unreadCount = apiConv.unreadCount,
+                        isOnline = apiConv.isOnline, 
+                        productTitle = null, 
+                        vendorUserId = apiConv.userId
+                    )
+                }
+            conversations = sorted
+            errorMessage = null
         } catch (e: Exception) {
-            errorMessage = e.message ?: "Erreur de chargement"
+            if (conversations.isEmpty()) {
+                errorMessage = e.message ?: "Erreur de chargement"
+            }
         }
         isLoading = false
+    }
+
+    // Initial load
+    LaunchedEffect(Unit) {
+        refreshConversations()
+    }
+
+    // Auto-refresh every 10 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(10000)
+            refreshConversations()
+        }
     }
 
     Scaffold(
@@ -86,7 +108,6 @@ fun ConversationsScreen(
                     title = { Text("Centre de messages", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) },
                     navigationIcon = { if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
-                        IconButton(onClick = {}) { Icon(Icons.Default.FilterList, null, tint = Color.White) }
                         IconButton(onClick = {}) { Icon(Icons.Default.DoneAll, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -112,7 +133,7 @@ fun ConversationsScreen(
                             scope.launch {
                                 isLoading = true
                                 errorMessage = null
-                                // Retry logic
+                                refreshConversations()
                             }
                         }) { Text("Réessayer") }
                     }
@@ -198,7 +219,6 @@ private fun ConversationItem(conv: Conversation, onClick: () -> Unit) {
             }
             
             Spacer(Modifier.width(12.dp))
-            
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(conv.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))

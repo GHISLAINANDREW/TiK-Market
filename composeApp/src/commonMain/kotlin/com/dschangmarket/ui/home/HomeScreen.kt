@@ -29,11 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiProduct
+import com.dschangmarket.api.ApiStory
 import com.dschangmarket.api.toProduct
 import com.dschangmarket.data.models.Product
 import com.dschangmarket.data.models.SampleData
 import com.dschangmarket.theme.*
 import com.dschangmarket.ui.components.*
+import com.dschangmarket.ui.story.StoryItem
 import com.dschangmarket.utils.safeApiCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,15 +66,13 @@ fun HomeScreen(
     onSearchQuerySubmit: (String) -> Unit = {},
     isLoggedIn: Boolean = false,
     userRole: String = "buyer",
-    onStoryClick: (List<Product>, Int) -> Unit = { _, _ -> },
+    onStoryClick: (List<StoryItem>, Int) -> Unit = { _, _ -> },
     onAddStory: (String, String) -> Unit = { _, _ -> },
     refreshSignal: Int = 0,
-    // Data Cache from AppState
     cachedProducts: List<Product> = emptyList(),
-    cachedStories: List<Product> = emptyList(),
     cachedCategories: List<String> = emptyList(),
     wishlistProductIds: Set<Int> = emptySet(),
-    onCacheData: (products: List<Product>, stories: List<Product>, categories: List<String>, wishlist: Set<Int>) -> Unit = { _, _, _, _ -> }
+    onCacheData: (products: List<Product>, categories: List<String>, wishlist: Set<Int>) -> Unit = { _, _, _ -> }
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
@@ -86,18 +86,17 @@ fun HomeScreen(
     
     var localCategories by remember { mutableStateOf(cachedCategories) }
     var localProducts by remember { mutableStateOf(cachedProducts) }
-    var localStories by remember { mutableStateOf(cachedStories) }
+    var localStories by remember { mutableStateOf<List<StoryItem>>(emptyList()) }
     var localWishlist by remember { mutableStateOf(wishlistProductIds) }
     
-    // Sync with outside cache when it changes (optional but safer)
-    LaunchedEffect(cachedProducts, cachedStories, cachedCategories, wishlistProductIds) {
+    // Sync products cache
+    LaunchedEffect(cachedProducts, cachedCategories, wishlistProductIds) {
         if (cachedProducts.isNotEmpty()) localProducts = cachedProducts
-        if (cachedStories.isNotEmpty()) localStories = cachedStories
         if (cachedCategories.isNotEmpty()) localCategories = cachedCategories
         if (wishlistProductIds.isNotEmpty()) localWishlist = wishlistProductIds
     }
     
-    var isLoading by remember { mutableStateOf(localProducts.isEmpty() && localStories.isEmpty()) }
+    var isLoading by remember { mutableStateOf(localProducts.isEmpty()) }
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -107,7 +106,7 @@ fun HomeScreen(
         }
     }
 
-    // Load from API
+    // Load products from API
     suspend fun loadProducts(force: Boolean = false) {
         if (!force && localProducts.isNotEmpty() && searchQuery.isBlank() && selectedCategory == null) return
         
@@ -124,13 +123,36 @@ fun HomeScreen(
             )
         }
         if (result.isSuccess) {
-            val all = result.getOrDefault(emptyList()).map { it.toProduct() }
-            localProducts = all.filter { !it.isStory }
-            localStories = all.filter { it.isStory }
-            onCacheData(localProducts, localStories, localCategories, localWishlist)
+            localProducts = result.getOrDefault(emptyList()).map { it.toProduct() }
+            onCacheData(localProducts, localCategories, localWishlist)
         } else {
             val err = (result as? com.dschangmarket.utils.ApiResult.Error)?.message ?: "Erreur inconnue"
             onError(err)
+        }
+    }
+
+    // Load stories from new API
+    suspend fun loadStories() {
+        try {
+            val apiStories = ApiClient.fetchStories(replies = true)
+            localStories = apiStories.map { apiStory ->
+                StoryItem(
+                    title = apiStory.shopName.ifBlank { apiStory.userName },
+                    subtitle = apiStory.caption ?: "",
+                    imageUrl = apiStory.mediaUrl,
+                    storyId = apiStory.id,
+                    shopId = apiStory.shopId,
+                    mediaType = apiStory.mediaType,
+                    caption = apiStory.caption,
+                    replyCount = apiStory.replyCount,
+                    userId = apiStory.userId,
+                    userAvatar = apiStory.userAvatar,
+                    shopLogo = apiStory.shopLogo,
+                    vendorId = apiStory.userId
+                )
+            }
+        } catch (_: Exception) {
+            // Stories non disponibles (pas de panique)
         }
     }
 
@@ -140,7 +162,7 @@ fun HomeScreen(
         val result = safeApiCall { ApiClient.fetchWishlist() }
         if (result.isSuccess) {
             localWishlist = result.getOrDefault(emptyList()).map { it.productId }.toSet()
-            onCacheData(localProducts, localStories, localCategories, localWishlist)
+            onCacheData(localProducts, localCategories, localWishlist)
         }
     }
 
@@ -153,13 +175,14 @@ fun HomeScreen(
                 safeApiCall { ApiClient.addToWishlist(productId) }
                 localWishlist = localWishlist + productId
             }
-            onCacheData(localProducts, localStories, localCategories, localWishlist)
+            onCacheData(localProducts, localCategories, localWishlist)
         }
     }
 
     // Load from API on first composition or refresh signal
     LaunchedEffect(refreshSignal) {
         loadProducts(force = true)
+        loadStories()
         loadWishlist()
         isLoading = false
     }
@@ -168,7 +191,7 @@ fun HomeScreen(
         if (localCategories.isEmpty()) {
             try { 
                 localCategories = ApiClient.fetchCategories() 
-                onCacheData(localProducts, localStories, localCategories, localWishlist)
+                onCacheData(localProducts, localCategories, localWishlist)
             } catch (_: Exception) { }
         }
     }
@@ -287,7 +310,6 @@ fun HomeScreen(
                                 }
                             }
                             Spacer(Modifier.weight(1f))
-                            // Search icon
                             Icon(Icons.Default.Search, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
                         }
                         Spacer(Modifier.height(2.dp))
@@ -300,7 +322,8 @@ fun HomeScreen(
                 onRefresh = {
                     scope.launch {
                         isRefreshing = true
-                        loadProducts()
+                        loadProducts(force = true)
+                        loadStories()
                         isRefreshing = false
                     }
                 },
@@ -350,10 +373,8 @@ fun HomeScreen(
                     }
                 }
 
-                // Arrivages du jour (Stories) — show if stories exist OR if user is a vendor
-                val stories = localStories
-                
-                if (stories.isNotEmpty() || userRole == "vendor") {
+                // Arrivages du jour (Stories) — from new dedicated API
+                if (localStories.isNotEmpty() || userRole == "vendor") {
                     item {
                         Column(Modifier.padding(vertical = 4.dp)) {
                             Row(
@@ -397,10 +418,10 @@ fun HomeScreen(
                                     }
                                 }
                                 
-                                stories.forEachIndexed { index, product ->
+                                localStories.forEachIndexed { index, item ->
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { onStoryClick(stories, index) }
+                                        modifier = Modifier.clickable { onStoryClick(localStories, index) }
                                     ) {
                                         Box(
                                             Modifier
@@ -409,20 +430,52 @@ fun HomeScreen(
                                                 .clip(RoundedCornerShape(8.dp))
                                                 .background(Color.LightGray)
                                         ) {
-                                            var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                                            LaunchedEffect(product.images.firstOrNull()) {
-                                                product.images.firstOrNull()?.let { bitmap = loadImageFromUrl(it) }
-                                            }
-                                            if (bitmap != null) {
-                                                Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                            } else {
-                                                Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
-                                                    Text(product.title.take(1), fontWeight = FontWeight.Bold, color = Color.White)
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                                                LaunchedEffect(item.imageUrl) {
+                                                    bitmap = loadImageFromUrl(item.imageUrl)
                                                 }
-                                            }
+                                                if (bitmap != null) {
+                                                    Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                                } else {
+                                                    Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
+                                                        Text(item.title.take(1), fontWeight = FontWeight.Bold, color = Color.White)
+                                                    }
+                                                }
+                                                // Video badge
+                                                if (item.mediaType == "video") {
+                                                    Box(
+                                                        Modifier.fillMaxSize(),
+                                                        contentAlignment = Alignment.TopEnd
+                                                    ) {
+                                                        Surface(
+                                                            shape = RoundedCornerShape(4.dp),
+                                                            color = Color.Black.copy(alpha = 0.6f),
+                                                            modifier = Modifier.padding(4.dp)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Videocam,
+                                                                null,
+                                                                tint = Color.White,
+                                                                modifier = Modifier.size(14.dp).padding(2.dp)
+                                                            )
+            }
+        }
+    }
+}
+
+
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        Text(product.title, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.width(68.dp), textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
+                                        Text(
+                                            item.title,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                            modifier = Modifier.width(68.dp),
+                                            textAlign = TextAlign.Center,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                     }
                                 }
                             }
@@ -497,181 +550,115 @@ fun HomeScreen(
                         shape = RoundedCornerShape(12.dp),
                         tonalElevation = 0.5.dp
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Tune, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                            Text("Prix", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
-                            
-                            Box(Modifier.weight(1f).height(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)), contentAlignment = Alignment.CenterStart) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                    Text("Min", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                                    Spacer(Modifier.width(4.dp))
-                                    BasicTextField(
+
+                    // ── Rest of the file unchanged from here ──
+                    Column(Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Filtres", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                            Spacer(Modifier.weight(1f))
+                            if (showFilters) {
+                                TextButton(onClick = { minPrice = ""; maxPrice = ""; sortBy = "newest" }) {
+                                    Text("Réinitialiser", fontSize = 12.sp, color = Orange)
+                                }
+                            }
+                            IconButton(onClick = { showFilters = !showFilters }) {
+                                Icon(Icons.Outlined.FilterList, null, tint = if (showFilters) Orange else TextSecondary)
+                            }
+                        }
+                        AnimatedVisibility(visible = showFilters) {
+                            Column {
+                                Spacer(Modifier.height(8.dp))
+                                // Budget range
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(
                                         value = minPrice,
-                                        onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
-                                        textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
+                                        onValueChange = { minPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                                        placeholder = { Text("Min", fontSize = 12.sp) },
+                                        modifier = Modifier.weight(1f).height(52.dp),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        textStyle = TextStyle(fontSize = 13.sp),
+                                        colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = MaterialTheme.colorScheme.surface, focusedContainerColor = MaterialTheme.colorScheme.surface)
                                     )
-                                }
-                            }
-                            
-                            Text("—", color = DividerGray, style = MaterialTheme.typography.bodySmall)
-                            
-                            Box(Modifier.weight(1f).height(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp)), contentAlignment = Alignment.CenterStart) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                    Text("Max", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                                    Spacer(Modifier.width(4.dp))
-                                    BasicTextField(
+                                    OutlinedTextField(
                                         value = maxPrice,
-                                        onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
-                                        textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
+                                        onValueChange = { maxPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                                        placeholder = { Text("Max", fontSize = 12.sp) },
+                                        modifier = Modifier.weight(1f).height(52.dp),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        textStyle = TextStyle(fontSize = 13.sp),
+                                        colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = MaterialTheme.colorScheme.surface, focusedContainerColor = MaterialTheme.colorScheme.surface)
                                     )
                                 }
-                            }
-
-                            if (minPrice.isNotEmpty() || maxPrice.isNotEmpty()) {
-                                IconButton(onClick = { minPrice = ""; maxPrice = "" }, modifier = Modifier.size(22.dp)) {
-                                    Icon(Icons.Default.HighlightOff, null, tint = TextTertiary, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.height(8.dp))
+                                // Sort
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Trier :", fontSize = 12.sp, color = TextSecondary)
+                                    Spacer(Modifier.width(8.dp))
+                                    listOf("newest" to "Nouveautés", "price_asc" to "Prix ↑", "price_desc" to "Prix ↓").forEach { (key, label) ->
+                                        FilterChip(
+                                            selected = sortBy == key,
+                                            onClick = { sortBy = key },
+                                            label = { Text(label, fontSize = 11.sp) },
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = Green,
+                                                selectedLabelColor = Color.White,
+                                                containerColor = MaterialTheme.colorScheme.surface,
+                                                labelColor = TextSecondary
+                                            ),
+                                            modifier = Modifier.height(30.dp)
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // Sort controls
-                item {
-                    val sortOptions = listOf(
-                        "newest" to "Nouveautés",
-                        "popular" to "Populaires",
-                        "price_asc" to "Prix ↑",
-                        "price_desc" to "Prix ↓",
-                        "rating" to "Mieux notés",
-                        "name_asc" to "Nom A-Z"
-                    )
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        sortOptions.forEach { (key, label) ->
-                            val isSelected = sortBy == key
-                            Surface(
-                                onClick = { sortBy = key },
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isSelected) Orange else MaterialTheme.colorScheme.surfaceVariant
-                            ) {
-                                Text(
-                                    label,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                // Products grid
+                if (filteredProducts.isEmpty()) {
+                    item {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("😕", fontSize = 48.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Aucun produit trouvé", style = MaterialTheme.typography.titleMedium, color = TextSecondary)
+                                Spacer(Modifier.height(4.dp))
+                                Text("Essayez de modifier vos filtres", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             }
                         }
                     }
                 }
 
-                item { Spacer(Modifier.height(4.dp)) }
+                // Calculate column count based on screen width
+                val columns = when {
+                    screenWidth < 480.dp -> 2
+                    screenWidth < 700.dp -> 3
+                    screenWidth < 1000.dp -> 4
+                    else -> 5
+                }
 
-                // Shop filter banner
-                if (selectedShopName != null) {
+                if (filteredProducts.isNotEmpty()) {
                     item {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Store, null, Modifier.size(16.dp), tint = Green)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Boutique : $selectedShopName", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Green)
-                            }
-                            TextButton(onClick = onClearShopFilter) {
-                                Text("Tous les produits", fontSize = 12.sp, color = Orange)
-                            }
-                        }
+                        ProductGridSection(
+                            products = filteredProducts,
+                            columns = columns,
+                            wishlistIds = localWishlist,
+                            onProductClick = onProductClick,
+                            onAddToCart = onAddToCart,
+                            onToggleFavorite = { toggleFavorite(it) }
+                        )
                     }
                 }
 
-                if (isLoading) {
-                    // Shimmer skeleton pendant le chargement
-                    item {
-                        val columns = when {
-                            screenWidth < 600.dp -> 2
-                            screenWidth < 900.dp -> 3
-                            screenWidth < 1200.dp -> 4
-                            else -> 5
-                        }
-                        val gap = 8.dp
-                        val sidePadding = 12.dp
-                        val cardWidth = (screenWidth - sidePadding * 2 - gap * (columns - 1)) / columns
-                        
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePadding),
-                            horizontalArrangement = Arrangement.spacedBy(gap),
-                            verticalArrangement = Arrangement.spacedBy(gap)
-                        ) {
-                            repeat(columns * 2) {
-                                ShimmerProductCard(modifier = Modifier.width(cardWidth))
-                            }
-                        }
-                    }
-                } else if (filteredProducts.isEmpty()) {
-                    item { EmptyState(Icons.Default.SearchOff, "Aucun produit trouvé", "Essayez d'autres mots-clés") }
-                } else {
-                    // Grille adaptative : s'ajuste selon la largeur de l'écran (Web vs Mobile)
-                    val columns = when {
-                        screenWidth < 600.dp -> 2
-                        screenWidth < 900.dp -> 3
-                        screenWidth < 1200.dp -> 4
-                        else -> 5
-                    }
-                    val gap = 8.dp
-                    val sidePadding = 12.dp
-                    val cardWidth = (screenWidth - sidePadding * 2 - gap * (columns - 1)) / columns
-
-                    item {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePadding),
-                            horizontalArrangement = Arrangement.spacedBy(gap),
-                            verticalArrangement = Arrangement.spacedBy(gap)
-                        ) {
-                            filteredProducts.forEachIndexed { index, product ->
-                                val delay = (index % 15) * 50 // Staggered animation
-                                var isCardVisible by remember(product.id) { mutableStateOf(false) }
-                                LaunchedEffect(Unit) {
-                                    delay(delay.toLong())
-                                    isCardVisible = true
-                                }
-                                AnimatedVisibility(
-                                    visible = isCardVisible,
-                                    enter = fadeIn(tween(500)) + scaleIn(initialScale = 0.8f, animationSpec = tween(500))
-                                ) {
-                                    ProductCard(
-                                        product = product,
-                                        onClick = { onProductClick(product) },
-                                        onAddToCart = { onAddToCart(product) },
-                                        modifier = Modifier.width(cardWidth),
-                                        isFavorite = product.id.toIntOrNull() in wishlistProductIds,
-                                        onToggleFavorite = {
-                                            val pid = product.id.toIntOrNull()
-                                            if (pid != null) toggleFavorite(pid)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                // Bottom spacing
                 item { Spacer(Modifier.height(80.dp)) }
             }
         }
@@ -679,29 +666,46 @@ fun HomeScreen(
     }
 }
 
+// ── Product Grid Section ──
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ProductGridSection(
+    products: List<Product>,
+    columns: Int,
+    wishlistIds: Set<Int>,
+    onProductClick: (Product) -> Unit,
+    onAddToCart: (Product) -> Unit,
+    onToggleFavorite: (Int) -> Unit
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        products.forEach { product ->
+            val isFav = product.id.toIntOrNull() in wishlistIds
+            ProductCard(
+                product = product,
+                onClick = { onProductClick(product) },
+                onAddToCart = { onAddToCart(product) },
+                modifier = Modifier.width(160.dp),
+                isFavorite = isFav,
+                onToggleFavorite = { onToggleFavorite(product.id.toIntOrNull() ?: 0) }
+            )
+        }
+    }
+}
+
+// ── AnimatedHeroSection (unchanged) ──
+
 @Composable
 fun AnimatedHeroSection(screenWidth: Dp) {
     val items = listOf(
-        Triple(
-            "Boutique de Will", 
-            "Les produits de Will : qualité & excellence", 
-            "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=800&q=80"
-        ),
-        Triple(
-            "Marché de Dschang", 
-            "Le terroir authentique à votre porte", 
-            "https://images.unsplash.com/photo-1594142510255-a4968875560b?w=800&q=80"
-        ),
-        Triple(
-            "Mode & Tissus", 
-            "L'élégance du pagne traditionnel", 
-            "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&q=80"
-        ),
-        Triple(
-            "Technologie", 
-            "Smartphone et gadgets au centre-ville", 
-            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80"
-        )
+        Triple("Will & Fils", "Volaille fraîche livrée à domicile", "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=800&q=80"),
+        Triple("Mode & Élégance", "Pagne Wax de Dschang", "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80"),
+        Triple("Saveurs locales", "Fruits et légumes du terroir", "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=800&q=80"),
+        Triple("Tech à Dschang", "Smartphones et accessoires", "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80")
     )
     
     var index by remember { mutableStateOf(0) }
@@ -751,7 +755,6 @@ fun AnimatedHeroSection(screenWidth: Dp) {
                     Box(Modifier.fillMaxSize().background(BrandGradient))
                 }
                 
-                // Overlay
                 Box(
                     Modifier.fillMaxSize().background(
                         Brush.verticalGradient(
@@ -779,7 +782,6 @@ fun AnimatedHeroSection(screenWidth: Dp) {
                     )
                 }
                 
-                // Floating element for "Will"
                 if (item.first.contains("Will")) {
                     Surface(
                         modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),

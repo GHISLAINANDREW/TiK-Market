@@ -118,6 +118,68 @@ data class ApiUploadBody(
     val filename: String
 )
 
+// ── Story models ───────────────────────────────────────────────
+
+@Serializable
+data class ApiStory(
+    val id: Int,
+    @SerialName("user_id") val userId: Int,
+    @SerialName("shop_id") val shopId: Int,
+    @SerialName("media_url") val mediaUrl: String,
+    @SerialName("media_type") val mediaType: String = "image",
+    val caption: String? = null,
+    val duration: Int = 0,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("user_name") val userName: String = "",
+    @SerialName("user_avatar") val userAvatar: String? = null,
+    @SerialName("shop_name") val shopName: String = "",
+    @SerialName("shop_logo") val shopLogo: String? = null,
+    val replies: List<ApiStoryReply>? = null,
+    @SerialName("reply_count") val replyCount: Int = 0
+)
+
+@Serializable
+data class ApiStoryReply(
+    val id: Int,
+    @SerialName("story_id") val storyId: Int,
+    @SerialName("user_id") val userId: Int,
+    val text: String,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("user_name") val userName: String = ""
+)
+
+@Serializable
+data class ApiStoriesResponse(
+    val stories: List<ApiStory>,
+    @SerialName("deleted_expired") val deletedExpired: Int = 0
+)
+
+@Serializable
+data class ApiCreateStoryBody(
+    @SerialName("shop_id") val shopId: Int,
+    @SerialName("media_url") val mediaUrl: String,
+    @SerialName("media_type") val mediaType: String = "image",
+    val caption: String? = null,
+    val duration: Int = 0
+)
+
+@Serializable
+data class ApiStoryReplyBody(
+    val text: String
+)
+
+@Serializable
+data class ApiStoryReplyResponse(
+    val success: Boolean,
+    @SerialName("reply_id") val replyId: Int = 0
+)
+
+@Serializable
+data class ApiStoryDeleteResponse(
+    val success: Boolean,
+    val message: String = ""
+)
+
 // ── Result Wrapper ─────────────────────────────────────────────
 
 sealed class ApiResult<out T> {
@@ -162,6 +224,7 @@ object ApiClient {
         const val WALLET_RECHARGE = "/wallet/recharge.php"
         const val COUPONS = "/coupons/list.php"
         const val COUPONS_USE = "/coupons/use.php"
+        const val STORIES = "/stories/stories.php"
         const val ADMIN_USERS = "/admin/users.php"
         const val ADMIN_SHOPS = "/admin/shops.php"
     }
@@ -611,6 +674,39 @@ object ApiClient {
         val base64Data = dataUrl.substringAfter(",", dataUrl)
         val body = json.encodeToString(ApiUploadBody(base64Data, fileName))
         return safeRequest<ApiUploadResponse>("POST", Endpoints.UPLOADS, body).imageUrl
+    }
+
+    // ── Stories ─────────────────────────────────────────────────
+
+    suspend fun fetchStories(replies: Boolean = false): List<ApiStory> {
+        val path = buildUrl(Endpoints.STORIES, mapOf("replies" to if (replies) "1" else "0"))
+        return safeRequest<ApiStoriesResponse>("GET", path).stories
+    }
+
+    suspend fun fetchShopStories(shopId: Int, replies: Boolean = false): List<ApiStory> {
+        val path = buildUrl(Endpoints.STORIES, mapOf(
+            "shop_id" to shopId.toString(),
+            "replies" to if (replies) "1" else "0"
+        ))
+        return safeRequest<ApiStoriesResponse>("GET", path).stories
+    }
+
+    suspend fun fetchStoryById(storyId: Int): ApiStory {
+        return safeRequest("GET", "${Endpoints.STORIES}?id=$storyId")
+    }
+
+    suspend fun createStory(shopId: Int, mediaUrl: String, mediaType: String = "image", caption: String? = null): ApiStory {
+        val body = json.encodeToString(ApiCreateStoryBody(shopId, mediaUrl, mediaType, caption))
+        return safeRequest("POST", Endpoints.STORIES, body)
+    }
+
+    suspend fun replyToStory(storyId: Int, text: String): ApiStoryReplyResponse {
+        val body = json.encodeToString(ApiStoryReplyBody(text))
+        return safeRequest("POST", "${Endpoints.STORIES}?reply=$storyId", body)
+    }
+
+    suspend fun deleteStory(storyId: Int) {
+        delete("${Endpoints.STORIES}?id=$storyId")
     }
 
     // ── Vendor Orders ──
