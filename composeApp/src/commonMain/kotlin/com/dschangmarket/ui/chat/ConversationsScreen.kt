@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,10 +47,15 @@ fun ConversationsScreen(
     onConversationClick: (vendorName: String, productTitle: String?, vendorUserId: Int, isOnline: Boolean) -> Unit,
     showBack: Boolean = true
 ) {
+    var searchQuery by remember { mutableStateOf("") }
     var conversations by remember { mutableStateOf<List<Conversation>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    val filteredConversations = conversations.filter {
+        it.name.contains(searchQuery, ignoreCase = true) || it.lastMessage.contains(searchQuery, ignoreCase = true)
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -90,7 +96,7 @@ fun ConversationsScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF7F8FA))) {
             // Search bar
-            SearchBar()
+            SearchBar(value = searchQuery, onValueChange = { searchQuery = it })
 
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -106,22 +112,22 @@ fun ConversationsScreen(
                             scope.launch {
                                 isLoading = true
                                 errorMessage = null
-                                // Retry logic could be here, but simpler to just reload screen or use a refresh signal
+                                // Retry logic
                             }
                         }) { Text("Réessayer") }
                     }
                 }
-            } else if (conversations.isEmpty()) {
+            } else if (filteredConversations.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.ChatBubbleOutline, null, Modifier.size(64.dp), tint = Color.LightGray)
                         Spacer(Modifier.height(16.dp))
-                        Text("Aucun message", fontSize = 16.sp, color = Color.Gray)
+                        Text(if (searchQuery.isEmpty()) "Aucun message" else "Aucun résultat pour '$searchQuery'", fontSize = 16.sp, color = Color.Gray)
                     }
                 }
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    items(conversations) { conv ->
+                    items(filteredConversations) { conv ->
                         ConversationItem(conv, onClick = { onConversationClick(conv.name, conv.productTitle, conv.vendorUserId, conv.isOnline) })
                         HorizontalDivider(Modifier.padding(start = 80.dp), color = Color(0xFFF0F0F0), thickness = 0.5.dp)
                     }
@@ -132,7 +138,7 @@ fun ConversationsScreen(
 }
 
 @Composable
-private fun SearchBar() {
+private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(12.dp),
         shape = RoundedCornerShape(20.dp),
@@ -140,12 +146,25 @@ private fun SearchBar() {
         border = BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
         Row(
-            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Default.Search, null, Modifier.size(20.dp), tint = Color.Gray)
             Spacer(Modifier.width(8.dp))
-            Text("Rechercher des contacts ou messages", color = Color.Gray, fontSize = 14.sp)
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text("Rechercher un contact...", color = Color.Gray, fontSize = 14.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 14.sp)
+            )
         }
     }
 }

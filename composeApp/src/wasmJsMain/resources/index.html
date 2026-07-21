@@ -21,7 +21,8 @@
       transition: opacity 0.5s;
     }
     #loading-screen.hidden { opacity: 0; pointer-events: none; }
-    #loading-logo { font-size: 32px; font-weight: bold; color: #FF9800; }
+    #loading-logo { font-size: 32px; font-weight: bold; color: #FF9800; text-align: center; }
+    #loading-msg { font-size: 14px; color: white; margin-top: 10px; opacity: 0.8; text-align: center; }
     .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #FF9800; border-radius: 50%; animation: spin .8s linear infinite; margin-top: 20px; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
@@ -30,6 +31,7 @@
   <div id="composeApp"></div>
   <div id="loading-screen">
     <div id="loading-logo">DSCHANG MARKET</div>
+    <div id="loading-msg">Chargement des ressources (8.8 Mo)...<br>Ceci peut prendre quelques secondes.</div>
     <div class="spinner"></div>
   </div>
   <script type="module" src="dschangmarket.mjs"></script>

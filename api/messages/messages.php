@@ -40,6 +40,8 @@ try {
     if ($method === 'GET') {
         $conversationWith = isset($_GET['conversation_with']) ? (int)$_GET['conversation_with'] : 0;
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $sinceId = isset($_GET['since_id']) ? (int)$_GET['since_id'] : 0;
+        $limit = isset($_GET['limit']) ? max(1, min(200, (int)$_GET['limit'])) : 200;
 
         if ($conversationWith > 0) {
             $sql = '
@@ -53,12 +55,17 @@ try {
             ';
             $params = [$userId, $conversationWith, $conversationWith, $userId];
 
+            if ($sinceId > 0) {
+                $sql .= ' AND m.id > ?';
+                $params[] = $sinceId;
+            }
+
             if ($search !== '') {
                 $sql .= ' AND m.text LIKE ?';
                 $params[] = "%$search%";
             }
 
-            $sql .= ' ORDER BY m.created_at ASC';
+            $sql .= ' ORDER BY m.created_at ASC LIMIT ' . $limit;
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);

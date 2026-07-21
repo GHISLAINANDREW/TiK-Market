@@ -24,24 +24,24 @@ try {
     $stmt->execute([$vendorId]);
     $shop = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$shop) {
-        echo json_encode(['error' => 'No shop found']);
+        json(404, ['error' => 'No shop found']);
         exit;
     }
     $shopId = $shop['id'];
 
     // 2. Overview stats
     // Products count
-    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND deleted_at IS NULL");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND is_active = 1");
     $stmt->execute([$shopId]);
     $productCount = (int)$stmt->fetch(PDO::FETCH_ASSOC)['cnt'];
 
     // Low stock products (< 5)
-    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND stock < 5 AND stock > 0 AND deleted_at IS NULL");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND stock < 5 AND stock > 0 AND is_active = 1");
     $stmt->execute([$shopId]);
     $lowStockCount = (int)$stmt->fetch(PDO::FETCH_ASSOC)['cnt'];
 
     // Out of stock
-    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND stock = 0 AND deleted_at IS NULL");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products WHERE shop_id = ? AND stock = 0 AND is_active = 1");
     $stmt->execute([$shopId]);
     $outOfStockCount = (int)$stmt->fetch(PDO::FETCH_ASSOC)['cnt'];
 
@@ -103,7 +103,7 @@ try {
                COALESCE(SUM(oi.price * oi.quantity), 0) as total_generated
         FROM products p
         LEFT JOIN order_items oi ON p.id = oi.product_id
-        WHERE p.shop_id = ? AND p.deleted_at IS NULL
+        WHERE p.shop_id = ? AND p.is_active = 1
         GROUP BY p.id, p.title, p.price
         ORDER BY total_sold DESC
         LIMIT 5
@@ -156,7 +156,7 @@ try {
         ];
     }, $monthlyData);
 
-    echo json_encode([
+    json(200, [
         'success' => true,
         'shop_name' => $shop['name'],
         'overview' => [
@@ -174,6 +174,5 @@ try {
     ]);
 
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    json(500, ['error' => $e->getMessage()]);
 }

@@ -149,12 +149,12 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val currentStatus = OrderStatus.fromCode(order.status)
                 when (currentStatus) {
-                    OrderStatus.PENDING -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { 
-                        Text("En attente de paiement", color = Orange, fontSize = 12.sp, fontWeight = FontWeight.Medium) 
-                    }
+                    OrderStatus.PENDING -> ActionButton("Confirmer la commande", Orange, Modifier.weight(1f)) { onUpdateStatus("confirmed") }
                     OrderStatus.CONFIRMED -> ActionButton("Commencer préparation", GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
                     OrderStatus.PREPARING -> ActionButton("Prêt pour livraison", Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
-                    OrderStatus.DELIVERING -> ActionButton("Confirmer réception", Green, Modifier.weight(1f)) { onUpdateStatus("delivered") }
+                    OrderStatus.DELIVERING -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { 
+                        Text("En cours de livraison...", color = Green, fontSize = 12.sp, fontWeight = FontWeight.Medium) 
+                    }
                     else -> {}
                 }
             }
