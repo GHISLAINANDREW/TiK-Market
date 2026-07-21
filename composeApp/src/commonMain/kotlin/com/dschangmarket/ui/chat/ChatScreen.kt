@@ -106,15 +106,23 @@ fun ChatScreen(
     var maxMessageId by remember { mutableStateOf(0) }
     var hasInitialLoad by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var userScrolledUp by remember { mutableStateOf(false) }
 
-    // Optimized: reload or fetch only new messages since maxMessageId
+    // Mark when user manually scrolls away from bottom
+    fun checkScrollPosition() {
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        val totalItems = messages.size
+        userScrolledUp = totalItems > 0 && lastVisible < totalItems - 3
+    }
+
+    // Optimized: fetch only new messages since maxMessageId
     fun refreshMessages() {
         if (isRefreshing) return
         scope.launch {
             isRefreshing = true
             try {
                 val newMsgs = if (hasInitialLoad) {
-                    ApiClient.fetchMessages(vendorId, limit = 50, sinceId = maxMessageId)
+                    ApiClient.fetchMessages(vendorId, limit = 100, sinceId = maxMessageId)
                 } else {
                     ApiClient.fetchMessages(vendorId, limit = 200)
                 }
@@ -138,20 +146,25 @@ fun ChatScreen(
                         reactions = msg.reactions
                     )
                 }
-                if (hasInitialLoad) {
-                    // Filter out incoming messages that were already sent locally (negative IDs)
-                    val incomingTexts = chatMsgs.map { it.text }
-                    val currentMessagesCleaned = messages.filter { it.id > 0 || !incomingTexts.contains(it.text) }
 
-                    // Append only new messages; play sound if from other user
-                    val hasNewFromOther = chatMsgs.any { it.senderId != currentUserId }
+                if (hasInitialLoad) {
+                    // Remove temp messages that now have a real server version
+                    val incomingIds = chatMsgs.map { it.id }.toSet()
+                    val cleaned = messages.filter { it.id > 0 || it.id !in incomingIds }
+
+                    // Append only genuinely new messages
+                    val existingIds = cleaned.map { it.id }.toSet()
+                    val trulyNew = chatMsgs.filter { it.id !in existingIds }
+
+                    val hasNewFromOther = trulyNew.any { it.senderId != currentUserId }
                     if (hasNewFromOther) playChatSound()
-                    messages = currentMessagesCleaned + chatMsgs
+
+                    messages = cleaned + trulyNew
                 } else {
-                    // Full initial load
                     messages = chatMsgs
                     hasInitialLoad = true
                 }
+
                 // Update max seen message id
                 newMsgs.maxOfOrNull { it.id }?.let { if (it > maxMessageId) maxMessageId = it }
                 // Mark as read if last message is from other user
@@ -164,15 +177,16 @@ fun ChatScreen(
         }
     }
 
-    // Kept for backward compatibility - delegates to optimized refreshMessages
+    // Kept for backward compatibility
     fun loadMessages() { refreshMessages() }
 
     fun sendMessage(text: String, dataUrl: String? = null, duration: Int = 0) {
         scope.launch {
             try {
+                val tempId = -(kotlin.random.Random.nextLong()).toInt()
                 if (dataUrl != null || text.isNotBlank()) {
                     val tempMsg = ChatMessage(
-                        id = -(kotlin.random.Random.nextLong()).toInt(),
+                        id = tempId,
                         senderId = currentUserId,
                         senderName = ApiClient.getCurrentUser()?.name ?: "Moi",
                         text = text,
@@ -184,23 +198,26 @@ fun ChatScreen(
                         repliedText = replyToMsg?.text
                     )
                     messages = messages + tempMsg
-                    scope.launch {
-                        delay(100)
-                        listState.animateScrollToItem(messages.size - 1)
-                    }
+                    userScrolledUp = false // ensure auto-scroll on own message
+                    listState.animateScrollToItem(messages.size - 1)
                 }
-                if (dataUrl != null) {
+                val sentMsg = if (dataUrl != null) {
                     ApiClient.sendMessage(vendorId, text, dataUrl, duration, repliedToId = replyToMsg?.id)
                 } else {
                     ApiClient.sendMessage(vendorId, text.trim(), repliedToId = replyToMsg?.id)
                 }
+                // Replace temp message with real one without full reload
+                val realId = sentMsg.id
+                if (realId > 0) {
+                    messages = messages.map { if (it.id == tempId) it.copy(id = realId) else it }
+                    if (realId > maxMessageId) maxMessageId = realId
+                }
                 messageText = ""
                 replyToMsg = null
-                loadMessages()
             } catch (_: Exception) {
                 messageText = ""
                 replyToMsg = null
-                loadMessages()
+                loadMessages() // fallback: reload on error
             }
         }
     }
@@ -252,19 +269,26 @@ fun ChatScreen(
 
     LaunchedEffect(Unit) { refreshMessages() }
 
-    // Only auto-scroll to bottom if the user is near the bottom (within 3 items)
-    // This prevents fighting the user when they scroll up to read history
+    // Auto-scroll to bottom only when user hasn't scrolled up
+    // Resets when they send a new message (userScrolledUp = false in sendMessage)
     LaunchedEffect(messages.size) {
         val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
         val totalItems = messages.size
-        val isNearBottom = lastVisible >= totalItems - 3
-        if (totalItems > 0 && isNearBottom) {
-            delay(200)
+        val isNearBottom = lastVisible >= totalItems - 2
+        if (totalItems > 0 && (isNearBottom || !userScrolledUp)) {
+            delay(150)
             listState.animateScrollToItem(messages.size - 1)
         }
     }
 
-    // Smart polling every 2s: only fetches NEW messages since maxMessageId (lightweight)
+    // Detect when user scrolls away from bottom
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            checkScrollPosition()
+        }
+    }
+
+    // Smart polling every 2s: only fetches NEW messages since maxMessageId
     LaunchedEffect(Unit) {
         delay(500) // initial delay to let first load complete
         while (true) {
