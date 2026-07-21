@@ -93,7 +93,6 @@ fun App(onExit: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showOnboarding by remember { mutableStateOf(OnboardingManager.isFirstLaunch()) }
-    var isAppReady by remember { mutableStateOf(false) }
 
     DschangTheme(darkTheme = appState.isDarkMode) {
         if (showOnboarding) {
@@ -104,7 +103,7 @@ fun App(onExit: () -> Unit = {}) {
                 }
             )
         } else {
-            // Restore session
+            // Restore session in background — does NOT block UI
             LaunchedEffect(Unit) {
                 ApiClient.initToken()
                 if (ApiClient.isLoggedIn()) {
@@ -142,29 +141,10 @@ fun App(onExit: () -> Unit = {}) {
                         appState.navigateTo(NavScreen.ProductDetail)
                     } catch (_: Exception) {}
                 }
-
-                delay(500)
-                isAppReady = true
             }
 
-            if (!isAppReady) {
-                SplashScreen()
-            } else {
-                MainContent(appState, onExit, scope, snackbarHostState)
-            }
-        }
-    }
-}
-
-@Composable
-fun SplashScreen() {
-    Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Storefront, null, modifier = Modifier.size(80.dp), tint = Color.White)
-            Spacer(Modifier.height(16.dp))
-            Text("DschangMarket", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(Modifier.height(8.dp))
-            CircularProgressIndicator(color = Color.White)
+            // Show MainContent IMMEDIATELY — data loads in background
+            MainContent(appState, onExit, scope, snackbarHostState)
         }
     }
 }
