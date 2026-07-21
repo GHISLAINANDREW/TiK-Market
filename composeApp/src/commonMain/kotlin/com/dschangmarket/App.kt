@@ -329,6 +329,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                         else if (appState.userRole == "admin") appState.navigateTo(NavScreen.AdminDashboard)
                         else appState.navigateTo(NavScreen.Profile)
                     } else {
+                        appState.isRegisterMode = true
                         appState.navigateTo(NavScreen.Auth)
                     }
                 },
@@ -512,8 +513,10 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onOrderClick = { appState.navigateTo(NavScreen.Orders) }
             )
             NavScreen.Auth -> AuthScreen(
-                onBack = { appState.goBack() },
+                onBack = { appState.goBack(); appState.isRegisterMode = false },
+                initialModeRegister = appState.isRegisterMode,
                 onLoginSuccess = { token, name, role ->
+                    appState.isRegisterMode = false
                     scope.launch {
                         ApiClient.setToken(token)
                         appState.isLoggedIn = true

@@ -67,6 +67,9 @@ class AppState(
     // Search History
     var searchHistory by mutableStateOf<List<String>>(emptyList())
 
+    // Registration mode (true = show register form instead of login)
+    var isRegisterMode by mutableStateOf(false)
+
     // Story Viewer
     var storyItems by mutableStateOf<List<StoryItem>>(emptyList())
     var storyIndex by mutableStateOf(0)

@@ -56,10 +56,11 @@ enum class AuthMode { Email, Google, Phone }
 @Composable
 fun AuthScreen(
     onLoginSuccess: (token: String, userName: String, userRole: String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    initialModeRegister: Boolean = false
 ) {
-    println("[Auth] AuthScreen chargé")
-    var isLogin by remember { mutableStateOf(true) }
+    println("[Auth] AuthScreen chargé (initialModeRegister=$initialModeRegister)")
+    var isLogin by remember { mutableStateOf(!initialModeRegister) }
     var authMode by remember { mutableStateOf<AuthMode>(AuthMode.Email) }
     var form by remember { mutableStateOf(AuthFormState()) }
     var showPassword by remember { mutableStateOf(false) }
