@@ -7,6 +7,57 @@ try {
     $db = getDB();
     $userId = getAuthUserId();
 
+    // ── Auto-migration: ensure wallets & loyalty_tiers tables exist ──
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS loyalty_tiers (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(20) NOT NULL UNIQUE,
+            min_points INT NOT NULL DEFAULT 0,
+            cashback_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+            bonus_pct DECIMAL(5,2) NOT NULL DEFAULT 0,
+            color VARCHAR(10) DEFAULT '#8D6E63',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        // Seed default tiers if empty
+        $check = $db->query("SELECT COUNT(*) FROM loyalty_tiers")->fetchColumn();
+        if ((int)$check === 0) {
+            $db->exec("INSERT INTO loyalty_tiers (name, min_points, cashback_pct, bonus_pct, color) VALUES
+                ('bronze', 0, 1.0, 0, '#8D6E63'),
+                ('argent', 100, 2.0, 5, '#9E9E9E'),
+                ('or', 500, 3.0, 10, '#FFD700')");
+        }
+    } catch (Exception $e) { error_log("Migration loyalty_tiers: " . $e->getMessage()); }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS wallets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL UNIQUE,
+            balance INT NOT NULL DEFAULT 0,
+            total_points INT NOT NULL DEFAULT 0,
+            current_points INT NOT NULL DEFAULT 0,
+            tier VARCHAR(20) NOT NULL DEFAULT 'bronze',
+            lifetime_spent INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+    } catch (Exception $e) { error_log("Migration wallets: " . $e->getMessage()); }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS wallet_transactions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            wallet_id INT NOT NULL,
+            type VARCHAR(20) NOT NULL DEFAULT 'earn',
+            amount_fcfa INT NOT NULL DEFAULT 0,
+            points INT NOT NULL DEFAULT 0,
+            description TEXT,
+            reference_type VARCHAR(20) DEFAULT NULL,
+            reference_id INT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE
+        )");
+    } catch (Exception $e) { error_log("Migration wallet_transactions: " . $e->getMessage()); }
+
     $stmt = $db->prepare('
         SELECT w.*, lt.name as tier_name, lt.cashback_pct, lt.bonus_pct, lt.color as tier_color
         FROM wallets w
