@@ -10,6 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DschangMarket">
   <meta name="theme-color" content="#1B5E20">
+  <!-- Preload critical wasm modules for early loading -->
+  <link rel="preload" as="fetch" crossorigin="anonymous" href="dd568dbcd078c0adf7cf.wasm">
+  <link rel="preload" as="fetch" crossorigin="anonymous" href="skiko.wasm">
+  <link rel="modulepreload" href="dschangmarket.mjs">
+  <link rel="modulepreload" href="skiko.mjs">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -20,7 +25,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       background: #1B5E20;
       z-index: 9999;
-      transition: opacity 0.3s ease-out;
+      transition: opacity 0.25s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
     .splash-icon {
@@ -52,28 +57,21 @@
     (function() {
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
-      var hidden = false;
 
-      function hideSplash() {
-        if (hidden) return;
-        hidden = true;
-        splash.classList.add('hidden');
-      }
-
-      // Detect when Compose app renders inside #composeApp
+      // Hide splash when Compose app renders content
       var observer = new MutationObserver(function() {
-        if (appEl.children.length > 0 || appEl.textContent.trim() !== '') {
-          hideSplash();
+        if (appEl.children.length > 0) {
+          splash.classList.add('hidden');
           observer.disconnect();
         }
       });
-      observer.observe(appEl, { childList: true, subtree: true, characterData: true });
+      observer.observe(appEl, { childList: true, subtree: true });
 
-      // Fallback: hide after 30s max
-      setTimeout(hideSplash, 30000);
+      // Safety fallback
+      setTimeout(function() { splash.classList.add('hidden'); }, 30000);
     })();
 
-    // Register Service Worker for instant 2nd-load
+    // Register Service Worker early for instant 2nd-load
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(function() {});
     }
