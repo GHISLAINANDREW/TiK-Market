@@ -58,7 +58,6 @@ class AppState(
     
     // Data Cache
     var cachedProducts by mutableStateOf<List<Product>>(emptyList())
-    var cachedStories by mutableStateOf<List<Product>>(emptyList())
     var cachedCategories by mutableStateOf<List<String>>(emptyList())
     var wishlistProductIds by mutableStateOf<Set<Int>>(emptySet())
 

@@ -362,16 +362,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onSearchQuerySubmit = { query -> appState.addSearchQuery(query) },
                 isLoggedIn = appState.isLoggedIn,
                 userRole = appState.userRole,
-                onStoryClick = { stories, index ->
-                    val items = stories.map { product ->
-                        com.dschangmarket.ui.story.StoryItem(
-                            title = product.shopName,
-                            subtitle = product.title,
-                            imageUrl = product.images.firstOrNull() ?: "",
-                            product = product
-                        )
-                    }
-                    appState.storyItems = items
+                onStoryClick = { storyItems, index ->
+                    appState.storyItems = storyItems
                     appState.storyIndex = index
                     appState.navigateTo(NavScreen.StoryViewer)
                 },
@@ -385,17 +377,12 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                             val shop = ApiClient.fetchShopByVendor()
                             if (shop != null) {
                                 val uploadedUrl = ApiClient.uploadImage(dataUrl, name)
-                                ApiClient.createProduct(
+                                // Use new dedicated stories API
+                                val mediaType = if (name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov")) "video" else "image"
+                                ApiClient.createStory(
                                     shopId = shop.id,
-                                    title = "Story de ${shop.name}",
-                                    description = "Story partagée via DschangMarket",
-                                    price = 0.0,
-                                    comparePrice = null,
-                                    category = "Stories",
-                                    stock = 1,
-                                    unit = "story",
-                                    imageUrl = uploadedUrl,
-                                    isStory = true
+                                    mediaUrl = uploadedUrl,
+                                    mediaType = mediaType
                                 )
                                 snackbarJob.cancel()
                                 appState.refreshSignal++
@@ -411,12 +398,10 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 },
                 refreshSignal = appState.refreshSignal,
                 cachedProducts = appState.cachedProducts,
-                cachedStories = appState.cachedStories,
                 cachedCategories = appState.cachedCategories,
                 wishlistProductIds = appState.wishlistProductIds,
-                onCacheData = { p, s, c, w ->
+                onCacheData = { p, c, w ->
                     appState.cachedProducts = p
-                    appState.cachedStories = s
                     appState.cachedCategories = c
                     appState.wishlistProductIds = w
                 }
@@ -872,18 +857,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                         appState.navigateTo(NavScreen.Chat)
                     }
                 },
-                onDeleteStory = { product ->
-                    scope.launch {
-                        try {
-                            ApiClient.deleteProduct(product.id.toInt())
-                            snackbarHostState.showSnackbar("Story supprimée")
-                            appState.refreshSignal++
-                            appState.goBack()
-                        } catch (e: Exception) {
-                            showError("Erreur lors de la suppression")
-                        }
-                    }
-                },
+                onRefreshStories = { appState.refreshSignal++ },
                 currentUserId = appState.currentUser?.id ?: 0
             )
             NavScreen.MyGroupBuys -> MyGroupBuysScreen(

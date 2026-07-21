@@ -22,10 +22,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dschangmarket.api.ApiClient
 import com.dschangmarket.data.models.Product
 import com.dschangmarket.theme.*
 import com.dschangmarket.ui.components.loadImageFromUrl
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/**
+ * Enhanced StoryItem supporting both legacy Product-based stories
+ * and new standalone stories from the stories API.
+ */
+data class StoryItem(
+    val title: String,
+    val subtitle: String = "",
+    val imageUrl: String = "",
+    val product: Product? = null,
+    // New fields for standalone stories
+    val storyId: Int = 0,
+    val shopId: Int = 0,
+    val vendorId: Int = 0,
+    val mediaType: String = "image", // "image" or "video"
+    val caption: String? = null,
+    val replyCount: Int = 0,
+    val userId: Int = 0,
+    val userAvatar: String? = null,
+    val shopLogo: String? = null
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,31 +59,32 @@ fun StoryViewerScreen(
     onProductClick: (Product) -> Unit,
     onReply: ((String, Product) -> Unit)? = null,
     onDeleteStory: ((Product) -> Unit)? = null,
-    currentUserId: Int = 0
+    currentUserId: Int = 0,
+    onRefreshStories: () -> Unit = {}
 ) {
     var currentIndex by remember { mutableStateOf(initialIndex.coerceIn(0, stories.lastIndex)) }
     var progress by remember { mutableStateOf(0f) }
     var isPaused by remember { mutableStateOf(false) }
     var replyText by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val storyDurationMs = 5000L // 5 seconds per story
 
     // Auto-advance timer using delay
     LaunchedEffect(currentIndex, isPaused) {
         if (isPaused || stories.isEmpty()) return@LaunchedEffect
-        val totalTicks = 100 // 100 steps
+        val totalTicks = 100
         val tickMs = storyDurationMs / totalTicks
         for (step in 1..totalTicks) {
             delay(tickMs)
             if (isPaused) return@LaunchedEffect
             progress = step.toFloat() / totalTicks
         }
-        // Story finished
         if (currentIndex < stories.lastIndex) {
             currentIndex++
             progress = 0f
         } else {
             onBack()
-            return@LaunchedEffect
         }
     }
 
@@ -78,7 +102,7 @@ fun StoryViewerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Story content
+        // Story image content
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (currentStory.imageUrl.isNotBlank()) {
                 var bitmap by remember(currentIndex, currentStory.imageUrl) {
@@ -95,11 +119,8 @@ fun StoryViewerScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    // Fallback gradient
                     Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Green),
+                        Modifier.fillMaxSize().background(Green),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -108,6 +129,25 @@ fun StoryViewerScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
+                    }
+                }
+                // Video indicator overlay
+                if (currentStory.mediaType == "video") {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.7f)
+                        ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                null,
+                                modifier = Modifier.padding(16.dp).size(48.dp),
+                                tint = Color.Black
+                            )
+                        }
                     }
                 }
             } else {
@@ -136,10 +176,8 @@ fun StoryViewerScreen(
         }
 
         // Touch areas for navigation (left=prev, right=next)
-        // Use clickable on the whole screen with pause on tap
         Box(Modifier.fillMaxSize().clickable { isPaused = !isPaused })
 
-        // Semi-transparent zones for prev/next
         Row(Modifier.fillMaxSize()) {
             Box(
                 Modifier
@@ -162,9 +200,8 @@ fun StoryViewerScreen(
             )
         }
 
-        // Top bar with progress bars and close button
         Column(Modifier.fillMaxSize()) {
-            // Progress bars
+            // ── Progress bars ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -199,14 +236,14 @@ fun StoryViewerScreen(
                 }
             }
 
-            // Story header (shop name + close)
+            // ── Header (avatar + shop name + caption info + close) ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Shop avatar
+                // Avatar or initial
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -239,10 +276,29 @@ fun StoryViewerScreen(
                         )
                     }
                 }
-                
-                // Delete button for owner
-                if (currentStory.product != null && currentStory.product.vendorId.toIntOrNull() == currentUserId) {
-                    IconButton(onClick = { onDeleteStory?.invoke(currentStory.product) }) {
+
+                // Delete button (owner only)
+                val isOwner = currentUserId > 0 && (
+                    currentStory.userId == currentUserId ||
+                    (currentStory.product?.vendorId?.toIntOrNull() == currentUserId)
+                )
+                if (isOwner) {
+                    IconButton(onClick = {
+                        scope.launch {
+                            try {
+                                if (currentStory.storyId > 0) {
+                                    ApiClient.deleteStory(currentStory.storyId)
+                                } else if (currentStory.product != null) {
+                                    onDeleteStory?.invoke(currentStory.product)
+                                }
+                                snackbarHostState.showSnackbar("Story supprimée")
+                                onRefreshStories()
+                                onBack()
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Erreur: ${e.message}")
+                            }
+                        }
+                    }) {
                         Icon(Icons.Default.Delete, "Supprimer", tint = Color.White)
                     }
                 }
@@ -250,6 +306,27 @@ fun StoryViewerScreen(
                 Spacer(Modifier.width(8.dp))
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.Close, null, tint = Color.White)
+                }
+            }
+
+            // ── Caption / Note (if present) ──
+            if (!currentStory.caption.isNullOrBlank()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    color = Color.Black.copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        currentStory.caption,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(12.dp),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
@@ -285,13 +362,35 @@ fun StoryViewerScreen(
                     Spacer(Modifier.width(8.dp))
                     IconButton(
                         onClick = {
-                            if (replyText.isNotBlank() && currentStory.product != null) {
-                                val msg = "📲 Story: ${currentStory.product.title}\n${replyText.trim()}"
+                            if (replyText.isNotBlank()) {
+                                val msgText = replyText.trim()
                                 replyText = ""
-                                onReply?.invoke(msg, currentStory.product)
+                                scope.launch {
+                                    try {
+                                        // For new standalone stories → use API
+                                        if (currentStory.storyId > 0 && currentStory.shopId > 0) {
+                                            // Send private message to the vendor (not story reply)
+                                            val vendorId = if (currentStory.vendorId > 0) currentStory.vendorId
+                                                else ApiClient.fetchShopById(currentStory.shopId)?.vendorId ?: 0
+                                            if (vendorId > 0) {
+                                                val msg = "📲 Story: ${currentStory.title}\n$msgText"
+                                                ApiClient.sendMessage(receiverId = vendorId, text = msg)
+                                                snackbarHostState.showSnackbar("Message envoyé au vendeur")
+                                            } else {
+                                                snackbarHostState.showSnackbar("Impossible d'identifier le vendeur")
+                                            }
+                                        } else if (currentStory.product != null) {
+                                            // Legacy: use onReply callback
+                                            val msg = "📲 Story: ${currentStory.product.title}\n$msgText"
+                                            onReply?.invoke(msg, currentStory.product)
+                                        }
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Erreur: ${e.message}")
+                                    }
+                                }
                             }
                         },
-                        enabled = replyText.isNotBlank() && currentStory.product != null
+                        enabled = replyText.isNotBlank()
                     ) {
                         Icon(
                             Icons.Default.Send,
@@ -303,7 +402,7 @@ fun StoryViewerScreen(
                 }
             }
 
-            // Bottom action area (product card)
+            // ── Bottom product card (for legacy Product stories) ──
             if (currentStory.product != null) {
                 Surface(
                     modifier = Modifier
@@ -362,12 +461,11 @@ fun StoryViewerScreen(
                 }
             }
         }
+
+        // Snackbar host for toasts
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp)
+        )
     }
 }
-
-data class StoryItem(
-    val title: String,
-    val subtitle: String = "",
-    val imageUrl: String = "",
-    val product: Product? = null
-)
