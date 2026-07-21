@@ -123,7 +123,7 @@ fun HomeScreen(
             )
         }
         if (result.isSuccess) {
-            localProducts = result.getOrDefault(emptyList()).map { it.toProduct() }
+            localProducts = result.getOrDefault(emptyList()).map { it.toProduct() }.filter { !it.isStory }
             onCacheData(localProducts, localCategories, localWishlist)
         } else {
             val err = (result as? com.dschangmarket.utils.ApiResult.Error)?.message ?: "Erreur inconnue"
