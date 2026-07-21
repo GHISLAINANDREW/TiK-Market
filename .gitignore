@@ -59,3 +59,6 @@ features-proposal.md
 *.bat
 !gradlew.bat
 kotlin-js-store/
+
+.vercel
+.env*
