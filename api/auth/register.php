@@ -37,6 +37,16 @@ if (!in_array($role, $allowedRoles)) {
 try {
     $db = getDB();
 
+    // Auto-migration: ensure referral columns exist
+    try {
+        $check = $db->query("SHOW COLUMNS FROM users LIKE 'referral_code'")->fetch();
+        if (!$check) {
+            $db->exec("ALTER TABLE users ADD COLUMN referral_code VARCHAR(20) UNIQUE AFTER avatar");
+            $db->exec("ALTER TABLE users ADD COLUMN referred_by INT NULL AFTER referral_code");
+            $db->exec("ALTER TABLE users ADD CONSTRAINT fk_referred_by FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL");
+        }
+    } catch (Exception $e) {}
+
     $stmt = $db->prepare('SELECT id FROM users WHERE email = ?');
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
