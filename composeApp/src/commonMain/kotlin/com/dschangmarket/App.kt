@@ -124,6 +124,9 @@ fun App(onExit: () -> Unit = {}) {
                     }
                 }
                 
+                // Trigger full refresh (stories, products, etc.) after login restored
+                appState.refreshSignal++
+
                 // Fetch unread counts initially
                 if (appState.isLoggedIn) {
                     try {
