@@ -4,6 +4,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Platform');
 
+date_default_timezone_set('Africa/Douala');
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
 /**
@@ -35,6 +37,7 @@ function getDB(): PDO {
     // TLS encryption is still used if the server requires it.
     try {
         $pdo = new PDO($dsn, $user, $pass, $options);
+        $pdo->exec("SET time_zone = '+01:00'"); // Cameroon time
         return $pdo;
     } catch (PDOException $e) {
         // Last resort: try with explicit SSL options

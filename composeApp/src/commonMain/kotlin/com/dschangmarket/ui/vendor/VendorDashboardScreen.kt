@@ -41,23 +41,31 @@ fun VendorDashboardScreen(
     onSubscribers: () -> Unit = {},
     refreshSignal: Int = 0
 ) {
+    var internalRefresh by remember { mutableStateOf(0) }
     var stats by remember { mutableStateOf<ApiVendorStatsResponse?>(null) }
     var myProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(refreshSignal) {
+    LaunchedEffect(refreshSignal, internalRefresh) {
         isLoading = true
         try {
-            stats = ApiClient.fetchVendorStats()
+            val response = ApiClient.fetchVendorStats()
+            if (response.success) {
+                stats = response
+            } else {
+                stats = null
+            }
             // Fetch all products of the shop
             val shop = ApiClient.fetchShopByVendor()
             if (shop != null) {
-                val products = ApiClient.fetchProducts().filter { it.shopId == shop.id }
+                val products = ApiClient.fetchProducts(shopId = shop.id, includeInactive = true)
                 myProducts = products.map { it.toProduct() }
             }
-        } catch (_: Exception) { }
+        } catch (_: Exception) { 
+            stats = null
+        }
         isLoading = false
     }
 
@@ -84,6 +92,11 @@ fun VendorDashboardScreen(
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
+                actions = {
+                    IconButton(onClick = { internalRefresh++ }) {
+                        Icon(Icons.Default.Refresh, null, tint = Color.White)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
         }) { padding ->
@@ -100,7 +113,11 @@ fun VendorDashboardScreen(
                 } else {
                     // ── Stats cards ──
                     item {
-                        if (displayStats.isNotEmpty()) {
+                        if (isLoading) {
+                             Box(Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Green)
+                             }
+                        } else if (displayStats.isNotEmpty()) {
                             if (isCompact) {
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     displayStats.chunked(2).forEach { row ->
@@ -114,6 +131,10 @@ fun VendorDashboardScreen(
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     displayStats.forEach { stat -> StatCard(stat, Modifier.weight(1f)) }
                                 }
+                            }
+                        } else {
+                            Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                                Text("Aucune statistique disponible", color = Color.Gray)
                             }
                         }
                     }

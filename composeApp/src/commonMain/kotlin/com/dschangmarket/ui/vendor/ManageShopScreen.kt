@@ -100,7 +100,7 @@ fun ManageShopScreen(
                     existingLogoBitmap = loadImageFromUrl(finalUrl)
                 }
 
-                val allProducts = ApiClient.fetchProducts()
+                val allProducts = ApiClient.fetchProducts(includeInactive = true)
                 products = allProducts.filter { it.shopId == shop.id }
             }
         } catch (_: Exception) { }

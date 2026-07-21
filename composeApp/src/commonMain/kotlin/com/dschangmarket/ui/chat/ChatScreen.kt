@@ -103,52 +103,69 @@ fun ChatScreen(
     }
     var productSentToApi by remember { mutableStateOf(false) }
 
-    fun loadMessages() {
+    var maxMessageId by remember { mutableStateOf(0) }
+    var hasInitialLoad by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    // Optimized: reload or fetch only new messages since maxMessageId
+    fun refreshMessages() {
+        if (isRefreshing) return
         scope.launch {
+            isRefreshing = true
             try {
-                val apiMessages = ApiClient.fetchMessages(vendorId)
-                val newMessages = apiMessages.map { msg ->
+                val newMsgs = if (hasInitialLoad) {
+                    ApiClient.fetchMessages(vendorId, limit = 50, sinceId = maxMessageId)
+                } else {
+                    ApiClient.fetchMessages(vendorId, limit = 200)
+                }
+
+                if (newMsgs.isEmpty()) {
+                    if (!hasInitialLoad) {
+                        hasInitialLoad = true
+                        isLoading = false
+                    }
+                    return@launch
+                }
+
+                val chatMsgs = newMsgs.map { msg ->
                     ChatMessage(
-                        id = msg.id,
-                        senderId = msg.senderId,
-                        senderName = msg.senderName,
-                        text = msg.text,
-                        audioUrl = msg.audioUrl,
-                        duration = msg.duration,
-                        timestamp = msg.createdAt,
-                        isRead = msg.isRead,
-                        productId = msg.productId,
-                        productTitle = msg.productTitle,
+                        id = msg.id, senderId = msg.senderId, senderName = msg.senderName,
+                        text = msg.text, audioUrl = msg.audioUrl, duration = msg.duration,
+                        timestamp = msg.createdAt, isRead = msg.isRead,
+                        productId = msg.productId, productTitle = msg.productTitle,
                         productImageUrl = msg.productImageUrl,
-                        repliedToId = msg.repliedToId,
-                        repliedText = msg.repliedText,
+                        repliedToId = msg.repliedToId, repliedText = msg.repliedText,
                         reactions = msg.reactions
                     )
                 }
-                if (newMessages.size != messages.size || newMessages.lastOrNull()?.id != messages.lastOrNull()?.id) {
-                    if (messages.isNotEmpty() && newMessages.size > messages.size) {
-                        val lastNew = newMessages.last()
-                        if (lastNew.senderId != currentUserId) {
-                            playChatSound()
-                        }
-                    }
-                    messages = newMessages
-                    if (messages.isNotEmpty()) {
-                        scope.launch {
-                            delay(100)
-                            listState.animateScrollToItem(messages.size)
-                        }
-                    }
-                    if (newMessages.lastOrNull()?.senderId != currentUserId) {
-                        ApiClient.markMessagesAsRead(vendorId)
-                    }
+                if (hasInitialLoad) {
+                    // Filter out incoming messages that were already sent locally (negative IDs)
+                    val incomingTexts = chatMsgs.map { it.text }
+                    val currentMessagesCleaned = messages.filter { it.id > 0 || !incomingTexts.contains(it.text) }
+
+                    // Append only new messages; play sound if from other user
+                    val hasNewFromOther = chatMsgs.any { it.senderId != currentUserId }
+                    if (hasNewFromOther) playChatSound()
+                    messages = currentMessagesCleaned + chatMsgs
+                } else {
+                    // Full initial load
+                    messages = chatMsgs
+                    hasInitialLoad = true
+                }
+                // Update max seen message id
+                newMsgs.maxOfOrNull { it.id }?.let { if (it > maxMessageId) maxMessageId = it }
+                // Mark as read if last message is from other user
+                if (messages.lastOrNull()?.senderId != currentUserId) {
+                    ApiClient.markMessagesAsRead(vendorId)
                 }
                 isLoading = false
-            } catch (_: Exception) {
-                isLoading = false
-            }
+            } catch (_: Exception) { isLoading = false }
+            isRefreshing = false
         }
     }
+
+    // Kept for backward compatibility - delegates to optimized refreshMessages
+    fun loadMessages() { refreshMessages() }
 
     fun sendMessage(text: String, dataUrl: String? = null, duration: Int = 0) {
         scope.launch {
@@ -233,24 +250,26 @@ fun ChatScreen(
         }
     }
 
-    var prevMessageCount by remember { mutableStateOf(-1) }
+    LaunchedEffect(Unit) { refreshMessages() }
 
-    LaunchedEffect(Unit) { loadMessages() }
-
+    // Only auto-scroll to bottom if the user is near the bottom (within 3 items)
+    // This prevents fighting the user when they scroll up to read history
     LaunchedEffect(messages.size) {
-        if (messages.isEmpty()) return@LaunchedEffect
-        val prev = prevMessageCount
-        prevMessageCount = messages.size
-        if (prev < messages.size) {
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        val totalItems = messages.size
+        val isNearBottom = lastVisible >= totalItems - 3
+        if (totalItems > 0 && isNearBottom) {
             delay(200)
             listState.animateScrollToItem(messages.size - 1)
         }
     }
 
+    // Smart polling every 2s: only fetches NEW messages since maxMessageId (lightweight)
     LaunchedEffect(Unit) {
+        delay(500) // initial delay to let first load complete
         while (true) {
-            delay(1000)
-            loadMessages()
+            delay(2000)
+            refreshMessages()
         }
     }
 
@@ -998,10 +1017,10 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
             ) {
                 // Generate realistic-looking voice waveform
                 val bars = listOf(
-                    6, 10, 14, 18, 22, 26, 30, 24, 20, 16, 12, 8,
-                    12, 18, 24, 28, 32, 28, 22, 16, 10, 14, 20, 26,
-                    30, 34, 30, 24, 18, 12, 8, 14, 20, 26, 32, 28,
-                    22, 16, 10, 6, 10, 16, 22, 28, 24, 18, 12, 8
+                    8, 12, 18, 24, 28, 32, 28, 22, 16, 12,
+                    10, 16, 22, 28, 34, 38, 34, 26, 18, 12,
+                    8, 14, 20, 26, 30, 26, 20, 14, 10, 8,
+                    12, 18, 24, 28, 32, 28, 22, 16, 10, 6
                 )
                 val totalBars = bars.size
                 bars.forEachIndexed { i, h ->

@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -210,6 +211,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
 
     Scaffold(
         modifier = Modifier.statusBarsPadding(),
+        containerColor = Color.Transparent, // Transparent to show gradient
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (!hideBottomBar) {
@@ -217,8 +219,24 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
             }
         }
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            AppNavigation(appState, scope, snackbarHostState)
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
+                    )
+                )
+        ) {
+            // "Transparent" overlay effect
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .padding(padding)
+            ) {
+                AppNavigation(appState, scope, snackbarHostState)
+            }
         }
     }
 }
@@ -391,7 +409,17 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                         }
                     }
                 },
-                refreshSignal = appState.refreshSignal
+                refreshSignal = appState.refreshSignal,
+                cachedProducts = appState.cachedProducts,
+                cachedStories = appState.cachedStories,
+                cachedCategories = appState.cachedCategories,
+                wishlistProductIds = appState.wishlistProductIds,
+                onCacheData = { p, s, c, w ->
+                    appState.cachedProducts = p
+                    appState.cachedStories = s
+                    appState.cachedCategories = c
+                    appState.wishlistProductIds = w
+                }
             )
             NavScreen.ProductDetail -> appState.selectedProduct?.let { product ->
                 ProductDetailScreen(

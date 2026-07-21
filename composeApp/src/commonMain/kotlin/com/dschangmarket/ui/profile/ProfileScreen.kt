@@ -175,7 +175,8 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = Color.White,
-                    shadowElevation = 0.5.dp
+                    shadowElevation = 0.5.dp,
+                    onClick = onOrdersClick // Whole section is clickable
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

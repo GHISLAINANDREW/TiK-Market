@@ -66,7 +66,13 @@ fun HomeScreen(
     userRole: String = "buyer",
     onStoryClick: (List<Product>, Int) -> Unit = { _, _ -> },
     onAddStory: (String, String) -> Unit = { _, _ -> },
-    refreshSignal: Int = 0
+    refreshSignal: Int = 0,
+    // Data Cache from AppState
+    cachedProducts: List<Product> = emptyList(),
+    cachedStories: List<Product> = emptyList(),
+    cachedCategories: List<String> = emptyList(),
+    wishlistProductIds: Set<Int> = emptySet(),
+    onCacheData: (products: List<Product>, stories: List<Product>, categories: List<String>, wishlist: Set<Int>) -> Unit = { _, _, _, _ -> }
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchFocused by remember { mutableStateOf(false) }
@@ -77,11 +83,22 @@ fun HomeScreen(
     var showFilters by remember { mutableStateOf(false) }
     var isNearMeSelected by remember { mutableStateOf(false) }
     var userLocationName by remember { mutableStateOf<String?>(null) }
-    var categories by remember { mutableStateOf<List<String>>(emptyList()) }
-    var apiProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    
+    var localCategories by remember { mutableStateOf(cachedCategories) }
+    var localProducts by remember { mutableStateOf(cachedProducts) }
+    var localStories by remember { mutableStateOf(cachedStories) }
+    var localWishlist by remember { mutableStateOf(wishlistProductIds) }
+    
+    // Sync with outside cache when it changes (optional but safer)
+    LaunchedEffect(cachedProducts, cachedStories, cachedCategories, wishlistProductIds) {
+        if (cachedProducts.isNotEmpty()) localProducts = cachedProducts
+        if (cachedStories.isNotEmpty()) localStories = cachedStories
+        if (cachedCategories.isNotEmpty()) localCategories = cachedCategories
+        if (wishlistProductIds.isNotEmpty()) localWishlist = wishlistProductIds
+    }
+    
+    var isLoading by remember { mutableStateOf(localProducts.isEmpty() && localStories.isEmpty()) }
     var isRefreshing by remember { mutableStateOf(false) }
-    var wishlistProductIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val scope = rememberCoroutineScope()
 
     val pickMedia = rememberImagePickerLauncher { result ->
@@ -91,7 +108,9 @@ fun HomeScreen(
     }
 
     // Load from API
-    suspend fun loadProducts() {
+    suspend fun loadProducts(force: Boolean = false) {
+        if (!force && localProducts.isNotEmpty() && searchQuery.isBlank() && selectedCategory == null) return
+        
         val cat = if (selectedCategory == "Tout") null else selectedCategory
         val minP = minPrice.toDoubleOrNull()
         val maxP = maxPrice.toDoubleOrNull()
@@ -105,10 +124,12 @@ fun HomeScreen(
             )
         }
         if (result.isSuccess) {
-            apiProducts = result.getOrDefault(emptyList()).map { it.toProduct() }
+            val all = result.getOrDefault(emptyList()).map { it.toProduct() }
+            localProducts = all.filter { !it.isStory }
+            localStories = all.filter { it.isStory }
+            onCacheData(localProducts, localStories, localCategories, localWishlist)
         } else {
             val err = (result as? com.dschangmarket.utils.ApiResult.Error)?.message ?: "Erreur inconnue"
-            println("[HomeScreen] API Error: $err")
             onError(err)
         }
     }
@@ -118,43 +139,46 @@ fun HomeScreen(
         if (!ApiClient.isLoggedIn()) return
         val result = safeApiCall { ApiClient.fetchWishlist() }
         if (result.isSuccess) {
-            wishlistProductIds = result.getOrDefault(emptyList()).map { it.productId }.toSet()
+            localWishlist = result.getOrDefault(emptyList()).map { it.productId }.toSet()
+            onCacheData(localProducts, localStories, localCategories, localWishlist)
         }
     }
 
     fun toggleFavorite(productId: Int) {
         scope.launch {
-            if (productId in wishlistProductIds) {
+            if (productId in localWishlist) {
                 safeApiCall { ApiClient.removeFromWishlist(productId) }
-                wishlistProductIds = wishlistProductIds - productId
+                localWishlist = localWishlist - productId
             } else {
                 safeApiCall { ApiClient.addToWishlist(productId) }
-                wishlistProductIds = wishlistProductIds + productId
+                localWishlist = localWishlist + productId
             }
+            onCacheData(localProducts, localStories, localCategories, localWishlist)
         }
     }
 
     // Load from API on first composition or refresh signal
     LaunchedEffect(refreshSignal) {
-        println("[HomeScreen] Fetching products (signal=$refreshSignal)...")
-        loadProducts()
+        loadProducts(force = true)
         loadWishlist()
         isLoading = false
     }
 
     LaunchedEffect(Unit) {
-        try { categories = ApiClient.fetchCategories() } catch (_: Exception) { }
+        if (localCategories.isEmpty()) {
+            try { 
+                localCategories = ApiClient.fetchCategories() 
+                onCacheData(localProducts, localStories, localCategories, localWishlist)
+            } catch (_: Exception) { }
+        }
     }
 
     LaunchedEffect(searchQuery, selectedCategory, minPrice, maxPrice, sortBy) {
         if (searchQuery.isNotEmpty()) delay(300)
-        loadProducts()
+        loadProducts(force = true)
     }
 
-    val displayProducts = apiProducts
-
-    val filteredProducts = displayProducts.filter { p ->
-        !p.isStory &&
+    val filteredProducts = localProducts.filter { p ->
         (selectedShopName == null || p.shopName == selectedShopName) &&
         (selectedCategory == null || p.category == selectedCategory) &&
         (searchQuery.isBlank() || p.title.contains(searchQuery, ignoreCase = true) || p.shopName.contains(searchQuery, ignoreCase = true))
@@ -327,7 +351,7 @@ fun HomeScreen(
                 }
 
                 // Arrivages du jour (Stories) — show if stories exist OR if user is a vendor
-                val stories = apiProducts.filter { it.isStory }
+                val stories = localStories
                 
                 if (stories.isNotEmpty() || userRole == "vendor") {
                     item {
@@ -428,7 +452,7 @@ fun HomeScreen(
                 }
 
                 // Categories horizontal scroll
-                if (categories.isNotEmpty()) {
+                if (localCategories.isNotEmpty()) {
                     item {
                         Column(Modifier.padding(vertical = 4.dp)) {
                             Row(
@@ -439,7 +463,7 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val allCats = listOf("Tout") + categories
+                                val allCats = listOf("Tout") + localCategories
                                 allCats.forEach { cat ->
                                     val isSelected = (cat == "Tout" && selectedCategory == null) || cat == selectedCategory
                                     FilterChip(
@@ -661,22 +685,22 @@ fun AnimatedHeroSection(screenWidth: Dp) {
         Triple(
             "Boutique de Will", 
             "Les produits de Will : qualité & excellence", 
-            "https://images.unsplash.com/photo-1587593810167-a84920ea0781"
+            "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=800&q=80"
         ),
         Triple(
             "Marché de Dschang", 
             "Le terroir authentique à votre porte", 
-            "https://images.unsplash.com/photo-1594142510255-a4968875560b"
+            "https://images.unsplash.com/photo-1594142510255-a4968875560b?w=800&q=80"
         ),
         Triple(
             "Mode & Tissus", 
             "L'élégance du pagne traditionnel", 
-            "https://images.unsplash.com/photo-1523381210434-271e8be1f52b"
+            "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&q=80"
         ),
         Triple(
             "Technologie", 
             "Smartphone et gadgets au centre-ville", 
-            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf"
+            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&q=80"
         )
     )
     

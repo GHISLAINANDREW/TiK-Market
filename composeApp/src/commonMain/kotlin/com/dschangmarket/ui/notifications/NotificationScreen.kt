@@ -188,7 +188,7 @@ fun NotificationItem(
             }
 
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "Supprimer", tint = Color.LightGray, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
             }
         }
     }

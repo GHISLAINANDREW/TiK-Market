@@ -85,6 +85,17 @@ fun OrdersScreen(
                                     snackbarHostState.showSnackbar("Erreur : ${e.message ?: "impossible d'annuler"}")
                                 }
                             }
+                        },
+                        onConfirmDelivery = {
+                            scope.launch {
+                                try {
+                                    ApiClient.confirmOrderReceived(order.id)
+                                    snackbarHostState.showSnackbar("✅ Réception confirmée. Merci !")
+                                    refreshOrders()
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: "action impossible"}")
+                                }
+                            }
                         }
                     )
                 }
@@ -98,13 +109,16 @@ private fun OrderCard(
     order: ApiOrder,
     onPay: () -> Unit,
     onContactVendor: (Int) -> Unit = {},
-    onCancel: () -> Unit = {}
+    onCancel: () -> Unit = {},
+    onConfirmDelivery: () -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
     val isDirect = order.paymentType == "direct"
     val orderStatus = OrderStatus.fromCode(order.status)
     val canCancel = orderStatus == OrderStatus.PENDING
+    val canConfirmDelivery = orderStatus == OrderStatus.DELIVERING
 
     // Cancel confirmation dialog
     if (showCancelDialog) {
@@ -120,6 +134,24 @@ private fun OrderCard(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showCancelDialog = false }) { Text("Non") }
+            }
+        )
+    }
+
+    // Delivery confirmation dialog
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Confirmer la réception ?") },
+            text = { Text("Confirmez-vous avoir reçu tous les articles de la commande ${order.orderNumber} ?") },
+            confirmButton = {
+                Button(
+                    onClick = { showConfirmDialog = false; onConfirmDelivery() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Green)
+                ) { Text("Confirmer") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showConfirmDialog = false }) { Text("Annuler") }
             }
         )
     }
@@ -262,6 +294,21 @@ private fun OrderCard(
                 }
 
                 Spacer(Modifier.height(12.dp))
+
+                // Delivery confirmation button for client
+                if (canConfirmDelivery) {
+                    Button(
+                        onClick = { showConfirmDialog = true },
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Green)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Confirmer la réception", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
 
                 // Cancel button for pending orders
                 if (canCancel) {

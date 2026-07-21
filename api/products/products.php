@@ -14,8 +14,14 @@ try {
             $db->exec("ALTER TABLE products ADD COLUMN is_story TINYINT(1) DEFAULT 0 AFTER total_sales");
         }
 
-        // AUTO-CLEANUP: Deactivate stories older than 24 hours
-        $db->exec("UPDATE products SET is_active = 0 WHERE is_story = 1 AND is_active = 1 AND created_at < NOW() - INTERVAL 1 DAY");
+        // AUTO-CLEANUP: Handle stories expiration (run max once per hour)
+        // Only remove the story flag after 24h — NEVER deactivate a product
+        $cleanupFile = sys_get_temp_dir() . '/products_story_cleanup';
+        $lastCleanup = @file_get_contents($cleanupFile);
+        if (!$lastCleanup || time() - (int)$lastCleanup > 3600) {
+            $db->exec("UPDATE products SET is_story = 0 WHERE is_story = 1 AND created_at < NOW() - INTERVAL 1 DAY");
+            file_put_contents($cleanupFile, time());
+        }
     } catch (Exception $e) {
         error_log("Migration/Cleanup error (is_story): " . $e->getMessage());
     }
@@ -74,8 +80,12 @@ try {
         $limit = max(1, min(100, (int)($_GET['limit'] ?? 20)));
         $offset = ($page - 1) * $limit;
         $sort_by = $_GET['sort_by'] ?? 'newest';
+        $include_inactive = isset($_GET['include_inactive']) && $_GET['include_inactive'] == 1;
 
-        $where = ['p.is_active = 1', "s.status = 'active'", "u.status = 'active'"];
+        $where = ["s.status = 'active'", "u.status = 'active'"];
+        if (!$include_inactive) {
+            $where[] = 'p.is_active = 1';
+        }
 
         // Stories are always visible as products; filtering for stories section is done client-side
 

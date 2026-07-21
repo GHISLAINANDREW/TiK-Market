@@ -2,7 +2,8 @@
 /**
  * Vendor order management endpoint.
  * GET  /orders/vendor.php?shop_id=X → list orders for the vendor's shop
- * PUT  /orders/vendor.php?id=X&status=confirmed → update order status
+ * PUT  /orders/vendor.php?id=X&status=confirmed → update order status (vendor: any status, client: only 'delivered')
+ * PUT  /orders/vendor.php?id=X&action=confirm_received → client confirms delivery (alternative)
  */
 require_once __DIR__ . '/../config/database.php';
 
@@ -88,21 +89,57 @@ try {
             $newStatus = trim($qParams['status'] ?? $newStatus);
         }
 
+        // Dedicated action: client confirms reception (more explicit than status=delivered)
+        $action = trim($_GET['action'] ?? '');
+        if ($action === 'confirm_received') {
+            $orderId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+            if (!$orderId) json(400, ['error' => 'ID commande requis']);
+            $stmt = $db->prepare('SELECT user_id, status FROM orders WHERE id = ?');
+            $stmt->execute([$orderId]);
+            $order = $stmt->fetch();
+            if (!$order) json(404, ['error' => 'Commande introuvable']);
+            if ((int)$order['user_id'] !== $userId) json(403, ['error' => 'Non autorisé - cette commande ne vous appartient pas']);
+            if ($order['status'] !== 'delivering') json(400, ['error' => "La commande doit être en cours de livraison (statut actuel: {$order['status']})"]);
+            $stmt = $db->prepare("UPDATE orders SET status = 'delivered' WHERE id = ?");
+            $stmt->execute([$orderId]);
+            sendNotification((int)$order['user_id'], "Livraison confirmée", "Vous avez confirmé la réception de la commande.", 'order', $orderId);
+            json(200, ['success' => true, 'message' => 'Livraison confirmée. Merci !']);
+        }
+
         $allowedStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'delivered', 'cancelled'];
         if (!$orderId || !in_array($newStatus, $allowedStatuses)) {
             json(400, ['error' => 'ID commande et statut requis (confirmed|preparing|delivering|delivered|cancelled)']);
         }
 
-        // Verify vendor owns products in this order
-        $stmt = $db->prepare('
-            SELECT oi.id FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            JOIN shops s ON p.shop_id = s.id
-            WHERE oi.order_id = ? AND s.vendor_id = ?
-            LIMIT 1
-        ');
-        $stmt->execute([$orderId, $userId]);
-        if (!$stmt->fetch()) json(403, ['error' => 'Non autorisé']);
+        // Get current order info
+        $stmtOwner = $db->prepare('SELECT user_id, status FROM orders WHERE id = ?');
+        $stmtOwner->execute([$orderId]);
+        $order = $stmtOwner->fetch();
+        if (!$order) json(404, ['error' => 'Commande introuvable']);
+        
+        $isOwner = (int)$order['user_id'] === $userId;
+        $currentStatus = $order['status'];
+
+        if ($isOwner) {
+            // Client: can ONLY set to 'delivered' and ONLY if currently 'delivering'
+            if ($newStatus !== 'delivered') {
+                json(403, ['error' => 'En tant que client, vous ne pouvez que confirmer la réception de la commande. Utilisez le statut "delivered".']);
+            }
+            if ($currentStatus !== 'delivering') {
+                json(400, ['error' => "La commande doit être en cours de livraison (statut actuel: $currentStatus)"]);
+            }
+        } else {
+            // Verify vendor owns products in this order
+            $stmt = $db->prepare('
+                SELECT oi.id FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                JOIN shops s ON p.shop_id = s.id
+                WHERE oi.order_id = ? AND s.vendor_id = ?
+                LIMIT 1
+            ');
+            $stmt->execute([$orderId, $userId]);
+            if (!$stmt->fetch()) json(403, ['error' => 'Non autorisé - vous n\'êtes ni le propriétaire de cette commande ni le vendeur associé.']);
+        }
 
         $stmt = $db->prepare('UPDATE orders SET status = ? WHERE id = ?');
         $stmt->execute([$newStatus, $orderId]);

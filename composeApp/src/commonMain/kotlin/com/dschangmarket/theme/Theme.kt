@@ -34,10 +34,10 @@ val BrandTopBarColor = Color(0xFF2E4D23)
 
 // ── Neutral / Surface ──
 val SurfaceWhite = Color(0xFFFFFFFF)
-val BackgroundViolet = Color(0xFFE6E0F0) // Violet doux, légèrement plus sombre
+val BackgroundViolet = Color(0xFFF5F3FF) // Violet très clair, plus doux
 val BackgroundGray = Color(0xFFF8F9FA)
-val CardWhite = Color(0xFFFFFBFF) // Blanc cassé vers le violet
-val DividerGray = Color(0xFFE1E0E9)
+val CardWhite = Color(0xFFFFFFFF)
+val DividerGray = Color(0xFFEEEEEE)
 val TextPrimary = Color(0xFF1A1A2E)
 val TextSecondary = Color(0xFF6B7280)
 val TextTertiary = Color(0xFF9CA3AF)

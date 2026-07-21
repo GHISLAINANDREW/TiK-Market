@@ -302,7 +302,8 @@ object ApiClient {
         minPrice: Double? = null,
         maxPrice: Double? = null,
         shopId: Int? = null,
-        sortBy: String? = null
+        sortBy: String? = null,
+        includeInactive: Boolean = false
     ): List<ApiProduct> {
         val path = buildUrl(Endpoints.PRODUCTS, mapOf(
             "category" to category,
@@ -310,7 +311,8 @@ object ApiClient {
             "min_price" to minPrice,
             "max_price" to maxPrice,
             "shop_id" to shopId,
-            "sort_by" to sortBy
+            "sort_by" to sortBy,
+            "include_inactive" to if (includeInactive) 1 else null
         ))
         return safeRequest<ApiProductsResponse>("GET", path).products
     }
@@ -552,8 +554,8 @@ object ApiClient {
         return safeRequest<ApiConversationsResponse>("GET", Endpoints.MESSAGES).conversations
     }
 
-    suspend fun fetchMessages(contactId: Int): List<ApiMessage> {
-        return safeRequest<ApiMessagesResponse>("GET", "${Endpoints.MESSAGES}?conversation_with=$contactId").messages
+    suspend fun fetchMessages(contactId: Int, limit: Int = 200, sinceId: Int = 0): List<ApiMessage> {
+        return safeRequest<ApiMessagesResponse>("GET", "${Endpoints.MESSAGES}?conversation_with=$contactId&limit=$limit" + if (sinceId > 0) "&since_id=$sinceId" else "").messages
     }
 
     suspend fun sendMessage(
@@ -624,6 +626,10 @@ object ApiClient {
 
     suspend fun updateOrderStatus(orderId: Int, status: String) {
         put("${Endpoints.ORDERS_VENDOR}?id=$orderId&status=$status", "")
+    }
+
+    suspend fun confirmOrderReceived(orderId: Int) {
+        put("${Endpoints.ORDERS_VENDOR}?id=$orderId&action=confirm_received", "")
     }
 
     // ── Shop Management ──
