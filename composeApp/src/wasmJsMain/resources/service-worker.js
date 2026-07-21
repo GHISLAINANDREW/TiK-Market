@@ -12,17 +12,17 @@ const STATIC_URLS = [
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
-  '/dschangmarket.js',
-  '/dschangmarket.wasm',
   '/skiko.js',
   '/skiko.wasm'
 ];
 
-// ── Install: precache static assets ──
+// ── Install: precache known static assets ──
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHES.STATIC).then(cache => {
-      return cache.addAll(STATIC_URLS);
+      return cache.addAll(STATIC_URLS).catch(() => {
+        // Silently ignore individual failures (e.g. 0-byte placeholders)
+      });
     }).then(() => self.skipWaiting())
   );
 });
@@ -54,6 +54,7 @@ function isStatic(url) {
     (url.pathname.endsWith('.wasm') ||
      url.pathname.endsWith('.js') ||
      url.pathname.endsWith('.mjs') ||
+     url.pathname.endsWith('.map') ||
      url.pathname.endsWith('.css') ||
      url.pathname.endsWith('.json') ||
      url.pathname === '/' ||
@@ -75,7 +76,8 @@ function isApiCall(url) {
      url.pathname.includes('/messages/') ||
      url.pathname.includes('/auth/') ||
      url.pathname.includes('/cart/') ||
-     url.pathname.includes('/shops/'));
+     url.pathname.includes('/shops/') ||
+     url.pathname.includes('/stories/'));
 }
 
 // ── Fetch: routing ──
