@@ -80,12 +80,9 @@ fun ImagePicker(
             if (url.startsWith("data:")) {
                 previewBitmap = decodeDataUrlToImageBitmap(url)
             } else if (url.isNotBlank() && url.startsWith("http")) {
-                // Load image from server URL
+                // Load image from server URL with optimization + cache
                 try {
-                    val dataUrl = fetchImageAsDataUrl(url)
-                    if (dataUrl != null && dataUrl.startsWith("data:")) {
-                        previewBitmap = decodeDataUrlToImageBitmap(dataUrl)
-                    }
+                    previewBitmap = loadImageFromUrl(url)
                 } catch (_: Exception) {
                     previewBitmap = null
                 }

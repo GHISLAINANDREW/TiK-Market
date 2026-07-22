@@ -67,8 +67,8 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Safety fallback
-      setTimeout(function() { splash.classList.add('hidden'); }, 30000);
+      // Safety fallback — if Compose fails to render, hide splash after 10s
+      setTimeout(function() { splash.classList.add('hidden'); }, 10000);
     })();
 
     // Register Service Worker early for instant 2nd-load
