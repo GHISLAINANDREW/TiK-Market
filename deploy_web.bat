@@ -63,6 +63,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [SUCCES] Votre application DschangMarket Web est mise a jour !
-echo URL: https://dschang-market-web.vercel.app
+echo URL: https://dschang-marke.vercel.app
 echo.
 pause
