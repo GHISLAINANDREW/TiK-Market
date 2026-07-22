@@ -111,3 +111,20 @@ actual fun getCurrentLocationLatLng(onResult: (lat: Double?, lng: Double?) -> Un
         }
     }
 }
+
+actual fun getPlaceName(lat: Double, lng: Double, onResult: (String) -> Unit) {
+    val activity = AndroidChatContext.currentActivity ?: run { onResult("${lat.toString().take(8)}, ${lng.toString().take(8)}"); return }
+    try {
+        val geocoder = Geocoder(activity, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(lat, lng, 1)
+        if (addresses != null && addresses.isNotEmpty()) {
+            val addr = addresses[0]
+            val locality = addr.locality ?: addr.subAdminArea ?: addr.adminArea ?: addr.thoroughfare ?: ""
+            onResult(locality.ifBlank { "${lat.toString().take(8)}, ${lng.toString().take(8)}" })
+        } else {
+            onResult("${lat.toString().take(8)}, ${lng.toString().take(8)}")
+        }
+    } catch (_: Exception) {
+        onResult("${lat.toString().take(8)}, ${lng.toString().take(8)}")
+    }
+}

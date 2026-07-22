@@ -221,7 +221,7 @@ try {
         if (!$stmt->fetch()) json(403, ['error' => 'Vous n\'êtes pas le propriétaire de cette boutique']);
 
         // Validate media type
-        if (!in_array($mediaType, ['image', 'video'])) {
+        if (!in_array($mediaType, ['image', 'video', 'text'])) {
             $mediaType = 'image';
         }
 

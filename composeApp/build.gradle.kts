@@ -13,15 +13,6 @@ kotlin {
     wasmJs {
         moduleName = "dschangmarket"
         browser {
-            commonWebpackConfig {
-                outputFileName = "dschangmarket.mjs"
-            }
-            runTask {
-                devServer = devServer.copy(
-                    port = 8080,
-                    open = false
-                )
-            }
         }
         binaries.executable()
     }

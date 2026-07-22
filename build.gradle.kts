@@ -9,5 +9,11 @@ plugins {
 // Configuration for Kotlin JS/Wasm Node.js version
 // Using a stable LTS version to avoid compatibility issues with Node 22+
 rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin::class.java).configureEach {
-    version = "20.15.0"
+    rootProject.extensions.configure(org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension::class.java) {
+        nodeVersion = "20.15.0"
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask::class.java).configureEach {
+    args.add("--ignore-scripts")
 }

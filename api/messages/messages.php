@@ -11,7 +11,8 @@ try {
         'audio_url' => 'TEXT NULL AFTER text',
         'duration' => 'INT DEFAULT 0 AFTER audio_url',
         'product_image_url' => 'TEXT NULL AFTER product_id',
-        'replied_to_id' => 'INT DEFAULT NULL AFTER product_image_url'
+        'product_title' => 'VARCHAR(255) NULL AFTER product_image_url',
+        'replied_to_id' => 'INT DEFAULT NULL AFTER product_title'
     ];
     foreach ($cols as $col => $def) {
         try {
@@ -178,6 +179,7 @@ try {
 
         $receiver_id = (int)($input['receiver_id'] ?? 0);
         $product_id = isset($input['product_id']) ? (int)$input['product_id'] : null;
+        $product_title = $input['product_title'] ?? null;
         $product_image_url = $input['product_image_url'] ?? null;
         $text = trim($input['text'] ?? '');
         $audio_url = $input['audio_url'] ?? null;
@@ -215,8 +217,8 @@ try {
             if (!$stmt->fetch()) json(404, ['error' => 'Produit non trouvé']);
         }
 
-        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, product_image_url, replied_to_id, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $product_image_url, $replied_to_id ?: null, $text, $audio_url, $duration]);
+        $stmt = $db->prepare('INSERT INTO messages (sender_id, receiver_id, product_id, product_title, product_image_url, replied_to_id, text, audio_url, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$userId, $receiver_id, $product_id ?: null, $product_title, $product_image_url, $replied_to_id ?: null, $text, $audio_url, $duration]);
         $messageId = (int)$db->lastInsertId();
 
         $stmtSender = $db->prepare('SELECT name FROM users WHERE id = ?');

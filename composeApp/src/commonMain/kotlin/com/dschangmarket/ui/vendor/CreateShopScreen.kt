@@ -23,6 +23,12 @@ import com.dschangmarket.ui.components.decodeDataUrlToImageBitmap
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import com.dschangmarket.utils.getCurrentLocationLatLng
+import com.dschangmarket.utils.getCurrentLocationName
+import com.dschangmarket.utils.getPlaceName
+import com.dschangmarket.ui.components.loadImageFromUrl
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val categories = listOf(
@@ -40,6 +46,7 @@ fun CreateShopScreen(
     var description by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("Dschang") }
+    var showLocationPicker by remember { mutableStateOf(false) }
     var category by remember { mutableStateOf("") }
     var categoryExpanded by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
@@ -128,10 +135,21 @@ fun CreateShopScreen(
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                     Spacer(Modifier.height(12.dp))
 
-                    OutlinedTextField(value = location, onValueChange = { location = it; errorMessage = null },
-                        label = { Text("Localisation *") }, modifier = Modifier.fillMaxWidth(),
-                        singleLine = true, shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = Green) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(value = location, onValueChange = { location = it; errorMessage = null },
+                            label = { Text("Localisation *") }, modifier = Modifier.weight(1f),
+                            singleLine = true, shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = Green) },
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
+                        
+                        Spacer(Modifier.width(8.dp))
+                        
+                        IconButton(
+                            onClick = { showLocationPicker = true },
+                            modifier = Modifier.padding(top = 8.dp).background(Green.copy(alpha = 0.1f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Map, "Choisir sur la carte", tint = Green)
+                        }
+                    }
                     
                     Spacer(Modifier.height(8.dp))
                     Text("Suggestions :", fontSize = 11.sp, color = Color.Gray)
@@ -227,4 +245,136 @@ fun CreateShopScreen(
             Spacer(Modifier.height(32.dp))
         }
     }
+
+    if (showLocationPicker) {
+        LocationPickerDialog(
+            onDismiss = { showLocationPicker = false },
+            onLocationSelected = { address, _, _ ->
+                location = address
+                showLocationPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+fun LocationPickerDialog(
+    onDismiss: () -> Unit,
+    onLocationSelected: (String, Double?, Double?) -> Unit
+) {
+    var lat by remember { mutableStateOf(5.4627) } // Dschang approx
+    var lng by remember { mutableStateOf(10.0533) }
+    var zoom by remember { mutableStateOf(15) }
+    var isLoading by remember { mutableStateOf(true) }
+    var address by remember { mutableStateOf("Chargement...") }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        getCurrentLocationLatLng { lLat, lLng ->
+            if (lLat != null && lLng != null) {
+                lat = lLat
+                lng = lLng
+            }
+            getPlaceName(lat, lng) { name ->
+                address = name
+                isLoading = false
+            }
+        }
+    }
+
+    // Effect to update address when lat/lng changes (with debounce)
+    LaunchedEffect(lat, lng) {
+        delay(800)
+        getPlaceName(lat, lng) { name ->
+            address = name
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Choisir sur la carte") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(8.dp)).background(Color.LightGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Static Map
+                    val mapUrl = "https://staticmap.openstreetmap.de/staticmap.php?center=$lat,$lng&zoom=$zoom&size=600x400&markers=$lat,$lng"
+                    var mapBitmap by remember(lat, lng, zoom) { mutableStateOf<ImageBitmap?>(null) }
+                    
+                    LaunchedEffect(lat, lng, zoom) {
+                        try {
+                            mapBitmap = loadImageFromUrl(mapUrl)
+                        } catch (_: Exception) {}
+                    }
+                    
+                    if (mapBitmap != null) {
+                        Image(mapBitmap!!, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        // Central Pin (Fixed in center of map)
+                        Icon(Icons.Default.LocationOn, null, tint = Color.Red, modifier = Modifier.size(32.dp).align(Alignment.Center).offset(y = (-16).dp))
+                    } else {
+                        CircularProgressIndicator(color = Green)
+                    }
+                    
+                    // Zoom controls
+                    Column(Modifier.align(Alignment.BottomEnd).padding(8.dp)) {
+                        IconButton(onClick = { if (zoom < 19) zoom++ }, modifier = Modifier.background(Color.White.copy(0.7f), CircleShape).size(32.dp)) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        IconButton(onClick = { if (zoom > 10) zoom-- }, modifier = Modifier.background(Color.White.copy(0.7f), CircleShape).size(32.dp)) {
+                            Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                Text(address, fontSize = 12.sp, color = Color.Gray, textAlign = TextAlign.Center, maxLines = 2)
+                
+                Spacer(Modifier.height(16.dp))
+                // D-Pad for moving (since we don't have interactive touch map)
+                val moveStep = 0.002 / (zoom - 13).coerceAtLeast(1)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = { lat += moveStep }) { Icon(Icons.Default.ArrowUpward, null) }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { lng -= moveStep }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                        Spacer(Modifier.width(16.dp))
+                        IconButton(onClick = { lng += moveStep }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, null) }
+                    }
+                    IconButton(onClick = { lat -= moveStep }) { Icon(Icons.Default.ArrowDownward, null) }
+                }
+                
+                Button(
+                    onClick = {
+                        isLoading = true
+                        getCurrentLocationLatLng { lLat, lLng ->
+                            if (lLat != null && lLng != null) {
+                                lat = lLat
+                                lng = lLng
+                                getPlaceName(lat, lng) { name ->
+                                    address = name
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Green.copy(alpha = 0.1f), contentColor = Green),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(Icons.Default.MyLocation, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Ma position", fontSize = 12.sp)
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onLocationSelected(address, lat, lng) }, colors = ButtonDefaults.buttonColors(containerColor = Green)) {
+                Text("Confirmer")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Annuler") }
+        }
+    )
 }

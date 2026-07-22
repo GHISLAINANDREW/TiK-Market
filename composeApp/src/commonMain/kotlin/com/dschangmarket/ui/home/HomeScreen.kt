@@ -67,7 +67,7 @@ fun HomeScreen(
     isLoggedIn: Boolean = false,
     userRole: String = "buyer",
     onStoryClick: (List<StoryItem>, Int) -> Unit = { _, _ -> },
-    onAddStory: (String, String) -> Unit = { _, _ -> },
+    onAddStory: (String, String, String?) -> Unit = { _, _, _ -> },
     refreshSignal: Int = 0,
     cachedProducts: List<Product> = emptyList(),
     cachedCategories: List<String> = emptyList(),
@@ -100,9 +100,22 @@ fun HomeScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    // ── Story Creation State ──
+    var showStoryTypeDialog by remember { mutableStateOf(false) }
+    var pendingStoryDataUrl by remember { mutableStateOf<String?>(null) }
+    var pendingStoryFileName by remember { mutableStateOf<String?>(null) }
+    var showCaptionDialog by remember { mutableStateOf(false) }
+    var storyCaption by remember { mutableStateOf("") }
+    
+    var showTextStoryDialog by remember { mutableStateOf(false) }
+    var textStoryContent by remember { mutableStateOf("") }
+    var textStoryColor by remember { mutableStateOf(Green) }
+
     val pickMedia = rememberImagePickerLauncher { result ->
         if (result != null) {
-            onAddStory(result.dataUrl, result.fileName)
+            pendingStoryDataUrl = result.dataUrl
+            pendingStoryFileName = result.fileName
+            showCaptionDialog = true
         }
     }
 
@@ -397,7 +410,7 @@ fun HomeScreen(
                                 if (userRole == "vendor") {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { pickMedia() }
+                                        modifier = Modifier.clickable { showStoryTypeDialog = true }
                                     ) {
                                         Box(
                                             Modifier
@@ -661,6 +674,137 @@ fun HomeScreen(
                 // Bottom spacing
                 item { Spacer(Modifier.height(80.dp)) }
             }
+        }
+
+        // ── Story Dialogs ──
+
+        if (showStoryTypeDialog) {
+            AlertDialog(
+                onDismissRequest = { showStoryTypeDialog = false },
+                title = { Text("Ajouter une story") },
+                text = { Text("Choisissez le type de story à publier.") },
+                confirmButton = {
+                    TextButton(onClick = { 
+                        showStoryTypeDialog = false
+                        pickMedia() 
+                    }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Photo / Vidéo")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showStoryTypeDialog = false
+                        showTextStoryDialog = true 
+                    }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.TextSnippet, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Texte uniquement")
+                        }
+                    }
+                }
+            )
+        }
+
+        if (showCaptionDialog) {
+            AlertDialog(
+                onDismissRequest = { showCaptionDialog = false },
+                title = { Text("Ajouter une légende") },
+                text = {
+                    Column {
+                        Text("Voulez-vous ajouter un message à votre story ?", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = storyCaption,
+                            onValueChange = { storyCaption = it },
+                            placeholder = { Text("Votre message...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        showCaptionDialog = false
+                        val dataUrl = pendingStoryDataUrl
+                        val fileName = pendingStoryFileName
+                        if (dataUrl != null && fileName != null) {
+                            onAddStory(dataUrl, fileName, storyCaption.ifBlank { null })
+                        }
+                        storyCaption = ""
+                    }) {
+                        Text("Publier")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCaptionDialog = false }) {
+                        Text("Passer")
+                    }
+                }
+            )
+        }
+
+        if (showTextStoryDialog) {
+            AlertDialog(
+                onDismissRequest = { showTextStoryDialog = false },
+                title = { Text("Story texte") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = textStoryContent,
+                            onValueChange = { textStoryContent = it },
+                            placeholder = { Text("Que voulez-vous dire ?") },
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = textStoryColor.copy(alpha = 0.1f)
+                            )
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text("Couleur de fond :", style = MaterialTheme.typography.labelSmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                            listOf(Green, Orange, BlueAccent, RedAccent, Color.DarkGray).forEach { color ->
+                                Box(
+                                    Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(color)
+                                        .border(if (textStoryColor == color) 2.dp else 0.dp, Color.White, RoundedCornerShape(16.dp))
+                                        .clickable { textStoryColor = color }
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showTextStoryDialog = false
+                            // Format color as hex string
+                            val colorHex = when(textStoryColor) {
+                                Green -> "#4CAF50"
+                                Orange -> "#FF9800"
+                                BlueAccent -> "#2196F3"
+                                RedAccent -> "#F44336"
+                                else -> "#333333"
+                            }
+                            onAddStory(colorHex, "text", textStoryContent)
+                            textStoryContent = ""
+                        },
+                        enabled = textStoryContent.isNotBlank()
+                    ) {
+                        Text("Publier")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTextStoryDialog = false }) {
+                        Text("Annuler")
+                    }
+                }
+            )
         }
         }
     }
