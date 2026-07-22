@@ -17,3 +17,11 @@ actual fun copyToClipboard(text: String) {
     val clip = ClipData.newPlainText("DschangMarket", text)
     clipboard.setPrimaryClip(clip)
 }
+
+actual fun updateUnreadBadge(count: Int) {
+    // No-op on Android; APK handles badge via native notifications
+}
+
+actual fun setupTabFocusRefresh(callback: () -> Unit) {
+    // No-op on Android
+}

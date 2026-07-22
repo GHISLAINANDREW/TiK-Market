@@ -22,6 +22,7 @@ import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiOrder
 import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.BrandTopBarColor
+import com.dschangmarket.ui.components.EmptyState
 import com.dschangmarket.ui.components.OrderProgressBar
 import com.dschangmarket.theme.Green
 import com.dschangmarket.theme.Orange
@@ -65,9 +66,7 @@ fun OrdersScreen(
                 CircularProgressIndicator()
             }
         } else if (orders.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Aucune commande", color = Color.Gray, fontSize = 16.sp)
-            }
+            EmptyState(Icons.Default.Receipt, "Aucune commande", "Vos commandes apparaîtront ici")
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5))) {
                 items(orders) { order ->

@@ -65,6 +65,7 @@ import com.dschangmarket.ui.onboarding.OnboardingManager
 import com.dschangmarket.ui.onboarding.OnboardingScreen
 import com.dschangmarket.utils.BackPressHandler
 import com.dschangmarket.utils.NotificationUtils
+import com.dschangmarket.utils.updateUnreadBadge
 import com.dschangmarket.ui.barcode.BarcodeScanScreen
 import com.dschangmarket.ui.compare.CompareScreen
 import com.dschangmarket.ui.story.StoryViewerScreen
@@ -144,6 +145,20 @@ fun App(onExit: () -> Unit = {}) {
                         appState.navigateTo(NavScreen.ProductDetail)
                     } catch (_: Exception) {}
                 }
+
+                // Listen for tab focus to refresh data
+                com.dschangmarket.utils.setupTabFocusRefresh {
+                    appState.refreshSignal++
+                    scope.launch {
+                        try {
+                            if (appState.isLoggedIn) {
+                                appState.unreadMessages = ApiClient.fetchUnreadCount()
+                                appState.unreadNotifications = ApiClient.fetchNotifications().count { !it.isRead }
+                                updateUnreadBadge(appState.unreadMessages + appState.unreadNotifications)
+                            }
+                        } catch (_: Exception) {}
+                    }
+                }
             }
 
             // Show MainContent IMMEDIATELY — data loads in background
@@ -218,7 +233,15 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                     .background(Color.White.copy(alpha = 0.2f))
                     .padding(padding)
             ) {
-                AppNavigation(appState, scope, snackbarHostState)
+                // Desktop constraint: limit max width for comfortable reading
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Box(Modifier.widthIn(max = 720.dp).fillMaxHeight()) {
+                        AppNavigation(appState, scope, snackbarHostState)
+                    }
+                }
             }
         }
     }
@@ -278,6 +301,7 @@ fun PollingManager(appState: AppState) {
                 }
                 previousUnreadMessages = msgCount
                 appState.unreadMessages = msgCount
+                updateUnreadBadge(msgCount + appState.unreadNotifications)
 
                 // Poll Notifications
                 val notifications = ApiClient.fetchNotifications()
