@@ -108,6 +108,7 @@ data class ApiSendMessageBody(
     @SerialName("audio_url") val audioUrl: String? = null,
     val duration: Int = 0,
     @SerialName("product_id") val productId: Int? = null,
+    @SerialName("product_title") val productTitle: String? = null,
     @SerialName("product_image_url") val productImageUrl: String? = null,
     @SerialName("replied_to_id") val repliedToId: Int? = null
 )
@@ -627,10 +628,11 @@ object ApiClient {
         audioUrl: String? = null,
         duration: Int = 0,
         productId: Int? = null,
+        productTitle: String? = null,
         productImageUrl: String? = null,
         repliedToId: Int? = null
     ): ApiMessage {
-        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId, productImageUrl, repliedToId))
+        val body = json.encodeToString(ApiSendMessageBody(receiverId, text, audioUrl, duration, productId, productTitle, productImageUrl, repliedToId))
         return safeRequest<ApiMessage>("POST", Endpoints.MESSAGES, body)
     }
 

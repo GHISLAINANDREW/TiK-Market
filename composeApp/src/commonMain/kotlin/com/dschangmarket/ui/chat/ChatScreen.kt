@@ -231,6 +231,7 @@ fun ChatScreen(
                     receiverId = vendorId,
                     text = msg.trim(),
                     productId = null,
+                    productTitle = sharedProduct.title,
                     productImageUrl = sharedProduct.imageUrl
                 )
                 productSentToApi = true

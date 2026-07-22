@@ -605,7 +605,7 @@ private fun LightTextField(
             singleLine = true,
             visualTransformation = if (isPassword && !showPassword) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-            keyboardActions = KeyboardActions(onDone = onImeAction, onNext = onImeAction),
+            keyboardActions = KeyboardActions(onDone = { onImeAction() }, onNext = { onImeAction() }),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = if (isError) RedAccent else MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = if (isError) RedAccent.copy(alpha = 0.5f) else DividerGray,

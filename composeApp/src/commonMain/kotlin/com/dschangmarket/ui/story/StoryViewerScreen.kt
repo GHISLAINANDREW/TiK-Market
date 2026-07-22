@@ -104,7 +104,29 @@ fun StoryViewerScreen(
     ) {
         // Story image content
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (currentStory.imageUrl.isNotBlank()) {
+            if (currentStory.mediaType == "text") {
+                val bgColor = when (currentStory.imageUrl) {
+                    "#4CAF50" -> Green
+                    "#FF9800" -> Orange
+                    "#2196F3" -> BlueAccent
+                    "#F44336" -> RedAccent
+                    else -> Color(0xFF333333)
+                }
+                Box(
+                    Modifier.fillMaxSize().background(bgColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        currentStory.caption ?: "",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(32.dp),
+                        lineHeight = 36.sp
+                    )
+                }
+            } else if (currentStory.imageUrl.isNotBlank()) {
                 var bitmap by remember(currentIndex, currentStory.imageUrl) {
                     mutableStateOf<ImageBitmap?>(null)
                 }
@@ -310,7 +332,7 @@ fun StoryViewerScreen(
             }
 
             // ── Caption / Note (if present) ──
-            if (!currentStory.caption.isNullOrBlank()) {
+            if (!currentStory.caption.isNullOrBlank() && currentStory.mediaType != "text") {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -374,7 +396,12 @@ fun StoryViewerScreen(
                                                 else ApiClient.fetchShopById(currentStory.shopId)?.vendorId ?: 0
                                             if (vendorId > 0) {
                                                 val msg = "📲 Story: ${currentStory.title}\n$msgText"
-                                                ApiClient.sendMessage(receiverId = vendorId, text = msg)
+                                                ApiClient.sendMessage(
+                                                    receiverId = vendorId,
+                                                    text = msg,
+                                                    productImageUrl = currentStory.imageUrl,
+                                                    productTitle = "Story: ${currentStory.title}"
+                                                )
                                                 snackbarHostState.showSnackbar("Message envoyé au vendeur")
                                             } else {
                                                 snackbarHostState.showSnackbar("Impossible d'identifier le vendeur")

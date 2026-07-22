@@ -1,16 +1,10 @@
 package com.dschangmarket
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -72,11 +66,12 @@ import com.dschangmarket.ui.story.StoryViewerScreen
 import com.dschangmarket.ui.profile.FollowedShopsScreen
 import com.dschangmarket.ui.misc.MyGroupBuysScreen
 import com.dschangmarket.ui.misc.ShopsMapScreen
+import com.dschangmarket.ui.misc.SplashScreen
 
 @Composable
 private fun rememberAppState() = remember {
     AppState(
-        currentScreenInitial = NavScreen.Home,
+        currentScreenInitial = NavScreen.Splash,
         cartItemsInitial = emptyList(),
         isLoggedInInitial = false,
         userNameInitial = "",
@@ -238,7 +233,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    Box(Modifier.widthIn(max = 720.dp).fillMaxHeight()) {
+                    Box(Modifier.fillMaxSize()) {
                         AppNavigation(appState, scope, snackbarHostState)
                     }
                 }
@@ -331,7 +326,9 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
     AnimatedContent(
         targetState = appState.currentScreen,
         transitionSpec = {
-            if (targetState.route == NavScreen.Home.route) {
+            if (targetState.route == NavScreen.Splash.route) {
+                EnterTransition.None togetherWith ExitTransition.None
+            } else if (targetState.route == NavScreen.Home.route) {
                 (fadeIn() + scaleIn(initialScale = 0.9f)).togetherWith(fadeOut() + scaleOut(targetScale = 1.1f))
             } else {
                 (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
@@ -340,6 +337,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
         label = "app_nav"
     ) { screen ->
         when (screen) {
+            NavScreen.Splash -> SplashScreen(onFinished = { appState.navigateTo(NavScreen.Home) })
             NavScreen.Home -> HomeScreen(
                 onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) },
                 onAddToCart = { p -> 
@@ -375,7 +373,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     appState.storyIndex = index
                     appState.navigateTo(NavScreen.StoryViewer)
                 },
-                onAddStory = { dataUrl, name ->
+                onAddStory = { dataUrl, name, caption ->
                     scope.launch {
                         try {
                             val snackbarJob = launch {
@@ -384,13 +382,24 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                             
                             val shop = ApiClient.fetchShopByVendor()
                             if (shop != null) {
-                                val uploadedUrl = ApiClient.uploadImage(dataUrl, name)
+                                val uploadedUrl = if (dataUrl.startsWith("data:")) {
+                                    ApiClient.uploadImage(dataUrl, name)
+                                } else {
+                                    dataUrl // it might be a color code or already uploaded URL
+                                }
+
                                 // Use new dedicated stories API
-                                val mediaType = if (name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov")) "video" else "image"
+                                val mediaType = when {
+                                    name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov") -> "video"
+                                    name == "text" -> "text"
+                                    else -> "image"
+                                }
+                                
                                 ApiClient.createStory(
                                     shopId = shop.id,
                                     mediaUrl = uploadedUrl,
-                                    mediaType = mediaType
+                                    mediaType = mediaType,
+                                    caption = caption
                                 )
                                 snackbarJob.cancel()
                                 appState.refreshSignal++
@@ -546,6 +555,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                         appState.isLoggedIn = true
                         appState.userName = name
                         appState.userRole = role
+                        appState.currentUser = ApiClient.getCurrentUser()
                         
                         // Fetch shop name if vendor
                         if (role == "vendor") {
@@ -861,6 +871,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                 receiverId = appState.chatVendorId,
                                 text = msg.trim(),
                                 productId = product.id.toIntOrNull(),
+                                productTitle = product.title,
                                 productImageUrl = product.images.firstOrNull()
                             )
                         } catch (_: Exception) { }

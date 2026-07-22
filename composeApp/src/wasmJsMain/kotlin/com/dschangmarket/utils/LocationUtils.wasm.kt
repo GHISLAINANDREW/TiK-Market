@@ -24,6 +24,12 @@ actual fun getCurrentLocationLatLng(onResult: (lat: Double?, lng: Double?) -> Un
     }
 }
 
+actual fun getPlaceName(lat: Double, lng: Double, onResult: (String) -> Unit) {
+    reverseGeocodeJs(lat.toString(), lng.toString()) { displayName ->
+        onResult(displayName ?: "${lat.toString().take(8)}, ${lng.toString().take(8)}")
+    }
+}
+
 @JsFun("""(callback) => {
     if (!navigator.geolocation) {
         callback(null, null);

@@ -33,4 +33,5 @@ sealed class NavScreen(val route: String, val title: String) {
     object NotifPrefs : NavScreen("notif-prefs", "Préférences notifications")
     object MyGroupBuys : NavScreen("my-group-buys", "Mes achats groupés")
     object ShopsMap : NavScreen("shops-map", "Carte des boutiques")
+    object Splash : NavScreen("splash", "DschangMarket")
 }
