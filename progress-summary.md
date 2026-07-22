@@ -13,7 +13,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - Vercel CLI 54.20.1, Node.js v20.16.0
 - Aiven MySQL 8.0 en ANSI_QUOTES mode
 - BaseUrl API : `https://dschang-market.onrender.com`
-- URL Web : `https://dschang-market.vercel.app`
+- URL Web : `https://dschang-marke.vercel.app`
 
 ## Done
 ### Infrastructure
@@ -22,7 +22,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - **SQL ANSI_QUOTES corrigé** – Tous les identifiants SQL utilisent `'`
 - **Cloudinary configuré** – `cloud_name=***REMOVED***`, `api_key=***REMOVED***`, `api_secret=***REMOVED***`
 - **APK Android buildé** – `composeApp/build/outputs/apk/debug/composeApp-debug.apk`
-- **Web WasmJS buildé et déployé** – `https://dschang-market.vercel.app`
+- **Web WasmJS buildé et déployé** – `https://dschang-marke.vercel.app`
 - **GitHub Actions workflow créé** – `.github/workflows/deploy-web.yml`
 
 ### Chat / Messages
