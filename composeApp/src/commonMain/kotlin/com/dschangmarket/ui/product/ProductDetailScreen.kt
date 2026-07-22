@@ -586,6 +586,14 @@ fun ProductDetailScreen(
                                 )
                             }
                         }
+                    } else {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.SearchOff, null, tint = Color.Gray, modifier = Modifier.size(32.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Aucun produit similaire", color = Color.Gray, fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
 

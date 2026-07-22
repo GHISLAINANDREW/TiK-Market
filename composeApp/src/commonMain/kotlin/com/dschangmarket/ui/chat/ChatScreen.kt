@@ -1102,10 +1102,7 @@ private fun ChatMessageImage(url: String, onClick: () -> Unit = {}) {
             bitmap = com.dschangmarket.ui.components.decodeDataUrlToImageBitmap(url)
         } else {
             try {
-                val dataUrl = com.dschangmarket.ui.components.fetchImageAsDataUrl(url)
-                if (dataUrl != null) {
-                    bitmap = com.dschangmarket.ui.components.decodeDataUrlToImageBitmap(dataUrl)
-                }
+                bitmap = loadImageFromUrl(url)
             } catch (_: Exception) {}
         }
     }
@@ -1189,10 +1186,7 @@ private fun FullScreenImagePreview(url: String, onDismiss: () -> Unit) {
             bitmap = com.dschangmarket.ui.components.decodeDataUrlToImageBitmap(url)
         } else {
             try {
-                val dataUrl = com.dschangmarket.ui.components.fetchImageAsDataUrl(url)
-                if (dataUrl != null) {
-                    bitmap = com.dschangmarket.ui.components.decodeDataUrlToImageBitmap(dataUrl)
-                }
+                bitmap = loadImageFromUrl(url)
             } catch (_: Exception) {}
         }
     }

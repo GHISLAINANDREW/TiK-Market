@@ -54,6 +54,27 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var avatarBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var isUpdatingAvatar by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // Confirm logout dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Red) },
+            title = { Text("Se déconnecter") },
+            text = { Text("Voulez-vous vraiment vous déconnecter ?") },
+            confirmButton = {
+                TextButton(onClick = { showLogoutDialog = false; onLogout() }) {
+                    Text("Se déconnecter", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
 
     val currentUser = ApiClient.getCurrentUser()
     var walletBalance by remember { mutableStateOf(0.0) }

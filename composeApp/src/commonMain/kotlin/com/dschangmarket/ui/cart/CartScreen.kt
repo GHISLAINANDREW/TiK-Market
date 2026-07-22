@@ -36,6 +36,28 @@ fun CartScreen(
     onRemove: (Int) -> Unit,
     onCheckout: () -> Unit
 ) {
+    var pendingRemoveIndex by remember { mutableStateOf(-1) }
+
+    // Confirm remove dialog
+    if (pendingRemoveIndex >= 0 && pendingRemoveIndex < items.size) {
+        AlertDialog(
+            onDismissRequest = { pendingRemoveIndex = -1 },
+            icon = { Icon(Icons.Default.Delete, null, tint = RedAccent) },
+            title = { Text("Retirer du panier") },
+            text = { Text("Supprimer « ${items[pendingRemoveIndex].product.title} » du panier ?") },
+            confirmButton = {
+                TextButton(onClick = { onRemove(pendingRemoveIndex); pendingRemoveIndex = -1 }) {
+                    Text("Retirer", color = RedAccent)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRemoveIndex = -1 }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+
     BoxWithConstraints {
         val isCompact = maxWidth < 480.dp
 
@@ -72,7 +94,7 @@ fun CartScreen(
                     CartItemCard(item = item, isCompact = isCompact,
                         onIncrease = { onUpdateQuantity(index, item.quantity + 1) },
                         onDecrease = { if (item.quantity > 1) onUpdateQuantity(index, item.quantity - 1) },
-                        onRemove = { onRemove(index) }
+                        onRemove = { pendingRemoveIndex = index }
                     )
                 }
                 item { Spacer(Modifier.height(80.dp)) }

@@ -77,8 +77,9 @@ function isApiCall(url) {
      url.pathname.includes('/auth/') ||
      url.pathname.includes('/cart/') ||
      url.pathname.includes('/shops/') ||
-     url.pathname.includes('/stories/'));
-}
+      url.pathname.includes('/stories/') ||
+      url.pathname.includes('/wallet/') ||
+      url.pathname.includes('/loyalty/'));
 
 // ── Fetch: routing ──
 self.addEventListener('fetch', event => {
