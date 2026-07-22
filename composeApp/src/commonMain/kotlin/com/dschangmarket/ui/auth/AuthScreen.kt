@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -274,6 +275,35 @@ private fun EmailAuthStep(
     onLoginSuccess: (String, String, String) -> Unit,
     onToggleMode: () -> Unit
 ) {
+    // Track per-field validation errors
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var confirmError by remember { mutableStateOf<String?>(null) }
+
+    fun validate(): Boolean {
+        var valid = true
+        if (!isLogin) {
+            if (form.name.isBlank()) { nameError = "Nom requis"; valid = false } else nameError = null
+            if (form.phone.isBlank()) { phoneError = "Téléphone requis"; valid = false }
+            else if (form.phone.replace(Regex("[^0-9]"), "").length < 8) { phoneError = "Numéro invalide (8+ chiffres)"; valid = false }
+            else phoneError = null
+        }
+        if (form.email.isBlank()) { emailError = "Email requis"; valid = false }
+        else if (!form.email.contains("@") || !form.email.contains(".")) { emailError = "Email invalide"; valid = false }
+        else emailError = null
+        if (form.password.isBlank()) { passwordError = "Mot de passe requis"; valid = false }
+        else if (form.password.length < 4) { passwordError = "4 caractères minimum"; valid = false }
+        else passwordError = null
+        if (!isLogin) {
+            if (form.confirmPassword.isBlank()) { confirmError = "Confirmation requise"; valid = false }
+            else if (form.password != form.confirmPassword) { confirmError = "Les mots de passe ne correspondent pas"; valid = false }
+            else confirmError = null
+        }
+        return valid
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = if (isLogin) "S'identifier" else "Créer un compte",
@@ -288,38 +318,50 @@ private fun EmailAuthStep(
         if (!isLogin) {
             LightTextField(
                 value = form.name,
-                onValueChange = { onFormChange(form.copy(name = it, error = null)) },
-                label = "Nom complet"
+                onValueChange = { onFormChange(form.copy(name = it, error = null)); nameError = null },
+                label = "Nom complet",
+                isError = nameError != null,
+                errorMessage = nameError
             )
             LightTextField(
                 value = form.phone,
-                onValueChange = { onFormChange(form.copy(phone = it, error = null)) },
+                onValueChange = { onFormChange(form.copy(phone = it, error = null)); phoneError = null },
                 label = "Téléphone",
-                keyboardType = KeyboardType.Phone
+                keyboardType = KeyboardType.Phone,
+                isError = phoneError != null,
+                errorMessage = phoneError
             )
         }
         LightTextField(
             value = form.email,
-            onValueChange = { onFormChange(form.copy(email = it, error = null)) },
+            onValueChange = { onFormChange(form.copy(email = it, error = null)); emailError = null },
             label = "Email",
-            keyboardType = KeyboardType.Email
+            keyboardType = KeyboardType.Email,
+            isError = emailError != null,
+            errorMessage = emailError
         )
         LightTextField(
             value = form.password,
-            onValueChange = { onFormChange(form.copy(password = it, error = null)) },
+            onValueChange = { onFormChange(form.copy(password = it, error = null)); passwordError = null },
             label = "Mot de passe",
             isPassword = true,
             showPassword = showPassword,
-            onTogglePassword = onTogglePassword
+            onTogglePassword = onTogglePassword,
+            isError = passwordError != null,
+            errorMessage = passwordError
         )
         if (!isLogin) {
             LightTextField(
                 value = form.confirmPassword,
-                onValueChange = { onFormChange(form.copy(confirmPassword = it, error = null)) },
+                onValueChange = { onFormChange(form.copy(confirmPassword = it, error = null)); confirmError = null },
                 label = "Confirmer le mot de passe",
                 isPassword = true,
                 showPassword = showPassword,
-                onTogglePassword = onTogglePassword
+                onTogglePassword = onTogglePassword,
+                isError = confirmError != null,
+                errorMessage = confirmError,
+                imeAction = ImeAction.Done,
+                onImeAction = { /* Submit via the button's onClick logic */ }
             )
         }
 
@@ -329,37 +371,14 @@ private fun EmailAuthStep(
             text = if (isLogin) "Se connecter" else "S'inscrire",
             isLoading = form.isLoading,
             onClick = {
+                if (!validate()) return@PrimaryButton
                 onFormChange(form.copy(isLoading = true, error = null))
                 scope.launch {
                     try {
                         if (isLogin) {
-                            if (form.email.isBlank() || form.password.isBlank()) {
-                                onFormChange(form.copy(error = "Veuillez remplir tous les champs", isLoading = false))
-                                return@launch
-                            }
                             val response = ApiClient.login(form.email, form.password)
                             onLoginSuccess(response.token, response.user.name, response.user.role)
                         } else {
-                            if (form.name.isBlank()) {
-                                onFormChange(form.copy(error = "Le nom est obligatoire", isLoading = false))
-                                return@launch
-                            }
-                            if (form.phone.isBlank()) {
-                                onFormChange(form.copy(error = "Le téléphone est obligatoire", isLoading = false))
-                                return@launch
-                            }
-                            if (form.email.isBlank()) {
-                                onFormChange(form.copy(error = "L'email est obligatoire", isLoading = false))
-                                return@launch
-                            }
-                            if (form.password.isBlank()) {
-                                onFormChange(form.copy(error = "Le mot de passe est obligatoire", isLoading = false))
-                                return@launch
-                            }
-                            if (form.password != form.confirmPassword) {
-                                onFormChange(form.copy(error = "Les mots de passe ne correspondent pas", isLoading = false))
-                                return@launch
-                            }
                             val response = ApiClient.register(
                                 name = form.name,
                                 email = form.email,
@@ -557,40 +576,58 @@ private fun LightTextField(
     showPassword: Boolean = false,
     onTogglePassword: () -> Unit = {},
     keyboardType: KeyboardType = KeyboardType.Text,
-    prefix: (@Composable () -> Unit)? = null
+    prefix: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    imeAction: ImeAction = ImeAction.Next,
+    onImeAction: () -> Unit = {}
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
-        trailingIcon = if (isPassword) {
-            {
-                IconButton(onClick = onTogglePassword, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        null, Modifier.size(18.dp),
-                        tint = TextSecondary
-                    )
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            isError = isError,
+            label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = onTogglePassword, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            null, Modifier.size(18.dp),
+                            tint = if (isError) RedAccent else TextSecondary
+                        )
+                    }
                 }
-            }
-        } else null,
-        prefix = prefix,
-        singleLine = true,
-        visualTransformation = if (isPassword && !showPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Next),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = DividerGray,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            unfocusedLabelColor = TextSecondary,
-            cursorColor = MaterialTheme.colorScheme.primary,
-            focusedContainerColor = CardWhite,
-            unfocusedContainerColor = CardWhite
-        ),
-        shape = RoundedCornerShape(CardShapeSmall),
-        modifier = Modifier.fillMaxWidth(),
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
-    )
+            } else if (isError) {
+                { Icon(Icons.Default.Warning, null, Modifier.size(18.dp), tint = RedAccent) }
+            } else null,
+            prefix = prefix,
+            singleLine = true,
+            visualTransformation = if (isPassword && !showPassword) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+            keyboardActions = KeyboardActions(onDone = onImeAction, onNext = onImeAction),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = if (isError) RedAccent else MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = if (isError) RedAccent.copy(alpha = 0.5f) else DividerGray,
+                focusedLabelColor = if (isError) RedAccent else MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = if (isError) RedAccent else TextSecondary,
+                cursorColor = if (isError) RedAccent else MaterialTheme.colorScheme.primary,
+                focusedContainerColor = CardWhite,
+                unfocusedContainerColor = CardWhite
+            ),
+            shape = RoundedCornerShape(CardShapeSmall),
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
+        )
+        if (isError && errorMessage != null) {
+            Text(
+                errorMessage,
+                color = RedAccent,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+            )
+        }
+    }
 }
 
 @Composable

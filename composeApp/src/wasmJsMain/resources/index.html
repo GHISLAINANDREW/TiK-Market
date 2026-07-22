@@ -2,13 +2,23 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dschang Market Place</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
+  <!-- Apple PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DschangMarket">
+  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231B5E20'/%3E%3Ccircle cx='96' cy='72' r='40' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='96' y='74' text-anchor='middle' font-size='56' font-weight='bold' fill='white' font-family='sans-serif'%3EDM%3C/text%3E%3Ctext x='96' y='135' text-anchor='middle' font-size='18' fill='%23FF9800' font-family='sans-serif' font-weight='bold'%3EDSCHANG%3C/text%3E%3Ctext x='96' y='158' text-anchor='middle' font-size='16' fill='%23FF9800' font-family='sans-serif' font-weight='bold'%3EMARKET%3C/text%3E%3C/svg%3E">
+  <!-- Social sharing -->
+  <meta property="og:title" content="Dschang Market">
+  <meta property="og:description" content="Achetez et vendez des produits locaux au Cameroun">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://dschang-market.vercel.app">
+  <meta property="og:image" content="https://dschang-market.vercel.app/favicon.svg">
+  <meta name="twitter:card" content="summary">
+  <!-- Theme -->
   <meta name="theme-color" content="#1B5E20">
   <!-- Preload critical wasm modules for early loading -->
   <link rel="preload" as="fetch" crossorigin="anonymous" href="dd568dbcd078c0adf7cf.wasm">
@@ -17,33 +27,94 @@
   <link rel="modulepreload" href="skiko.mjs">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #1B5E20; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #1B5E20;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
     #composeApp { width: 100%; height: 100vh; }
+    /* Splash screen */
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       background: #1B5E20;
       z-index: 9999;
-      transition: opacity 0.25s ease-out;
+      transition: opacity 0.2s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
     .splash-icon {
       width: 72px; height: 72px;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.10);
       border-radius: 18px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .splash-icon svg { width: 38px; height: 38px; }
     .splash-title {
       font-size: 22px; font-weight: 700;
-      color: #fff; letter-spacing: 0.3px;
+      color: #fff; letter-spacing: 0.4px;
     }
+    .splash-sub {
+      font-size: 12px; color: rgba(255,255,255,0.5);
+      margin-top: 8px; letter-spacing: 0.2px;
+    }
+    /* Offline banner */
+    #offline-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #D32F2F; color: white;
+      text-align: center; padding: 6px 16px;
+      font-size: 13px; font-weight: 500;
+      z-index: 10000;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+    #offline-banner.show { transform: translateY(0); }
+    /* Scrollbar styling for web */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+    /* Error state if wasm fails to load */
+    #error-screen {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #1B5E20; z-index: 10001;
+      color: white; text-align: center; padding: 32px;
+    }
+    #error-screen.visible { display: flex; }
+    #error-screen .err-icon { font-size: 48px; margin-bottom: 16px; }
+    #error-screen h2 { font-size: 18px; margin-bottom: 8px; }
+    #error-screen p { font-size: 13px; opacity: 0.8; margin-bottom: 20px; }
+    #error-screen button {
+      background: #FF9800; color: white; border: none;
+      padding: 10px 28px; border-radius: 24px; font-size: 14px;
+      cursor: pointer; font-weight: 600;
+    }
+    #error-screen button:hover { background: #F57C00; }
   </style>
 </head>
 <body>
   <div id="composeApp"></div>
+
+  <!-- Error screen (shown if wasm loading fails) -->
+  <div id="error-screen">
+    <div class="err-icon">⚠️</div>
+    <h2>Chargement interrompu</h2>
+    <p>L'application n'a pas pu se charger complètement.<br>Vérifiez votre connexion et réessayez.</p>
+    <button onclick="location.reload()">Réessayer</button>
+  </div>
+
+  <!-- Offline banner -->
+  <div id="offline-banner">📡 Connexion perdue — certaines fonctionnalités peuvent être limitées</div>
+
+  <!-- Splash -->
   <div id="splash">
     <div class="splash-icon">
       <svg viewBox="0 0 24 24" fill="none">
@@ -51,30 +122,77 @@
       </svg>
     </div>
     <div class="splash-title">DschangMarket</div>
+    <div class="splash-sub">Marché local en ligne</div>
   </div>
+
   <script type="module" src="dschangmarket.mjs"></script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
+      var errorScreen = document.getElementById('error-screen');
 
-      // Hide splash when Compose app renders content
+      // ── Splash ──
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
           splash.classList.add('hidden');
           observer.disconnect();
+          clearTimeout(failTimer);
         }
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Safety fallback — if Compose fails to render, hide splash after 10s
-      setTimeout(function() { splash.classList.add('hidden'); }, 10000);
-    })();
+      // Show error if wasm fails to load after 15s
+      var failTimer = setTimeout(function() {
+        if (appEl.children.length === 0) {
+          splash.classList.add('hidden');
+          errorScreen.classList.add('visible');
+        }
+      }, 15000);
 
-    // Register Service Worker early for instant 2nd-load
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch(function() {});
-    }
+      // Also hide splash on error
+      window.addEventListener('error', function() {
+        splash.classList.add('hidden');
+        clearTimeout(failTimer);
+      });
+
+      // ── Offline detection ──
+      var banner = document.getElementById('offline-banner');
+      function updateOnlineStatus() {
+        banner.classList.toggle('show', !navigator.onLine);
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+
+      // ── Auto-refresh when tab regains focus ──
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && typeof appStateRefresh === 'function') {
+          appStateRefresh();
+        }
+      });
+
+      // ── PWA Install prompt ──
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show a small install banner if user has been here a while
+        setTimeout(function() {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function() {
+              deferredPrompt = null;
+            });
+          }
+        }, 60000);
+      });
+
+      // ── Service Worker ──
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js').catch(function() {});
+      }
+    })();
   </script>
 </body>
 </html>
