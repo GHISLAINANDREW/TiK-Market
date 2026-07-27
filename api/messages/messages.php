@@ -244,6 +244,17 @@ try {
     }
 
     if ($method === 'DELETE') {
+        // ── Delete entire conversation ──
+        if (isset($_GET['delete_conversation'])) {
+            $contactId = isset($_GET['contact_id']) ? (int)$_GET['contact_id'] : 0;
+            if ($contactId <= 0) json(400, ['error' => 'contact_id requis']);
+            // Delete all messages between the two users
+            $stmt = $db->prepare(
+                'DELETE FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)'
+            );
+            $stmt->execute([$userId, $contactId, $contactId, $userId]);
+            json(200, ['success' => true, 'message' => 'Conversation supprimée']);
+        }
         if (isset($_GET['react'])) {
             $messageId = isset($_GET['message_id']) ? (int)$_GET['message_id'] : 0;
             $emoji = isset($_GET['emoji']) ? trim($_GET['emoji']) : '';
