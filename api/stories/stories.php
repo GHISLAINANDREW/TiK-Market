@@ -52,6 +52,11 @@ try {
         )");
     } catch (Exception $e) { error_log("Migration story_replies table: " . $e->getMessage()); }
 
+    // Auto-migration: add is_admin column to stories if missing
+    try {
+        $db->exec("ALTER TABLE stories ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER duration");
+    } catch (Exception $e) { /* column already exists */ }
+
     // ── AUTO-CLEANUP: permanently delete stories older than 24h ──
     $deleted = 0;
     try {
@@ -215,18 +220,26 @@ try {
             json(400, ['error' => 'shop_id et media_url requis']);
         }
 
-        // Verify vendor owns the shop
-        $stmt = $db->prepare("SELECT id FROM shops WHERE id = ? AND vendor_id = ?");
-        $stmt->execute([$shopId, $userId]);
-        if (!$stmt->fetch()) json(403, ['error' => 'Vous n\'êtes pas le propriétaire de cette boutique']);
+        // Verify vendor owns the shop (skip for admin)
+        $isAdmin = false;
+        $stmt = $db->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $userRow = $stmt->fetch();
+        if ($userRow && $userRow['role'] === 'admin') {
+            $isAdmin = true;
+        } else {
+            $stmt = $db->prepare("SELECT id FROM shops WHERE id = ? AND vendor_id = ?");
+            $stmt->execute([$shopId, $userId]);
+            if (!$stmt->fetch()) json(403, ['error' => 'Vous n\'êtes pas le propriétaire de cette boutique']);
+        }
 
         // Validate media type
         if (!in_array($mediaType, ['image', 'video', 'text'])) {
             $mediaType = 'image';
         }
 
-        $stmt = $db->prepare("INSERT INTO stories (user_id, shop_id, media_url, media_type, caption, duration) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$userId, $shopId, $mediaUrl, $mediaType, $caption ?: null, $duration]);
+        $stmt = $db->prepare("INSERT INTO stories (user_id, shop_id, media_url, media_type, caption, duration, is_admin) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $shopId, $mediaUrl, $mediaType, $caption ?: null, $duration, $isAdmin ? 1 : 0]);
         $storyId = (int)$db->lastInsertId();
 
         // Return the created story
@@ -267,11 +280,18 @@ try {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         if ($id <= 0) json(400, ['error' => 'ID story requis']);
 
-        $stmt = $db->prepare("SELECT user_id FROM stories WHERE id = ?");
+        $stmt = $db->prepare("SELECT s.user_id, u.role AS owner_role FROM stories s JOIN users u ON s.user_id = u.id WHERE s.id = ?");
         $stmt->execute([$id]);
         $story = $stmt->fetch();
         if (!$story) json(404, ['error' => 'Story non trouvée']);
-        if ((int)$story['user_id'] !== $userId) json(403, ['error' => 'Vous ne pouvez supprimer que vos propres stories']);
+        // Allow admin to delete any story
+        $callerStmt = $db->prepare("SELECT role FROM users WHERE id = ?");
+        $callerStmt->execute([$userId]);
+        $caller = $callerStmt->fetch();
+        $isAdminCaller = $caller && $caller['role'] === 'admin';
+        if ((int)$story['user_id'] !== $userId && !$isAdminCaller) {
+            json(403, ['error' => 'Vous ne pouvez supprimer que vos propres stories']);
+        }
 
         $stmt = $db->prepare("DELETE FROM stories WHERE id = ?");
         $stmt->execute([$id]);

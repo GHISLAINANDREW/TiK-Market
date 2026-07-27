@@ -431,7 +431,12 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                 snackbarHostState.showSnackbar("Préparation de la story...", duration = SnackbarDuration.Indefinite)
                             }
                             
-                            val shop = ApiClient.fetchShopByVendor()
+                            var shop = ApiClient.fetchShopByVendor()
+                            // Admin without a shop: use the first available shop
+                            if (shop == null && ApiClient.isAdmin()) {
+                                val allShops = ApiClient.fetchAllShops()
+                                shop = allShops.firstOrNull()
+                            }
                             if (shop != null) {
                                 val uploadedUrl = if (dataUrl.startsWith("data:")) {
                                     ApiClient.uploadImage(dataUrl, name)
@@ -457,7 +462,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                 snackbarHostState.showSnackbar("✅ Story publiée ! Elle disparaîtra dans 24h.")
                             } else {
                                 snackbarJob.cancel()
-                                snackbarHostState.showSnackbar("❌ Créez une boutique d'abord.")
+                                snackbarHostState.showSnackbar("❌ Aucune boutique disponible. Créez une boutique d'abord.")
                             }
                         } catch (e: Exception) {
                             snackbarHostState.showSnackbar("❌ Erreur : ${e.message}")

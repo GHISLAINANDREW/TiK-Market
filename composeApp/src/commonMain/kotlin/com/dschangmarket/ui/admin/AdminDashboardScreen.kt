@@ -19,12 +19,14 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiAdminDashboardResponse
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.api.ApiOnlineUser
 import com.dschangmarket.api.ApiOnlineUsersResponse
+import com.dschangmarket.api.ApiStory
 import com.dschangmarket.api.ApiPromoCreateBody
 import com.dschangmarket.data.models.SampleData
 import com.dschangmarket.data.models.OrderStatus
@@ -181,6 +183,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                 Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Notifications", style = MaterialTheme.typography.labelLarge) })
                 Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Dashboard", style = MaterialTheme.typography.labelLarge) })
                 Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("En ligne", style = MaterialTheme.typography.labelLarge) })
+                Tab(selected = selectedTab == 5, onClick = { selectedTab = 5 }, text = { Text("Stories", style = MaterialTheme.typography.labelLarge) })
             }
 
             if (isLoading && users.isEmpty() && shops.isEmpty() && selectedTab != 2) {
@@ -566,6 +569,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     }
                     3 -> AdminDashboardContent(scope = scope)
                     4 -> AdminOnlineUsersContent(scope = scope)
+                    5 -> AdminStoriesContent(scope = scope)
                 }
 
                 // ─── Promotion Dialog ───
@@ -1355,6 +1359,108 @@ private fun OnlineUserCard(user: ApiOnlineUser) {
                     Spacer(Modifier.width(8.dp))
                     Text("il y a ${user.secondsAgo}s", fontSize = 11.sp, color = TextTertiary)
                 }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  STORIES TAB (onglet Stories)
+// ═══════════════════════════════════════════════
+
+@Composable
+fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
+    var stories by remember { mutableStateOf<List<ApiStory>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        isLoading = true
+        try {
+            stories = ApiClient.fetchStories()
+        } catch (e: Exception) {
+            error = e.message
+        }
+        isLoading = false
+    }
+
+    Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Text("Toutes les stories", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Spacer(Modifier.height(8.dp))
+
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (error != null) {
+            DschangErrorState(message = error!!, onRetry = { scope.launch {
+                isLoading = true
+                try {
+                    stories = ApiClient.fetchStories()
+                    error = null
+                } catch (e: Exception) { error = e.message }
+                isLoading = false
+            }})
+        } else if (stories.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Aucune story pour le moment", color = TextSecondary)
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(stories) { story ->
+                    AdminStoryCard(story = story, onDelete = {
+                        scope.launch {
+                            try {
+                                ApiClient.deleteStory(story.id)
+                                stories = stories.filter { it.id != story.id }
+                            } catch (e: Exception) {
+                                error = "Erreur suppression: ${e.message}"
+                            }
+                        }
+                    })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Story thumbnail (circular)
+            Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFE0E0E0))) {
+                var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                LaunchedEffect(story.mediaUrl) {
+                    bitmap = try { loadImageFromUrl(story.mediaUrl) } catch (_: Exception) { null }
+                }
+                if (bitmap != null) {
+                    Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                } else {
+                    Icon(Icons.Default.PhotoLibrary, null, Modifier.size(24.dp), tint = Color.Gray)
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(story.shopName.ifBlank { story.userName }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                if (!story.caption.isNullOrBlank()) {
+                    Text(story.caption!!, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Text(
+                    "${story.mediaType} · ${story.replyCount} réponses",
+                    fontSize = 11.sp, color = TextTertiary
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, "Supprimer", tint = RedAccent)
             }
         }
     }

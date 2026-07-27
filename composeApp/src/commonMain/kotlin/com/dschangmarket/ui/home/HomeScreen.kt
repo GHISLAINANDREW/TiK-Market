@@ -408,7 +408,7 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 // "Add story" button for vendors
-                                if (userRole == "vendor") {
+                                if (userRole == "vendor" || userRole == "admin") {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.clickable { showStoryTypeDialog = true }
@@ -416,7 +416,7 @@ fun HomeScreen(
                                         Box(
                                             Modifier
                                                 .width(68.dp)
-                                                .height(90.dp)
+                                                .height(96.dp)
                                                 .clip(RoundedCornerShape(8.dp))
                                                 .background(Green.copy(alpha = 0.15f)),
                                             contentAlignment = Alignment.Center
@@ -445,7 +445,7 @@ fun HomeScreen(
                                     Box(
                                         Modifier
                                             .width(72.dp)
-                                            .height(94.dp)
+                                            .height(96.dp)
                                             .then(
                                                 if (hasRing) {
                                                     Modifier.border(
@@ -465,9 +465,9 @@ fun HomeScreen(
                                         Box(
                                             Modifier
                                                 .width(68.dp)
-                                                .height(90.dp)
+                                                .height(92.dp)
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .background(Color.LightGray)
+                                                .background(Color(0xFFE0E0E0))
                                         ) {
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -478,7 +478,7 @@ fun HomeScreen(
                                                     Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                                 } else {
                                                     Box(Modifier.fillMaxSize().background(Green), contentAlignment = Alignment.Center) {
-                                                        Text(item.title.take(1), fontWeight = FontWeight.Bold, color = Color.White)
+                                                        Text(item.title.take(1), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 20.sp)
                                                     }
                                                 }
                                                 // Video badge
@@ -505,15 +505,15 @@ fun HomeScreen(
                                         }
                                     }
                                     Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            item.title,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            maxLines = 1,
-                                            modifier = Modifier.width(68.dp),
-                                            textAlign = TextAlign.Center,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                    Text(
+                                        item.title,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.width(68.dp),
+                                        textAlign = TextAlign.Center
+                                    )
                                     }
                                 }
                             }
