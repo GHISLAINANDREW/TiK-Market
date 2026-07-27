@@ -44,11 +44,5 @@
         { "key": "Content-Disposition", "value": "attachment; filename=\"DschangMarket.apk\"" }
       ]
     }
-  ],
-  "overrides": [
-    {
-      "path": "*.apk",
-      "contentType": "application/vnd.android.package-archive"
-    }
   ]
 }

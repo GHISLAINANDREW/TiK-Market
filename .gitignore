@@ -20,8 +20,8 @@ composeApp/build/intermediates/
 composeApp/build/compileSync/
 composeApp/build/compose/
 composeApp/build/web/*/
-!composeApp/build/web/dist-prod/
 composeApp/build/web/*.*
+composeApp/build/kotlin-webpack/
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
@@ -61,4 +61,5 @@ features-proposal.md
 kotlin-js-store/
 
 .vercel
+.vercel-output/
 .env*

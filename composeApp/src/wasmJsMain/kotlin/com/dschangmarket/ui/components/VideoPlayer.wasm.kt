@@ -43,18 +43,10 @@ actual fun VideoPlayer(
 
         document.body?.appendChild(video)
 
-        // Try playing the video
+        // Try playing the video (returns a Promise that we safely ignore)
         try {
-            val playPromise = video.play()
-            // playPromise is a Promise in JS; catch async errors
-            if (playPromise is kotlin.js.Promise<*>) {
-                playPromise.catch { err ->
-                    console.warn("Video autoplay failed:", err)
-                }
-            }
-        } catch (e: Exception) {
-            console.warn("Video play error:", e.message)
-        }
+            video.play()
+        } catch (_: Exception) { }
 
         onDispose {
             video.removeEventListener("ended", onEndedHandler)
