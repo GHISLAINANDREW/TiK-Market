@@ -186,11 +186,11 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                 Tab(selected = selectedTab == 5, onClick = { selectedTab = 5 }, text = { Text("Stories", style = MaterialTheme.typography.labelLarge) })
             }
 
-            if (isLoading && users.isEmpty() && shops.isEmpty() && selectedTab != 2) {
+            if (isLoading && users.isEmpty() && shops.isEmpty() && selectedTab != 2 && selectedTab != 5) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-            } else if (errorMessage != null && users.isEmpty() && shops.isEmpty() && selectedTab != 2) {
+            } else if (errorMessage != null && users.isEmpty() && shops.isEmpty() && selectedTab != 2 && selectedTab != 5) {
                 Box(Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("⚠️", fontSize = 48.sp)
