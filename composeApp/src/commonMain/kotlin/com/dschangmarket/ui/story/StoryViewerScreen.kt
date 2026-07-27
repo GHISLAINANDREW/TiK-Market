@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.dschangmarket.api.ApiClient
 import com.dschangmarket.data.models.Product
 import com.dschangmarket.theme.*
+import com.dschangmarket.ui.components.VideoPlayer
 import com.dschangmarket.ui.components.loadImageFromUrl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -126,6 +127,21 @@ fun StoryViewerScreen(
                         lineHeight = 36.sp
                     )
                 }
+            } else if (currentStory.mediaType == "video") {
+                // Use native video player for video stories
+                VideoPlayer(
+                    url = currentStory.imageUrl,
+                    modifier = Modifier.fillMaxSize(),
+                    isPlaying = !isPaused,
+                    onEnded = {
+                        if (currentIndex < stories.lastIndex) {
+                            currentIndex++
+                            progress = 0f
+                        } else {
+                            onBack()
+                        }
+                    }
+                )
             } else if (currentStory.imageUrl.isNotBlank()) {
                 var bitmap by remember(currentIndex, currentStory.imageUrl) {
                     mutableStateOf<ImageBitmap?>(null)
@@ -151,25 +167,6 @@ fun StoryViewerScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                    }
-                }
-                // Video indicator overlay
-                if (currentStory.mediaType == "video") {
-                    Box(
-                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.7f)
-                        ) {
-                            Icon(
-                                Icons.Default.PlayArrow,
-                                null,
-                                modifier = Modifier.padding(16.dp).size(48.dp),
-                                tint = Color.Black
-                            )
-                        }
                     }
                 }
             } else {

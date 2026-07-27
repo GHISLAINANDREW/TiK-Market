@@ -38,6 +38,7 @@ import com.dschangmarket.ui.components.rememberPickFileLauncher
 import com.dschangmarket.ui.components.loadImageFromUrl
 import com.dschangmarket.utils.getCurrentLocationLatLng
 import com.dschangmarket.utils.getCurrentLocationName
+import com.dschangmarket.utils.getPlaceName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -463,7 +464,8 @@ fun ChatScreen(
                                                 if (lat != null && lng != null) {
                                                     locationLat = lat
                                                     locationLng = lng
-                                                    getCurrentLocationName { name ->
+                                                    // Use getPlaceName with already-fetched lat/lng to avoid double GPS request
+                                                    getPlaceName(lat, lng) { name ->
                                                         locationName = name
                                                         showLocationDialog = true
                                                     }

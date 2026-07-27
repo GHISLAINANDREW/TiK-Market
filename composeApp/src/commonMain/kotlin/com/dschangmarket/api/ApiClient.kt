@@ -130,6 +130,7 @@ data class ApiStory(
     @SerialName("media_type") val mediaType: String = "image",
     val caption: String? = null,
     val duration: Int = 0,
+    @SerialName("is_admin") val isAdmin: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("user_name") val userName: String = "",
     @SerialName("user_avatar") val userAvatar: String? = null,
@@ -705,6 +706,8 @@ object ApiClient {
         val body = json.encodeToString(ApiCreateStoryBody(shopId, mediaUrl, mediaType, caption))
         return safeRequest("POST", Endpoints.STORIES, body)
     }
+
+
 
     suspend fun replyToStory(storyId: Int, text: String): ApiStoryReplyResponse {
         val body = json.encodeToString(ApiStoryReplyBody(text))
