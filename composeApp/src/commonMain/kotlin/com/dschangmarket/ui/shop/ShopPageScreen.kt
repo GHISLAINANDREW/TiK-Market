@@ -156,7 +156,7 @@ fun ShopPageScreen(
                 actions = {
                     if (displayProducts.isNotEmpty()) {
                         IconButton(onClick = { useGrid = !useGrid }) {
-                            Icon(if (useGrid) Icons.Default.ViewList else Icons.Default.GridView, null, tint = Color.White)
+                            Icon(if (useGrid) Icons.Default.List else Icons.Default.Apps, null, tint = Color.White)
                         }
                     }
                 }

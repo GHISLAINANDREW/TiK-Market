@@ -88,6 +88,7 @@ fun HomeScreen(
     var localProducts by remember { mutableStateOf(cachedProducts) }
     var localStories by remember { mutableStateOf<List<StoryItem>>(emptyList()) }
     var localWishlist by remember { mutableStateOf(wishlistProductIds) }
+    var viewedStoryIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
     
     // Sync products cache
     LaunchedEffect(cachedProducts, cachedCategories, wishlistProductIds) {
@@ -432,9 +433,34 @@ fun HomeScreen(
                                 }
                                 
                                 localStories.forEachIndexed { index, item ->
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { onStoryClick(localStories, index) }
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.clickable {
+                                        viewedStoryIds = viewedStoryIds + item.storyId
+                                        onStoryClick(localStories, index)
+                                    }
+                                ) {
+                                    // Story ring (green if unviewed, transparent if viewed)
+                                    val hasRing = item.storyId > 0 && item.storyId !in viewedStoryIds
+                                    Box(
+                                        Modifier
+                                            .width(72.dp)
+                                            .height(94.dp)
+                                            .then(
+                                                if (hasRing) {
+                                                    Modifier.border(
+                                                        2.dp,
+                                                        Brush.sweepGradient(
+                                                            0f to Green,
+                                                            0.25f to Orange,
+                                                            0.5f to Green,
+                                                            0.75f to Orange,
+                                                            1f to Green
+                                                        ),
+                                                        RoundedCornerShape(10.dp)
+                                                    ).padding(2.dp)
+                                                } else Modifier
+                                            )
                                     ) {
                                         Box(
                                             Modifier
@@ -467,19 +493,18 @@ fun HomeScreen(
                                                             modifier = Modifier.padding(4.dp)
                                                         ) {
                                                             Icon(
-                                                                Icons.Default.Videocam,
+                                                                Icons.Default.PlayArrow,
                                                                 null,
                                                                 tint = Color.White,
                                                                 modifier = Modifier.size(14.dp).padding(2.dp)
                                                             )
-            }
-        }
-    }
-}
-
-
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
-                                        Spacer(Modifier.height(4.dp))
+                                    }
+                                    Spacer(Modifier.height(4.dp))
                                         Text(
                                             item.title,
                                             fontSize = 10.sp,

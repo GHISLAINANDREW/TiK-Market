@@ -69,25 +69,25 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
 
                         val current = prefs ?: ApiNotificationPreferences()
 
-                        NotifToggle("Nouveaux produits", "Promotions et nouveaux arrivages", Icons.Default.Storefront, Green, current.allowProduct) {
+                        NotifToggle("Nouveaux produits", "Promotions et nouveaux arrivages", Icons.Default.Store, Green, current.allowProduct) {
                             prefs = current.copy(allowProduct = it)
                         }
-                        NotifToggle("Mises à jour commandes", "Statut de vos commandes", Icons.Default.ShoppingBag, Orange, current.allowOrder) {
+                        NotifToggle("Mises à jour commandes", "Statut de vos commandes", Icons.Default.ShoppingCart, Orange, current.allowOrder) {
                             prefs = current.copy(allowOrder = it)
                         }
-                        NotifToggle("Offres promotionnelles", "Réductions et offres spéciales", Icons.Default.LocalOffer, Color(0xFFE91E63), current.allowPromo) {
+                        NotifToggle("Offres promotionnelles", "Réductions et offres spéciales", Icons.Default.Sell, Color(0xFFE91E63), current.allowPromo) {
                             prefs = current.copy(allowPromo = it)
                         }
                         NotifToggle("Messages", "Notifications de chat", Icons.Default.Chat, Color(0xFF1565C0), current.allowMessage) {
                             prefs = current.copy(allowMessage = it)
                         }
-                        NotifToggle("Système", "Informations générales", Icons.Default.SettingsSuggest, Color.Gray, current.allowSystem) {
+                        NotifToggle("Système", "Informations générales", Icons.Default.Settings, Color.Gray, current.allowSystem) {
                             prefs = current.copy(allowSystem = it)
                         }
 
                         HorizontalDivider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(vertical = 8.dp))
 
-                        NotifToggle("Push activé", "Recevoir les notifications même en arrière-plan", Icons.Default.NotificationsActive, Green, current.pushEnabled) {
+                        NotifToggle("Push activé", "Recevoir les notifications même en arrière-plan", Icons.Default.Notifications, Green, current.pushEnabled) {
                             prefs = current.copy(pushEnabled = it)
                         }
                     }

@@ -380,7 +380,7 @@ fun ManageShopScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
-                                Icons.Default.Inventory,
+                                Icons.Default.Store,
                                 null,
                                 Modifier.size(48.dp),
                                 tint = Color.LightGray

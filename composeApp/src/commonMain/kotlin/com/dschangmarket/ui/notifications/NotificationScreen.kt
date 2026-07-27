@@ -90,7 +90,7 @@ fun NotificationScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Green)
             } else if (notifications.isEmpty()) {
                 EmptyState(
-                    icon = Icons.Default.NotificationsNone,
+                    icon = Icons.Default.Notifications,
                     title = "Aucune notification",
                     subtitle = "Vous serez averti ici des nouveautés et mises à jour."
                 )
@@ -126,10 +126,10 @@ fun NotificationItem(
     onDelete: () -> Unit
 ) {
     val icon = when (notification.type) {
-        "product" -> Icons.Default.Storefront
-        "order" -> Icons.Default.ShoppingBag
-        "system" -> Icons.Default.SettingsSuggest
-        "promo" -> Icons.Default.LocalOffer
+        "product" -> Icons.Default.Store
+        "order" -> Icons.Default.ShoppingCart
+        "system" -> Icons.Default.Settings
+        "promo" -> Icons.Default.Sell
         else -> Icons.Default.Notifications
     }
 

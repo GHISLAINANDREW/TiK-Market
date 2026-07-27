@@ -117,7 +117,7 @@ fun ProductDetailScreen(
                 actions = {
                     IconButton(onClick = onToggleCompare) {
                         Icon(
-                            if (isCompared) Icons.Default.CompareArrows else Icons.Default.Compare,
+                            Icons.Default.SwapHoriz,
                             null,
                             tint = if (isCompared) Orange else Color.White
                         )

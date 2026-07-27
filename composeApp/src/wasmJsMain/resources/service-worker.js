@@ -77,9 +77,14 @@ function isApiCall(url) {
      url.pathname.includes('/auth/') ||
      url.pathname.includes('/cart/') ||
      url.pathname.includes('/shops/') ||
-      url.pathname.includes('/stories/') ||
-      url.pathname.includes('/wallet/') ||
-      url.pathname.includes('/loyalty/'));
+     url.pathname.includes('/stories/') ||
+     url.pathname.includes('/wallet/') ||
+     url.pathname.includes('/loyalty/'));
+}
+
+function isProductListing(url) {
+  return isRenderApi(url) && url.pathname === '/products/products.php';
+}
 
 // ── Fetch: routing ──
 self.addEventListener('fetch', event => {
@@ -117,6 +122,33 @@ self.addEventListener('fetch', event => {
             if (response.ok) cache.put(event.request, response.clone());
             return response;
           }).catch(() => new Response('', { status: 408 }));
+        })
+      )
+    );
+    return;
+  }
+
+  // Product listing → cache-first (instant 2nd visit), background refresh
+  if (isProductListing(url)) {
+    event.respondWith(
+      caches.open(CACHES.API).then(cache =>
+        cache.match(event.request).then(cached => {
+          if (cached) {
+            const ts = parseInt(cached.headers.get('X-Cache-Timestamp') || '0');
+            if (Date.now() - ts < 300000) return cached; // 5 min fresh
+          }
+          return fetch(event.request).then(response => {
+            const clone = response.clone();
+            const headers = new Headers(clone.headers);
+            headers.append('X-Cache-Timestamp', Date.now().toString());
+            cache.put(event.request, new Response(clone.body, {
+              status: clone.status, statusText: clone.statusText, headers: headers
+            }));
+            return response;
+          }).catch(() => cached || new Response('[]', {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }));
         })
       )
     );

@@ -13,6 +13,25 @@ import androidx.core.app.ActivityCompat
 import com.dschangmarket.AndroidChatContext
 import java.util.Locale
 
+// ── Pending permission callback ──
+private var pendingLocationCallback: ((Location?) -> Unit)? = null
+private const val LOCATION_PERMISSION_REQ = 300
+
+/**
+ * Called from MainActivity.onRequestPermissionsResult.
+ * Returns true if the request code was handled.
+ */
+fun handleLocationPermissionResult(grantResults: IntArray): Boolean {
+    val cb = pendingLocationCallback ?: return false
+    pendingLocationCallback = null
+    if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        requestFreshLocation(cb)
+    } else {
+        cb(null)
+    }
+    return true
+}
+
 /**
  * Helper: tries getLastKnownLocation first, then requests a fresh fix with a timeout.
  * Calls onResult(location) with a valid Location or null.
@@ -23,8 +42,9 @@ private fun requestFreshLocation(onResult: (Location?) -> Unit) {
     if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED
     ) {
-        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 300)
-        onResult(null)
+        // Store callback and request permission
+        pendingLocationCallback = onResult
+        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQ)
         return
     }
 

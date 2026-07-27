@@ -60,6 +60,7 @@ import com.dschangmarket.ui.onboarding.OnboardingScreen
 import com.dschangmarket.utils.BackPressHandler
 import com.dschangmarket.utils.NotificationUtils
 import com.dschangmarket.utils.updateUnreadBadge
+import com.dschangmarket.utils.observeConnectivity
 import com.dschangmarket.ui.barcode.BarcodeScanScreen
 import com.dschangmarket.ui.compare.CompareScreen
 import com.dschangmarket.ui.story.StoryViewerScreen
@@ -99,6 +100,34 @@ fun App(onExit: () -> Unit = {}) {
                 }
             )
         } else {
+            // ── Connectivity observer ──
+            var isOnline by remember { mutableStateOf(true) }
+            var showOfflineSnackbar by remember { mutableStateOf(false) }
+            var wasOffline by remember { mutableStateOf(false) }
+
+            LaunchedEffect(Unit) {
+                observeConnectivity { online ->
+                    isOnline = online
+                    if (!online) {
+                        wasOffline = true
+                        showOfflineSnackbar = true
+                    } else if (wasOffline) {
+                        // Just came back online
+                        showOfflineSnackbar = true
+                        wasOffline = false
+                    }
+                }
+            }
+
+            // Show snackbar on connectivity change
+            LaunchedEffect(showOfflineSnackbar) {
+                if (showOfflineSnackbar) {
+                    val msg = if (isOnline) "✅ Connexion rétablie" else "🔴 Connexion perdue"
+                    scope.launch { snackbarHostState.showSnackbar(msg) }
+                    showOfflineSnackbar = false
+                }
+            }
+
             // Restore session in background — does NOT block UI
             LaunchedEffect(Unit) {
                 ApiClient.initToken()
@@ -157,13 +186,13 @@ fun App(onExit: () -> Unit = {}) {
             }
 
             // Show MainContent IMMEDIATELY — data loads in background
-            MainContent(appState, onExit, scope, snackbarHostState)
+            MainContent(appState, onExit, scope, snackbarHostState, isOnline)
         }
     }
 }
 
 @Composable
-fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutines.CoroutineScope, snackbarHostState: SnackbarHostState) {
+fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutines.CoroutineScope, snackbarHostState: SnackbarHostState, isOnline: Boolean = true) {
     var backPressedOnce by remember { mutableStateOf(false) }
 
     LaunchedEffect(backPressedOnce) {
@@ -189,10 +218,10 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
     PollingManager(appState)
 
     val bottomItems = listOf(
-        BottomNavItem(NavScreen.Home, Icons.Outlined.Home, Icons.Filled.Home, "Accueil"),
-        BottomNavItem(NavScreen.Conversations, Icons.Outlined.ChatBubbleOutline, Icons.Filled.ChatBubble, "Messages"),
-        BottomNavItem(NavScreen.Cart, Icons.Outlined.ShoppingCart, Icons.Filled.ShoppingCart, "Panier"),
-        BottomNavItem(NavScreen.Profile, Icons.Outlined.Person, Icons.Filled.Person, "Compte")
+        BottomNavItem(NavScreen.Home, Icons.Default.Home, Icons.Filled.Home, "Accueil"),
+        BottomNavItem(NavScreen.Conversations, Icons.Default.Chat, Icons.Filled.Chat, "Messages"),
+        BottomNavItem(NavScreen.Cart, Icons.Default.ShoppingCart, Icons.Filled.ShoppingCart, "Panier"),
+        BottomNavItem(NavScreen.Profile, Icons.Default.Person, Icons.Filled.Person, "Compte")
     )
 
     val hideBottomBar = appState.currentScreen in listOf(
@@ -212,29 +241,51 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
             }
         }
     ) { padding ->
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
-                    )
-                )
-        ) {
-            // "Transparent" overlay effect
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.White.copy(alpha = 0.2f))
-                    .padding(padding)
-            ) {
-                // Desktop constraint: limit max width for comfortable reading
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopCenter
+            Column(Modifier.fillMaxSize()) {
+                // ── Offline/Online persistent bar ──
+                AnimatedVisibility(
+                    visible = !isOnline,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
                 ) {
-                    Box(Modifier.fillMaxSize()) {
-                        AppNavigation(appState, scope, snackbarHostState)
+                    Box(
+                        Modifier.fillMaxWidth().background(Color(0xFFD32F2F)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "🔴 Connexion perdue — certaines fonctionnalités peuvent être limitées",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
+                            )
+                        )
+                ) {
+                    // "Transparent" overlay effect
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .padding(padding)
+                    ) {
+                        // Desktop constraint: limit max width for comfortable reading
+                        Box(
+                            Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            Box(Modifier.fillMaxSize()) {
+                                AppNavigation(appState, scope, snackbarHostState)
+                        }
                     }
                 }
             }
@@ -790,7 +841,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onToggleDarkMode = { appState.isDarkMode = !appState.isDarkMode },
                 language = appState.language,
                 onToggleLanguage = { appState.updateLanguage(if (appState.language == "fr") "en" else "fr") },
-                onAboutClick = { /* Show about dialog or navigate */ }
+                onAboutClick = { /* Show about dialog or navigate */ },
+                onDownloadApk = { com.dschangmarket.utils.downloadFile("dschangmarket.apk", "DschangMarket.apk") }
             )
             NavScreen.Wishlist -> WishlistScreen(
                 onBack = { appState.goBack() },

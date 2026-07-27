@@ -640,6 +640,10 @@ object ApiClient {
         delete("${Endpoints.MESSAGES}?id=$messageId")
     }
 
+    suspend fun deleteConversation(contactId: Int) {
+        delete("${Endpoints.MESSAGES}?delete_conversation=1&contact_id=$contactId")
+    }
+
     suspend fun addReaction(messageId: Int, emoji: String): Boolean {
         return try {
             val resp = post(Endpoints.MESSAGES + "?react=1", """{"message_id":$messageId,"emoji":"$emoji"}""")

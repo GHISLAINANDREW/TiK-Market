@@ -73,10 +73,10 @@ fun VendorDashboardScreen(
     val overview = stats?.overview
     val displayStats = remember(overview) {
         if (overview == null) emptyList() else listOf(
-            DashboardStat("Produits", "${overview.productCount}", Icons.Default.Inventory, Green),
-            DashboardStat("Commandes", "${overview.totalOrders}", Icons.Default.ShoppingBag, GreenAccent),
-            DashboardStat("Vendus", "${overview.totalItemsSold}", Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF1565C0)),
-            DashboardStat("Revenu", "${overview.totalRevenue.toInt().let { if (it >= 1000) "${it / 1000}k" else "$it" }} FCFA", Icons.Default.AccountBalanceWallet, GreenDark)
+            DashboardStat("Produits", "${overview.productCount}", Icons.Default.Store, Green),
+            DashboardStat("Commandes", "${overview.totalOrders}", Icons.Default.ShoppingCart, GreenAccent),
+            DashboardStat("Vendus", "${overview.totalItemsSold}", Icons.Default.TrendingUp, Color(0xFF1565C0)),
+            DashboardStat("Revenu", "${overview.totalRevenue.toInt().let { if (it >= 1000) "${it / 1000}k" else "$it" }} FCFA", Icons.Default.AccountBalance, GreenDark)
         )
     }
 

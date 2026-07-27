@@ -19,3 +19,15 @@ expect fun updateUnreadBadge(count: Int)
  * Sets up a callback that fires when the browser tab regains focus (no-op on Android).
  */
 expect fun setupTabFocusRefresh(callback: () -> Unit)
+
+/**
+ * Observes online/offline connectivity status.
+ * Calls onChange(true) when online, onChange(false) when offline.
+ * Returns a cancellation function (call to stop observing).
+ */
+expect fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit
+
+/**
+ * Triggers a file download in the browser (no-op on Android).
+ */
+expect fun downloadFile(url: String, filename: String)

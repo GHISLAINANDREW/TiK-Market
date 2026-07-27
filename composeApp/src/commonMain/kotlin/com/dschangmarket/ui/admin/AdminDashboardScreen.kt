@@ -902,7 +902,7 @@ fun AdminShopCard(
                 DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
                     DropdownMenuItem(
                         text = { Text(if (shop.isVerified) "Dé-vérifier" else "Vérifier") },
-                        leadingIcon = { Icon(if (shop.isVerified) Icons.Default.VerifiedUser else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) },
+                        leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) },
                         onClick = { onToggleVerify(); showActions = false }
                     )
                     DropdownMenuItem(
