@@ -32,15 +32,20 @@ actual fun setupTabFocusRefresh(callback: () -> Unit) {
 
 actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
     val activity = AndroidChatContext.currentActivity ?: return {}
+    val connectivityManager: ConnectivityManager? = try {
+        activity.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+    } catch (_: Exception) { null }
+    if (connectivityManager == null) { onChange(true); return {} }
 
-    val connectivityManager = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-        ?: return {}
-
-    // Run initial check
-    val activeNetwork = connectivityManager.activeNetwork
-    val caps = connectivityManager.getNetworkCapabilities(activeNetwork)
-    val initiallyOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-    onChange(initiallyOnline)
+    // Run initial check safely
+    try {
+        val activeNetwork = connectivityManager.activeNetwork
+        val caps = connectivityManager.getNetworkCapabilities(activeNetwork)
+        val initiallyOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        onChange(initiallyOnline)
+    } catch (_: Exception) {
+        onChange(true) // Assume online if check fails
+    }
 
     // Register callback for future changes
     val callback = object : ConnectivityManager.NetworkCallback() {
@@ -49,10 +54,13 @@ actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
         }
 
         override fun onLost(network: Network) {
-            // Check if there are any other available networks
-            val currentNetwork = connectivityManager.activeNetwork
-            val currentCaps = connectivityManager.getNetworkCapabilities(currentNetwork)
-            if (currentCaps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) != true) {
+            try {
+                val currentNetwork = connectivityManager.activeNetwork
+                val currentCaps = connectivityManager.getNetworkCapabilities(currentNetwork)
+                if (currentCaps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) != true) {
+                    onChange(false)
+                }
+            } catch (_: Exception) {
                 onChange(false)
             }
         }
@@ -63,13 +71,17 @@ actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
         }
     }
 
-    val request = NetworkRequest.Builder()
-        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        .build()
-    connectivityManager.registerNetworkCallback(request, callback)
+    try {
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager.registerNetworkCallback(request, callback)
+    } catch (_: Exception) {
+        return {} // Callback registration failed
+    }
 
     return {
-        connectivityManager.unregisterNetworkCallback(callback)
+        try { connectivityManager.unregisterNetworkCallback(callback) } catch (_: Exception) {}
     }
 }
 
