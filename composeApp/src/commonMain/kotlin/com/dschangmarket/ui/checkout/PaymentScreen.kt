@@ -67,7 +67,7 @@ private fun StepConfirmPayment(amount: Double, method: String, phone: String, on
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
             Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(if (method.contains("Orange")) Icons.Default.PhoneAndroid else Icons.Default.PhoneIphone, null, Modifier.size(24.dp), tint = Green)
+                    Icon(Icons.Default.Phone, null, Modifier.size(24.dp), tint = Green)
                     Spacer(Modifier.width(8.dp))
                     Text("Numéro $method", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }

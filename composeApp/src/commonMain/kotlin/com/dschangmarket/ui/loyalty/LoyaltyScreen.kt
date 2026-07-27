@@ -97,14 +97,14 @@ fun LoyaltyScreen(
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ActionChip(
-                            icon = Icons.Default.CardGiftcard,
+                            icon = Icons.Default.Sell,
                             text = "Échanger points",
                             color = Orange,
                             onClick = { showRedeemDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                         ActionChip(
-                            icon = Icons.Default.AccountBalanceWallet,
+                            icon = Icons.Default.AccountBalance,
                             text = "Recharger",
                             color = Green,
                             onClick = { showRechargeDialog = true },
@@ -134,7 +134,7 @@ fun LoyaltyScreen(
                                 }
                             } else {
                                 if (coupons.isEmpty()) {
-                                    EmptyStateIcon(Icons.Default.CardGiftcard, "Aucun coupon")
+                                    EmptyStateIcon(Icons.Default.Sell, "Aucun coupon")
                                 } else {
                                     coupons.forEach { c -> CouponCard(c, onClick = { onCouponClick(c.code) }) }
                                 }
@@ -292,11 +292,11 @@ private fun TransactionRow(tx: ApiWalletTransaction) {
     val icon = when (tx.type) {
         "earn" -> Icons.Default.AddCircle
         "spend" -> Icons.Default.RemoveCircle
-        "recharge" -> Icons.Default.AccountBalanceWallet
-        "cashback" -> Icons.Default.CurrencyExchange
-        "bonus" -> Icons.Default.CardGiftcard
+        "recharge" -> Icons.Default.AccountBalance
+        "cashback" -> Icons.Default.SwapHoriz
+        "bonus" -> Icons.Default.Sell
         "refund" -> Icons.Default.Refresh
-        else -> Icons.Default.Receipt
+        else -> Icons.Default.ListAlt
     }
     val color = when (tx.type) {
         "earn", "cashback", "bonus", "refund" -> Green

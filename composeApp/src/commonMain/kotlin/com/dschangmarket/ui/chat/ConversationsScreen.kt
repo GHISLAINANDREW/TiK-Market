@@ -54,6 +54,10 @@ fun ConversationsScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
+    // Delete conversation state
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteTargetConv by remember { mutableStateOf<Conversation?>(null) }
+
     val filteredConversations = conversations.filter {
         it.name.contains(searchQuery, ignoreCase = true) || it.lastMessage.contains(searchQuery, ignoreCase = true)
     }
@@ -149,10 +153,49 @@ fun ConversationsScreen(
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
                     items(filteredConversations) { conv ->
-                        ConversationItem(conv, onClick = { onConversationClick(conv.name, conv.productTitle, conv.vendorUserId, conv.isOnline) })
+                        ConversationItem(
+                            conv,
+                            onClick = { onConversationClick(conv.name, conv.productTitle, conv.vendorUserId, conv.isOnline) },
+                            onDelete = {
+                                deleteTargetConv = conv
+                                showDeleteConfirm = true
+                            }
+                        )
                         HorizontalDivider(Modifier.padding(start = 80.dp), color = Color(0xFFF0F0F0), thickness = 0.5.dp)
                     }
                 }
+            }
+
+            // ── Delete conversation confirmation ──
+            if (showDeleteConfirm && deleteTargetConv != null) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false; deleteTargetConv = null },
+                    title = { Text("Supprimer la conversation") },
+                    text = { Text("Voulez-vous vraiment supprimer la conversation avec ${deleteTargetConv!!.name} ?\nLes messages seront définitivement perdus.") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        val contactId = deleteTargetConv!!.vendorUserId
+                                        ApiClient.deleteConversation(contactId)
+                                        conversations = conversations.filter { it.id != deleteTargetConv!!.id }
+                                    } catch (_: Exception) { }
+                                    showDeleteConfirm = false
+                                    deleteTargetConv = null
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        ) {
+                            Text("Supprimer", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = { showDeleteConfirm = false; deleteTargetConv = null }) {
+                            Text("Annuler")
+                        }
+                    }
+                )
             }
         }
     }
@@ -191,10 +234,10 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
 }
 
 @Composable
-private fun ConversationItem(conv: Conversation, onClick: () -> Unit) {
+private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: () -> Unit = {}) {
     Surface(onClick = onClick, color = Color.White) {
         Row(
-            Modifier.fillMaxWidth().padding(16.dp),
+            Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar with verified badge potential
@@ -249,6 +292,15 @@ private fun ConversationItem(conv: Conversation, onClick: () -> Unit) {
                         }
                     }
                 }
+            }
+            // Delete button
+            IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Supprimer la conversation",
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }

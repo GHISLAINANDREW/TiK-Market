@@ -28,18 +28,19 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%; height: 100%; overflow: hidden;
+      width: 100%; height: 100%; overflow-x: hidden;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: none;
     }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #1B5E20;
+      background: #f5f5f5;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
     }
-    #composeApp { width: 100%; height: 100vh; }
+    #composeApp { width: 100%; min-height: 100vh; }
     /* Splash screen */
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -65,6 +66,98 @@
       font-size: 12px; color: rgba(255,255,255,0.5);
       margin-top: 8px; letter-spacing: 0.2px;
     }
+    /* ── Preview (shown while WASM loads) ── */
+    #preview {
+      display: none;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    #preview.visible { display: block; }
+    #preview.hidden { display: none; }
+    /* Top bar */
+    .preview-topbar {
+      background: #1B5E20; color: white;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .preview-topbar h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+    .preview-topbar .icons { display: flex; gap: 16px; align-items: center; }
+    .preview-topbar .icons span { font-size: 20px; cursor: default; opacity: 0.9; }
+    /* Download buttons */
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 4px 10px;
+      border-radius: 14px; background: rgba(255,255,255,0.15);
+      color: white; text-decoration: none; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .dl-btn:hover { background: rgba(255,255,255,0.25); }
+    .dl-btn.ios { opacity: 0.6; cursor: default; }
+    /* Categories strip */
+    .preview-cats {
+      display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto;
+      background: white; border-bottom: 1px solid #e0e0e0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .preview-cats .cat {
+      white-space: nowrap; padding: 6px 14px; border-radius: 16px;
+      font-size: 13px; background: #e8f5e9; color: #1B5E20;
+      flex-shrink: 0;
+    }
+    .preview-cats .cat.active { background: #1B5E20; color: white; font-weight: 600; }
+    /* Product grid */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 12px 12px 100px;
+      max-width: 720px; margin: 0 auto;
+    }
+    .preview-card {
+      background: white; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .preview-card .img-wrap {
+      width: 100%; aspect-ratio: 1;
+      background: #f0f0f0; display: flex;
+      align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .preview-card .img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .preview-card .img-wrap .placeholder {
+      font-size: 32px; color: #bbb;
+    }
+    .preview-card .info { padding: 8px 10px 12px; }
+    .preview-card .info .title {
+      font-size: 13px; font-weight: 500; color: #212121;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.3; min-height: 34px;
+    }
+    .preview-card .info .price {
+      font-size: 15px; font-weight: 700; color: #1B5E20;
+      margin-top: 4px;
+    }
+    .preview-card .info .shop {
+      font-size: 11px; color: #757575; margin-top: 2px;
+    }
+    /* Loading shimmer */
+    .preview-card.skeleton .img-wrap { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .preview-card.skeleton .info .title { background: #e0e0e0; height: 14px; border-radius: 4px; min-height: auto; margin-bottom: 6px; width: 80%; }
+    .preview-card.skeleton .info .price { background: #e0e0e0; height: 16px; border-radius: 4px; width: 50%; }
+    .preview-card.skeleton .info .shop { background: #e0e0e0; height: 11px; border-radius: 4px; width: 60%; }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    /* Error/retry inside preview */
+    #preview-error {
+      text-align: center; padding: 40px 20px; color: #757575;
+    }
+    #preview-error button {
+      margin-top: 12px; background: #1B5E20; color: white;
+      border: none; padding: 8px 24px; border-radius: 20px; font-size: 14px; cursor: pointer;
+    }
     /* Offline banner */
     #offline-banner {
       position: fixed; top: 0; left: 0; right: 0;
@@ -76,10 +169,6 @@
       transition: transform 0.3s ease;
     }
     #offline-banner.show { transform: translateY(0); }
-    /* Scrollbar styling for web */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
     /* Error state if wasm fails to load */
     #error-screen {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -125,18 +214,91 @@
     <div class="splash-sub">Marché local en ligne</div>
   </div>
 
+  <!-- Preview (shown while WASM loads) -->
+  <div id="preview">
+    <div class="preview-topbar">
+      <h1>DschangMarket</h1>
+      <div class="icons">
+        <span class="dl-btn" onclick="document.getElementById('composeApp').scrollIntoView({behavior:'smooth'})" title="Télécharger depuis Paramètres">&#128241; APK</span>
+        <span class="dl-btn ios" title="Application iOS bientôt disponible">&#63743; iOS</span>
+      </div>
+    </div>
+    <div class="preview-cats" id="preview-cats">
+      <span class="cat active">Tous</span>
+      <span class="cat">Alimentation</span>
+      <span class="cat">Mode</span>
+      <span class="cat">Électronique</span>
+      <span class="cat">Artisanat</span>
+      <span class="cat">Services</span>
+    </div>
+    <div class="preview-grid" id="preview-grid">
+      <!-- Skeleton cards -->
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+    </div>
+    <div id="preview-error" style="display:none">
+      <p>Impossible de charger les produits</p>
+      <button onclick="loadPreviewProducts()">Réessayer</button>
+    </div>
+  </div>
+
   <script type="module" src="dschangmarket.mjs"></script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
+      var preview = document.getElementById('preview');
+      var previewGrid = document.getElementById('preview-grid');
 
-      // ── Splash ──
+      // ── Load preview products ──
+      window.loadPreviewProducts = function() {
+        var errDiv = document.getElementById('preview-error');
+        errDiv.style.display = 'none';
+        // Show skeleton
+        previewGrid.innerHTML =
+          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(4);
+        fetch('https://dschang-market.onrender.com/products/products.php')
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .then(function(data) {
+            var products = data.products || data || [];
+            if (!Array.isArray(products) || products.length === 0) throw new Error('No products');
+            previewGrid.innerHTML = '';
+            products.slice(0, 20).forEach(function(p) {
+              var title = p.title || 'Produit';
+              var price = (p.price != null) ? p.price.toLocaleString('fr-FR') + ' FCFA' : '—';
+              var shop = p.shop_name || p.seller_name || '';
+              var img = p.image_url || p.images || '';
+              var imgTag = img
+                ? '<img src="' + encodeURI(img) + '" alt="' + title.replace(/"/g,'&quot;') + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<span class=placeholder>&#128247;</span>\'">'
+                : '<span class="placeholder">&#128247;</span>';
+              previewGrid.innerHTML +=
+                '<div class="preview-card"><div class="img-wrap">' + imgTag + '</div><div class="info"><div class="title">' + title.replace(/</g,'&lt;') + '</div><div class="price">' + price + '</div><div class="shop">' + shop.replace(/</g,'&lt;') + '</div></div></div>';
+            });
+          })
+          .catch(function() {
+            errDiv.style.display = 'block';
+          });
+      };
+
+      // ── Splash → Preview transition ──
+      var splashTimer = setTimeout(function() {
+        if (appEl.children.length === 0) {
+          splash.classList.add('hidden');
+          preview.classList.add('visible');
+          loadPreviewProducts();
+        }
+      }, 800); // show splash for 800ms, then preview
+
+      // ── When compose renders, hide preview ──
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
           splash.classList.add('hidden');
+          preview.classList.add('hidden');
           observer.disconnect();
+          clearTimeout(splashTimer);
           clearTimeout(failTimer);
         }
       });
@@ -177,7 +339,6 @@
       window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
-        // Show a small install banner if user has been here a while
         setTimeout(function() {
           if (deferredPrompt) {
             deferredPrompt.prompt();
