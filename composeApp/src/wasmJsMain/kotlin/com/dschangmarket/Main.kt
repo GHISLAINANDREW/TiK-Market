@@ -35,6 +35,11 @@ fun main() {
                 println("[Main] ERROR: loading-screen element not found")
             }
         }
-        App()
+        App(onExit = {
+            println("[Main] Closing application")
+            window.close()
+            // Fallback for some browsers that prevent window.close()
+            window.location.href = "about:blank"
+        })
     }
 }

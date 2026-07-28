@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -13,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -256,60 +259,63 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
         NavScreen.StoryViewer, NavScreen.AdminDashboard
     )
 
-    Scaffold(
-        modifier = Modifier.statusBarsPadding(),
-        containerColor = Color.Transparent, // Transparent to show gradient
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            if (!hideBottomBar) {
-                AppBottomBar(appState, bottomItems)
-            }
-        }
-    ) { padding ->
-            Column(Modifier.fillMaxSize()) {
-                // ── Offline/Online persistent bar ──
-                AnimatedVisibility(
-                    visible = !isOnline,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Box(
-                        Modifier.fillMaxWidth().background(Color(0xFFD32F2F)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "🔴 Connexion perdue — certaines fonctionnalités peuvent être limitées",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                        )
+    BoxWithConstraints(
+        Modifier.fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
+                )
+            )
+    ) {
+        val screenWidth = maxWidth
+        val isDesktop = screenWidth > 600.dp
+        
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .then(if (isDesktop) Modifier.width(420.dp).fillMaxHeight().padding(vertical = 16.dp).clip(RoundedCornerShape(16.dp)).shadow(12.dp) else Modifier.fillMaxSize())
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = Color.Transparent,
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
+                    bottomBar = {
+                        if (!hideBottomBar) {
+                            AppBottomBar(appState, bottomItems)
+                        }
                     }
-                }
-
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
-                            )
-                        )
-                ) {
-                    // "Transparent" overlay effect
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .padding(padding)
-                    ) {
-                        // Desktop constraint: limit max width for comfortable reading
-                        Box(
-                            Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.TopCenter
+                ) { padding ->
+                    Column(Modifier.fillMaxSize()) {
+                        // ── Offline/Online persistent bar ──
+                        AnimatedVisibility(
+                            visible = !isOnline,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
                         ) {
-                            Box(Modifier.fillMaxSize()) {
-                                AppNavigation(appState, scope, snackbarHostState)
+                            Box(
+                                Modifier.fillMaxWidth().background(Color(0xFFD32F2F)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "🔴 Connexion perdue — certaines fonctionnalités peuvent être limitées",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                        ) {
+                            AppNavigation(appState, scope, snackbarHostState)
                         }
                     }
                 }
@@ -872,7 +878,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 language = appState.language,
                 onToggleLanguage = { appState.updateLanguage(if (appState.language == "fr") "en" else "fr") },
                 onAboutClick = { /* Show about dialog or navigate */ },
-                onDownloadApk = { com.dschangmarket.utils.downloadFile("dschangmarket.apk", "DschangMarket.apk") }
+                onDownloadApk = { com.dschangmarket.utils.downloadFile("https://github.com/GHISLAINANDREW/dschang-market/releases/download/beta/Dschang.Market.4.apk", "DschangMarket.apk") }
             )
             NavScreen.Wishlist -> WishlistScreen(
                 onBack = { appState.goBack() },
