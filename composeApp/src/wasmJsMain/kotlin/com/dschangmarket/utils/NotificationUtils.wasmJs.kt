@@ -1,6 +1,8 @@
 package com.dschangmarket.utils
 
 import kotlinx.browser.document
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Native browser notification logic for WasmJs.
@@ -40,6 +42,13 @@ actual object NotificationUtils {
             permissionRequested = true
             jsRequestPermission()
         }
+    }
+
+    private val _navigationEvents = MutableSharedFlow<Unit>(replay = 1, extraBufferCapacity = 1)
+    actual val navigationEvents = _navigationEvents.asSharedFlow()
+
+    actual fun onNotificationClicked() {
+        _navigationEvents.tryEmit(Unit)
     }
 
     actual fun showNotification(title: String, message: String) {

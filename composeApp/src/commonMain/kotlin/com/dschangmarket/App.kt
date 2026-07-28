@@ -25,6 +25,7 @@ import com.dschangmarket.api.toProduct
 import com.dschangmarket.data.models.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import com.dschangmarket.theme.*
 import com.dschangmarket.ui.auth.AuthScreen
 import com.dschangmarket.ui.cart.CartScreen
@@ -187,6 +188,30 @@ fun App(onExit: () -> Unit = {}) {
 
             // Show MainContent IMMEDIATELY — data loads in background
             MainContent(appState, onExit, scope, snackbarHostState, isOnline)
+
+            // Listen for notification navigation signal
+            LaunchedEffect(Unit) {
+                NotificationUtils.navigationEvents.collect {
+                    val notifType = com.dschangmarket.utils.getStartupParameter("notif_type")
+                    if (notifType != null) {
+                        val relatedId = com.dschangmarket.utils.getStartupParameter("notif_id")?.toIntOrNull()
+                        com.dschangmarket.utils.setStartupParameter("notif_type", null)
+                        com.dschangmarket.utils.setStartupParameter("notif_id", null)
+                        
+                        if (notifType == "notification" || notifType == "story") {
+                            appState.navigateTo(NavScreen.Notifications)
+                        } else if (notifType == "product") {
+                            if (relatedId != null) {
+                                try {
+                                    val p = ApiClient.fetchProduct(relatedId).toProduct()
+                                    appState.selectedProduct = p
+                                    appState.navigateTo(NavScreen.ProductDetail)
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

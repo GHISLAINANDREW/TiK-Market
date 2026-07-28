@@ -150,10 +150,18 @@ fun HomeScreen(
         try {
             val apiStories = ApiClient.fetchStories(replies = true)
             localStories = apiStories.map { apiStory ->
+                val cleanBase = ApiClient.baseUrl.trimEnd('/')
+                val cleanPath = apiStory.mediaUrl.trimStart('/', '\\').replace("\\", "/")
+                val finalMediaUrl = if (apiStory.mediaUrl.startsWith("http") || apiStory.mediaType == "text") {
+                    apiStory.mediaUrl
+                } else {
+                    "$cleanBase/$cleanPath"
+                }
+
                 StoryItem(
                     title = apiStory.shopName.ifBlank { apiStory.userName },
                     subtitle = apiStory.caption ?: "",
-                    imageUrl = apiStory.mediaUrl,
+                    imageUrl = finalMediaUrl,
                     storyId = apiStory.id,
                     shopId = apiStory.shopId,
                     mediaType = apiStory.mediaType,

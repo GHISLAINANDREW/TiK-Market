@@ -14,4 +14,14 @@ expect object NotificationUtils {
      * Also plays a notification sound.
      */
     fun showNotification(title: String, message: String)
+
+    /**
+     * Triggered when a notification is clicked.
+     */
+    val navigationEvents: kotlinx.coroutines.flow.SharedFlow<Unit>
+
+    /**
+     * Call this to trigger a navigation event.
+     */
+    fun onNotificationClicked()
 }

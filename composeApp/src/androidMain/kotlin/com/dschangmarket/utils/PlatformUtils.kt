@@ -9,10 +9,29 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import com.dschangmarket.AndroidChatContext
 
+private val startupParams = mutableMapOf<String, String?>()
+
 actual fun getStartupParameter(key: String): String? {
+    if (startupParams.containsKey(key)) return startupParams[key]
     val activity = AndroidChatContext.currentActivity ?: return null
-    val data = activity.intent?.data ?: return null
-    return data.getQueryParameter(key)
+    val intent = activity.intent ?: return null
+    
+    // Check URL data (Deep Link)
+    val data = intent.data?.getQueryParameter(key)
+    if (data != null) return data
+    
+    // Check Extras (Notifications)
+    val extra = intent.getStringExtra(key)
+    if (extra != null) return extra
+    
+    val intExtra = intent.getIntExtra(key, -1)
+    if (intExtra != -1) return intExtra.toString()
+    
+    return null
+}
+
+actual fun setStartupParameter(key: String, value: String?) {
+    startupParams[key] = value
 }
 
 actual fun copyToClipboard(text: String) {
