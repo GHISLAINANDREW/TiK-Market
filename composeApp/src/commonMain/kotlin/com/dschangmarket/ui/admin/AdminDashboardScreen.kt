@@ -1449,7 +1449,7 @@ private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
             Spacer(Modifier.width(12.dp))
 
             Column(Modifier.weight(1f)) {
-                Text(story.shopName.ifBlank { story.userName }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Text(if (story.isAdmin != 0) "DSCHANG MARKET" else story.shopName.ifBlank { story.userName }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                 if (!story.caption.isNullOrBlank()) {
                     Text(story.caption!!, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
