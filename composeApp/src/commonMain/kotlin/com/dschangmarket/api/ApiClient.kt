@@ -182,6 +182,29 @@ data class ApiStoryDeleteResponse(
     val message: String = ""
 )
 
+// ── Hero Section models ───────────────────────────────────────
+
+@Serializable
+data class ApiHeroItem(
+    val id: Int,
+    val title: String,
+    val subtitle: String,
+    @SerialName("image_url") val imageUrl: String,
+    @SerialName("shop_id") val shopId: Int? = null,
+    @SerialName("shop_name") val shopName: String? = null,
+    val priority: Int = 0,
+    @SerialName("is_active") val isActive: Boolean = true
+)
+
+@Serializable
+data class ApiCreateHeroBody(
+    val title: String,
+    val subtitle: String,
+    @SerialName("image_url") val imageUrl: String,
+    @SerialName("shop_id") val shopId: Int? = null,
+    val priority: Int = 0
+)
+
 // ── Result Wrapper ─────────────────────────────────────────────
 
 sealed class ApiResult<out T> {
@@ -227,6 +250,7 @@ object ApiClient {
         const val COUPONS = "/coupons/list.php"
         const val COUPONS_USE = "/coupons/use.php"
         const val STORIES = "/stories/stories.php"
+        const val HERO = "/admin/hero.php"
         const val ADMIN_USERS = "/admin/users.php"
         const val ADMIN_SHOPS = "/admin/shops.php"
     }
@@ -716,6 +740,24 @@ object ApiClient {
 
     suspend fun deleteStory(storyId: Int) {
         delete("${Endpoints.STORIES}?id=$storyId")
+    }
+
+    // ── Hero Section ──────────────────────────────────────────
+
+    suspend fun fetchHeroItems(): List<ApiHeroItem> {
+        return try {
+            safeRequest<List<ApiHeroItem>>("GET", Endpoints.HERO)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun createHeroItem(body: ApiCreateHeroBody): ApiHeroItem {
+        return safeRequest("POST", Endpoints.HERO, json.encodeToString(body))
+    }
+
+    suspend fun deleteHeroItem(id: Int) {
+        delete("${Endpoints.HERO}?id=$id")
     }
 
     // ── Vendor Orders ──

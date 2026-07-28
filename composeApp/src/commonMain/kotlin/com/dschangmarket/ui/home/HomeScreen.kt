@@ -89,6 +89,7 @@ fun HomeScreen(
     var localStories by remember { mutableStateOf<List<StoryItem>>(emptyList()) }
     var localWishlist by remember { mutableStateOf(wishlistProductIds) }
     var viewedStoryIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var localHeroItems by remember { mutableStateOf<List<com.dschangmarket.api.ApiHeroItem>>(emptyList()) }
     
     // Sync products cache
     LaunchedEffect(cachedProducts, cachedCategories, wishlistProductIds) {
@@ -206,6 +207,9 @@ fun HomeScreen(
         loadProducts(force = true)
         loadStories()
         loadWishlist()
+        try {
+            localHeroItems = ApiClient.fetchHeroItems()
+        } catch (_: Exception) {}
         isLoading = false
     }
 
@@ -230,7 +234,7 @@ fun HomeScreen(
     }
 
     // Dynamic placeholders for search
-    val searchPlaceholders = listOf("Rechercher un produit...", "Poulet frais de Dschang...", "Pagne Wax élégant...", "Smartphone Samsung...", "Boutique de Will...")
+    val searchPlaceholders = listOf("Poulet frais de Dschang...", "Rechercher un produit...", "Pagne Wax élégant...", "Smartphone Samsung...", "Boutique de Will...")
     var placeholderIndex by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
         while(true) {
@@ -425,18 +429,18 @@ fun HomeScreen(
                                             Modifier
                                                 .width(68.dp)
                                                 .height(96.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Green.copy(alpha = 0.15f)),
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFFE0E0E0).copy(alpha = 0.6f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Icon(Icons.Default.Add, null, tint = Green, modifier = Modifier.size(24.dp))
+                                                Icon(Icons.Default.Add, null, tint = Green, modifier = Modifier.size(28.dp))
                                                 Spacer(Modifier.height(2.dp))
-                                                Text("Story", fontSize = 9.sp, color = Green, fontWeight = FontWeight.Medium)
+                                                Text("Story", fontSize = 10.sp, color = Green, fontWeight = FontWeight.Bold)
                                             }
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        Text("Ajouter", fontSize = 9.sp, fontWeight = FontWeight.Medium, color = Green)
+                                        Text("Ajouter", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Green)
                                     }
                                 }
                                 
@@ -458,24 +462,18 @@ fun HomeScreen(
                                                 if (hasRing) {
                                                     Modifier.border(
                                                         2.dp,
-                                                        Brush.sweepGradient(
-                                                            0f to Green,
-                                                            0.25f to Orange,
-                                                            0.5f to Green,
-                                                            0.75f to Orange,
-                                                            1f to Green
-                                                        ),
-                                                        RoundedCornerShape(10.dp)
+                                                        BrandGradient,
+                                                        RoundedCornerShape(14.dp)
                                                     ).padding(2.dp)
-                                                } else Modifier
+                                                } else Modifier.border(1.dp, DividerGray, RoundedCornerShape(14.dp)).padding(1.dp)
                                             )
                                     ) {
                                         Box(
                                             Modifier
                                                 .width(68.dp)
                                                 .height(92.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Color(0xFFE0E0E0))
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(if (item.imageUrl.isEmpty()) Green else Color(0xFFF0F0F0))
                                         ) {
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -531,7 +529,11 @@ fun HomeScreen(
 
                 // Hero Section Montage
                 item {
-                    AnimatedHeroSection(screenWidth)
+                    if (localHeroItems.isNotEmpty()) {
+                        DynamicHeroSection(localHeroItems, screenWidth)
+                    } else {
+                        AnimatedHeroSection(screenWidth)
+                    }
                 }
 
                 // Welcome text
@@ -874,6 +876,106 @@ fun ProductGridSection(
     }
 }
 
+@Composable
+fun DynamicHeroSection(items: List<com.dschangmarket.api.ApiHeroItem>, screenWidth: Dp) {
+    var index by remember { mutableStateOf(0) }
+    
+    LaunchedEffect(items) {
+        while(items.isNotEmpty()) {
+            delay(5000)
+            index = (index + 1) % items.size
+        }
+    }
+
+    val heroHeight = when {
+        screenWidth < 480.dp -> 200.dp
+        screenWidth < 900.dp -> 280.dp
+        else -> 350.dp
+    }
+
+    if (items.isEmpty()) return
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(heroHeight)
+            .padding(16.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .shadow(4.dp)
+    ) {
+        AnimatedContent(
+            targetState = items[index],
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(1200)) + scaleIn(initialScale = 1.1f, animationSpec = tween(1200))) togetherWith
+                (fadeOut(animationSpec = tween(1200)) + scaleOut(targetScale = 0.9f, animationSpec = tween(1200)))
+            }
+        ) { item ->
+            Box(Modifier.fillMaxSize()) {
+                var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                LaunchedEffect(item.imageUrl) {
+                    bitmap = loadImageFromUrl(item.imageUrl)
+                }
+                
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap as ImageBitmap,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize().background(BrandGradient))
+                }
+                
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Orange.copy(alpha = 0.5f),
+                                GreenDark.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+                )
+                
+                Column(
+                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
+                ) {
+                    Text(
+                        text = item.title,
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        style = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color.Black, offset = androidx.compose.ui.geometry.Offset(2f, 2f), blurRadius = 4f))
+                    )
+                    Text(
+                        text = item.subtitle,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                if (item.shopName != null) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                        color = Orange,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "TOP BOUTIQUE", 
+                            color = Color.White, 
+                            fontSize = 10.sp, 
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ── AnimatedHeroSection (unchanged) ──
 
 @Composable
@@ -895,9 +997,9 @@ fun AnimatedHeroSection(screenWidth: Dp) {
     }
 
     val heroHeight = when {
-        screenWidth < 600.dp -> 180.dp
-        screenWidth < 900.dp -> 260.dp
-        else -> 320.dp
+        screenWidth < 480.dp -> 200.dp
+        screenWidth < 900.dp -> 280.dp
+        else -> 350.dp
     }
 
     Box(
@@ -934,9 +1036,11 @@ fun AnimatedHeroSection(screenWidth: Dp) {
                 
                 Box(
                     Modifier.fillMaxSize().background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
-                            startY = 100f
+                        Brush.horizontalGradient(
+                            listOf(
+                                Orange.copy(alpha = 0.5f),
+                                GreenDark.copy(alpha = 0.7f)
+                            )
                         )
                     )
                 )

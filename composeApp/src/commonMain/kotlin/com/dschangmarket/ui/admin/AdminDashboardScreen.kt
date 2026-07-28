@@ -184,6 +184,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                 Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Dashboard", style = MaterialTheme.typography.labelLarge) })
                 Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("En ligne", style = MaterialTheme.typography.labelLarge) })
                 Tab(selected = selectedTab == 5, onClick = { selectedTab = 5 }, text = { Text("Stories", style = MaterialTheme.typography.labelLarge) })
+                Tab(selected = selectedTab == 6, onClick = { selectedTab = 6 }, text = { Text("Promo Hero", style = MaterialTheme.typography.labelLarge) })
             }
 
             if (isLoading && users.isEmpty() && shops.isEmpty() && selectedTab != 2 && selectedTab != 5) {
@@ -570,6 +571,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     3 -> AdminDashboardContent(scope = scope)
                     4 -> AdminOnlineUsersContent(scope = scope)
                     5 -> AdminStoriesContent(scope = scope)
+                    6 -> AdminHeroContent(scope = scope, shops = shops)
                 }
 
                 // ─── Promotion Dialog ───
@@ -1467,6 +1469,151 @@ private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
 }
 
 // ── Mini barres ──
+@Composable
+fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>) {
+    var heroItems by remember { mutableStateOf<List<com.dschangmarket.api.ApiHeroItem>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    // Form state
+    var newTitle by remember { mutableStateOf("") }
+    var newSubtitle by remember { mutableStateOf("") }
+    var newImageUrl by remember { mutableStateOf("") }
+    var selectedShopId by remember { mutableStateOf<Int?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    fun load() {
+        scope.launch {
+            isLoading = true; error = null
+            try { heroItems = ApiClient.fetchHeroItems() } catch (e: Exception) { error = e.message }
+            isLoading = false
+        }
+    }
+
+    LaunchedEffect(Unit) { load() }
+
+    LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            Text("Gestion de la Hero Section", style = MaterialTheme.typography.titleLarge)
+            Text("Modifiez les bannières promotionnelles de l'accueil.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // ── Formulaire d'ajout ──
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Ajouter une promotion", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(12.dp))
+                    
+                    OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, label = { Text("Titre (ex: Saveurs locales)") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = newSubtitle, onValueChange = { newSubtitle = it }, label = { Text("Sous-titre (ex: Fruits du terroir)") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text("URL de l'image (Unsplash ou autre)") }, modifier = Modifier.fillMaxWidth())
+                    
+                    Spacer(Modifier.height(12.dp))
+                    Text("Boutique à promouvoir (optionnel)", style = MaterialTheme.typography.labelSmall)
+                    var showShopList by remember { mutableStateOf(false) }
+                    Box {
+                        OutlinedButton(
+                            onClick = { showShopList = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val shopName = shops.find { it.id == selectedShopId }?.name ?: "Aucune boutique sélectionnée"
+                            Text(shopName)
+                            Spacer(Modifier.weight(1f))
+                            Icon(Icons.Default.ArrowDropDown, null)
+                        }
+                        DropdownMenu(expanded = showShopList, onDismissRequest = { showShopList = false }) {
+                            DropdownMenuItem(text = { Text("Aucune") }, onClick = { selectedShopId = null; showShopList = false })
+                            shops.forEach { shop ->
+                                DropdownMenuItem(text = { Text(shop.name) }, onClick = { selectedShopId = shop.id; showShopList = false })
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isSubmitting = true
+                                try {
+                                    ApiClient.createHeroItem(com.dschangmarket.api.ApiCreateHeroBody(
+                                        title = newTitle,
+                                        subtitle = newSubtitle,
+                                        imageUrl = newImageUrl,
+                                        shopId = selectedShopId
+                                    ))
+                                    newTitle = ""; newSubtitle = ""; newImageUrl = ""; selectedShopId = null
+                                    load()
+                                } catch (e: Exception) { error = e.message }
+                                isSubmitting = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSubmitting && newTitle.isNotBlank() && newImageUrl.isNotBlank()
+                    ) {
+                        if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
+                        else Text("Ajouter à l'accueil")
+                    }
+                }
+            }
+        }
+
+        // ── Liste des bannières actuelles ──
+        item {
+            Text("Bannières actives", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        if (isLoading) {
+            item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+        } else if (heroItems.isEmpty()) {
+            item { Text("Aucune bannière personnalisée. Les bannières par défaut seront affichées.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) }
+        } else {
+            items(heroItems) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(60.dp).clip(RoundedCornerShape(4.dp)).background(Color.LightGray)) {
+                            var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            LaunchedEffect(item.imageUrl) { bitmap = loadImageFromUrl(item.imageUrl) }
+                            if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(item.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(item.subtitle, fontSize = 12.sp, color = TextSecondary)
+                            if (item.shopName != null) {
+                                Text("Lien: ${item.shopName}", fontSize = 10.sp, color = Orange, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                try {
+                                    ApiClient.deleteHeroItem(item.id)
+                                    load()
+                                } catch (e: Exception) { error = e.message }
+                            }
+                        }) {
+                            Icon(Icons.Default.Delete, null, tint = RedAccent)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun SimpleBarChart(data: List<Int>, modifier: Modifier = Modifier) {
     val max = data.maxOrNull()?.let { if (it == 0) 1 else it } ?: 1
