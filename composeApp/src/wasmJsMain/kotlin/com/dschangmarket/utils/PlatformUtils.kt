@@ -2,7 +2,10 @@ package com.dschangmarket.utils
 
 import kotlinx.browser.window
 
+private val startupParams = mutableMapOf<String, String?>()
+
 actual fun getStartupParameter(key: String): String? {
+    if (startupParams.containsKey(key)) return startupParams[key]
     val search = window.location.search
     if (search.isBlank()) return null
     val params = search.substring(1).split("&")
@@ -11,6 +14,10 @@ actual fun getStartupParameter(key: String): String? {
         if (kv.size == 2 && kv[0] == key) return kv[1]
     }
     return null
+}
+
+actual fun setStartupParameter(key: String, value: String?) {
+    startupParams[key] = value
 }
 
 actual fun copyToClipboard(text: String) {

@@ -16,7 +16,6 @@
 require_once __DIR__ . '/../config/database.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$userId = getAuthUserId();
 
 try {
     $db = getDB();
@@ -175,6 +174,7 @@ try {
 
     // ── POST : Create story ──
     if ($method === 'POST') {
+        $userId = getAuthUserId();
         // Handle reply to story
         $replyToStoryId = isset($_GET['reply']) ? (int)$_GET['reply'] : 0;
         if ($replyToStoryId > 0) {
@@ -277,6 +277,7 @@ try {
 
     // ── DELETE : Delete story ──
     if ($method === 'DELETE') {
+        $userId = getAuthUserId();
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         if ($id <= 0) json(400, ['error' => 'ID story requis']);
 

@@ -14,6 +14,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.dschangmarket.R
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
 actual object NotificationUtils {
     private var appContext: Context? = null
     private const val CHANNEL_ID = "dschang_market_notifs"
@@ -41,6 +44,13 @@ actual object NotificationUtils {
         // Permission request should be handled in Activity for Android 13+
     }
 
+    private val _navigationEvents = MutableSharedFlow<Unit>(replay = 1, extraBufferCapacity = 1)
+    actual val navigationEvents = _navigationEvents.asSharedFlow()
+
+    actual fun onNotificationClicked() {
+        _navigationEvents.tryEmit(Unit)
+    }
+
     actual fun showNotification(title: String, message: String) {
         val context = appContext ?: return
         
@@ -48,7 +58,10 @@ actual object NotificationUtils {
         
         // Click on notification opens the app
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            // Add custom data for navigation
+            putExtra("notif_type", "notification")
+            putExtra("notif_id", 0)
         }
         val pendingIntent = if (intent != null) {
             PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

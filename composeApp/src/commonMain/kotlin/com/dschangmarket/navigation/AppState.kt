@@ -36,6 +36,7 @@ class AppState(
     var userToken by mutableStateOf(userTokenInitial)
     var vendorShopName by mutableStateOf(vendorShopNameInitial)
     var refreshSignal by mutableStateOf(0)
+    var intentSignal by mutableStateOf(0)
     var editProductData by mutableStateOf<ProductForm?>(null)
     var checkoutAmount by mutableStateOf(0.0)
     var checkoutPaymentMethod by mutableStateOf("Orange Money")

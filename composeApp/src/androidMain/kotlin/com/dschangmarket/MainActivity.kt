@@ -34,6 +34,29 @@ class MainActivity : ComponentActivity() {
         setContent {
             App(onExit = { finish() })
         }
+
+        // Handle intent if activity is already running
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent?) {
+        val type = intent?.getStringExtra("notif_type") ?: intent?.getStringExtra("type")
+        val relatedId = intent?.getIntExtra("notif_id", -1).takeIf { it != -1 } 
+            ?: intent?.getIntExtra("related_id", -1).takeIf { it != -1 }
+            ?: -1
+        
+        if (type != null && relatedId != -1) {
+            // Store parameter for App.kt to consume
+            com.dschangmarket.utils.setStartupParameter("notif_type", type)
+            com.dschangmarket.utils.setStartupParameter("notif_id", relatedId.toString())
+            // Trigger signal
+            com.dschangmarket.utils.NotificationUtils.onNotificationClicked()
+        }
     }
 
     @Deprecated("Deprecated in Activity, but needed for API < 30 compatibility")

@@ -6,6 +6,11 @@ package com.dschangmarket.utils
 expect fun getStartupParameter(key: String): String?
 
 /**
+ * Sets a startup parameter (Internal use for navigation).
+ */
+expect fun setStartupParameter(key: String, value: String?)
+
+/**
  * Copies text to clipboard.
  */
 expect fun copyToClipboard(text: String)
