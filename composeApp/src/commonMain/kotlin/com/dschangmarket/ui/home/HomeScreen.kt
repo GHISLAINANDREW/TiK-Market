@@ -159,7 +159,7 @@ fun HomeScreen(
                 }
 
                 StoryItem(
-                    title = apiStory.shopName.ifBlank { apiStory.userName },
+                    title = if (apiStory.isAdmin != 0) "DSCHANG MARKET" else apiStory.shopName.ifBlank { apiStory.userName },
                     subtitle = apiStory.caption ?: "",
                     imageUrl = finalMediaUrl,
                     storyId = apiStory.id,
