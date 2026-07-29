@@ -845,15 +845,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                             appState.cartItems = emptyList()
                             appState.navigateTo(NavScreen.Orders)
                             if (paymentType == "delivery") {
-                                // Earn loyalty points
-                                try {
-                                    val resp = ApiClient.earnPoints(order.totalAmount, order.id)
-                                    if (resp.success) {
-                                        snackbarHostState.showSnackbar(
-                                            "${resp.earnedCashback.toInt()} FCFA cashback • ${resp.earnedPoints} pts gagnés !"
-                                        )
-                                    }
-                                } catch (_: Exception) { }
+                                snackbarHostState.showSnackbar("Commande enregistrée ! Vous gagnerez des points à la livraison.")
                             } else {
                                 snackbarHostState.showSnackbar(
                                     "Payez le vendeur, il validera votre commande"
@@ -868,21 +860,12 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     order = order,
                     onBack = { appState.goBack() },
                     onSuccess = {
-                        // Gagner des points de fidélité sur la commande
-                        val order = appState.paymentOrder
-                        if (order != null) {
-                            scope.launch {
-                                try {
-                                    val resp = ApiClient.earnPoints(order.totalAmount, order.id)
-                                    if (resp.success) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("${resp.earnedCashback.toInt()} FCFA cashback • ${resp.earnedPoints} pts gagnés !")
-                                        }
-                                    }
-                                } catch (_: Exception) { }
-                            }
-                        }
+                        // Points awarded automatically by backend upon delivery
                         appState.navigateTo(NavScreen.Orders)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Paiement réussi ! Points fidélité à la livraison.")
+                        }
+                    },
                     }
                 )
             }

@@ -104,25 +104,8 @@ try {
             $stmt->execute([$orderId]);
             sendNotification((int)$order['user_id'], "Livraison confirmée", "Vous avez confirmé la réception de la commande.", 'order', $orderId);
 
-            // Award loyalty points on successful delivery
-            $buyerId = (int)$order['user_id'];
-            awardPoints($db, $buyerId, 1, "Achat réussi #{$orderId}", 'order', $orderId);
-            $stmtV = $db->prepare('
-                SELECT DISTINCT s.vendor_id
-                FROM order_items oi
-                JOIN products p ON oi.product_id = p.id
-                JOIN shops s ON p.shop_id = s.id
-                WHERE oi.order_id = ?
-            ');
-            $stmtV->execute([$orderId]);
-            $vendorIds = $stmtV->fetchAll(PDO::FETCH_COLUMN);
-            foreach ($vendorIds as $vid) {
-                $vid = (int)$vid;
-                if ($vid > 0) {
-                    awardPoints($db, $vid, 1, "Vente réussie #{$orderId}", 'order', $orderId);
-                    sendNotification($vid, "Point fidélité gagné 🎉", "Vous avez gagné 1 point de fidélité pour la vente #{$orderId}.", 'order', $orderId);
-                }
-            }
+            // Award loyalty points and update sales on successful delivery
+            handleOrderDelivery($db, $orderId);
 
             json(200, ['success' => true, 'message' => 'Livraison confirmée. Merci !']);
         }
@@ -165,29 +148,9 @@ try {
         $stmt = $db->prepare('UPDATE orders SET status = ? WHERE id = ?');
         $stmt->execute([$newStatus, $orderId]);
 
-        // ── Award loyalty points on successful delivery ──
+        // ── Award loyalty points and update sales on successful delivery ──
         if ($newStatus === 'delivered') {
-            // Buyer
-            $buyerId = (int)$order['user_id'];
-            awardPoints($db, $buyerId, 1, "Achat réussi #{$orderId}", 'order', $orderId);
-
-            // Vendors
-            $stmtV = $db->prepare('
-                SELECT DISTINCT s.vendor_id
-                FROM order_items oi
-                JOIN products p ON oi.product_id = p.id
-                JOIN shops s ON p.shop_id = s.id
-                WHERE oi.order_id = ?
-            ');
-            $stmtV->execute([$orderId]);
-            $vendorIds = $stmtV->fetchAll(PDO::FETCH_COLUMN);
-            foreach ($vendorIds as $vid) {
-                $vid = (int)$vid;
-                if ($vid > 0) {
-                    awardPoints($db, $vid, 1, "Vente réussie #{$orderId}", 'order', $orderId);
-                    sendNotification($vid, "Point fidélité gagné 🎉", "Vous avez gagné 1 point de fidélité pour la vente #{$orderId}.", 'order', $orderId);
-                }
-            }
+            handleOrderDelivery($db, $orderId);
         }
 
         // Notifier l'acheteur

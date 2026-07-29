@@ -189,10 +189,12 @@ try {
         $stmt->execute([$userId, $orderNumber, $total, $status, $payment_method, $paymentStatus, $payment_type, $phone, $shipping_address, $notes ?: null]);
         $orderId = (int)$db->lastInsertId();
 
-        // Insert order items
+        // Insert order items and decrease stock
         $stmtItem = $db->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+        $stmtStock = $db->prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
         foreach ($cartItems as $item) {
             $stmtItem->execute([$orderId, $item['product_id'], $item['quantity'], $item['price']]);
+            $stmtStock->execute([(int)$item['quantity'], $item['product_id']]);
         }
 
         // Clear cart
