@@ -74,9 +74,9 @@ import com.dschangmarket.ui.misc.ShopsMapScreen
 import com.dschangmarket.ui.misc.SplashScreen
 
 @Composable
-private fun rememberAppState() = remember {
+private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
     AppState(
-        currentScreenInitial = NavScreen.Splash,
+        currentScreenInitial = initialScreen,
         cartItemsInitial = emptyList(),
         isLoggedInInitial = false,
         userNameInitial = "",
@@ -89,8 +89,8 @@ private fun rememberAppState() = remember {
 }
 
 @Composable
-fun App(onExit: () -> Unit = {}) {
-    val appState = rememberAppState()
+fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
+    val appState = rememberAppState(initialScreen)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showOnboarding by remember { mutableStateOf(OnboardingManager.isFirstLaunch()) }
@@ -378,6 +378,18 @@ fun PollingManager(appState: AppState) {
                 }
                 previousUnreadMessages = msgCount
                 appState.unreadMessages = msgCount
+
+                // Poll Wallet/Points
+                try {
+                    val w = ApiClient.fetchWallet()
+                    if (w != null) {
+                        appState.currentPoints = w.currentPoints
+                        appState.totalPoints = w.totalPoints
+                        appState.walletBalance = w.balance
+                        appState.walletTier = w.tier
+                    }
+                } catch (_: Exception) {}
+
                 updateUnreadBadge(msgCount + appState.unreadNotifications)
 
                 // Poll Notifications
@@ -568,6 +580,9 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onNotifPrefsClick = { appState.navigateTo(NavScreen.NotifPrefs) },
                 onGroupBuysClick = { appState.navigateTo(NavScreen.MyGroupBuys) },
                 onShopsMapClick = { appState.navigateTo(NavScreen.ShopsMap) },
+                walletBalance = appState.walletBalance,
+                walletPoints = appState.currentPoints,
+                walletTier = appState.walletTier,
                 onLogout = {
                     ApiClient.logout()
                     appState.isLoggedIn = false
@@ -934,7 +949,11 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             NavScreen.AdminDashboard -> AdminDashboardScreen(onBack = { appState.goBack() })
             NavScreen.Loyalty -> LoyaltyScreen(
                 onBack = { appState.goBack() },
-                onCouponClick = { code -> scope.launch { snackbarHostState.showSnackbar("Coupon $code copié !") } }
+                onCouponClick = { code -> scope.launch { snackbarHostState.showSnackbar("Coupon $code copié !") } },
+                currentPoints = appState.currentPoints,
+                totalPoints = appState.totalPoints,
+                walletBalance = appState.walletBalance,
+                walletTier = appState.walletTier
             )
             NavScreen.NotifPrefs -> NotificationPrefsScreen(onBack = { appState.goBack() })
             NavScreen.StoryViewer -> StoryViewerScreen(

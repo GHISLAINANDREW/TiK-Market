@@ -6,6 +6,7 @@ import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
+import com.dschangmarket.navigation.NavScreen
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
@@ -35,11 +36,14 @@ fun main() {
                 println("[Main] ERROR: loading-screen element not found")
             }
         }
-        App(onExit = {
-            println("[Main] Closing application")
-            window.close()
-            // Fallback for some browsers that prevent window.close()
-            window.location.href = "about:blank"
-        })
+        App(
+            onExit = {
+                println("[Main] Closing application")
+                window.close()
+                // Fallback for some browsers that prevent window.close()
+                window.location.href = "about:blank"
+            },
+            initialScreen = NavScreen.Home
+        )
     }
 }

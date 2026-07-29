@@ -16,24 +16,47 @@ import kotlinx.coroutines.launch
  * Opens a file picker for images, reads the file as data URL, then
  * calls onResult with JSON {dataUrl, fileName} or onError with a message.
  */
-@JsFun("""(onResult, onError) => {
+@JsFun("""(allowVideo, onResult, onError) => {
     try {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = () => {
+        input.accept = allowVideo ? 'image/*,video/*' : 'image/*';
+        input.onchange = async () => {
             try {
                 const file = input.files[0];
                 if (!file) { onError('Aucun fichier sélectionné'); return; }
-                const reader = new FileReader();
-                reader.onload = () => {
-                    onResult(JSON.stringify({
-                        dataUrl: reader.result,
-                        fileName: file.name
-                    }));
-                };
-                reader.onerror = () => onError('Erreur de lecture du fichier');
-                reader.readAsDataURL(file);
+                
+                let duration = 0;
+                if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = function() {
+                        window.URL.revokeObjectURL(video.src);
+                        duration = video.duration;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            onResult(JSON.stringify({
+                                dataUrl: reader.result,
+                                fileName: file.name,
+                                mimeType: file.type,
+                                durationSeconds: duration
+                            }));
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                    video.src = URL.createObjectURL(file);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        onResult(JSON.stringify({
+                            dataUrl: reader.result,
+                            fileName: file.name,
+                            mimeType: file.type,
+                            durationSeconds: 0
+                        }));
+                    };
+                    reader.readAsDataURL(file);
+                }
             } catch (e) {
                 onError(String(e));
             }
@@ -43,48 +66,57 @@ import kotlinx.coroutines.launch
         onError(String(e));
     }
 }""")
-private external fun nativePickImage(
+private external fun nativePickMedia(
+    allowVideo: Boolean,
     onResult: (String) -> Unit,
     onError: (String) -> Unit
 )
 
-/**
- * Parses JSON string into an object and gets a property by key.
- */
-@JsFun("(json, key) => { const obj = JSON.parse(json); return obj[key] || null; }")
+@JsFun("(json, key) => { const obj = JSON.parse(json); return obj[key] === undefined ? null : String(obj[key]); }")
 private external fun getJsonProperty(json: String, key: String): String?
 
-// ── Suspend function (kept for potential direct use) ────────────
+@JsFun("(json, key) => { const obj = JSON.parse(json); return obj[key] || 0; }")
+private external fun getJsonPropertyDouble(json: String, key: String): Double
 
-private suspend fun pickImageFromGallery(): ImagePickResult? {
+private suspend fun pickMediaFromGallery(allowVideo: Boolean): MediaPickResult? {
     return try {
         val json = suspendCoroutine<String> { cont ->
-            nativePickImage(
+            nativePickMedia(
+                allowVideo = allowVideo,
                 onResult = { cont.resume(it) },
                 onError = { cont.resumeWithException(Exception(it)) }
             )
         }
         val dataUrl = getJsonProperty(json, "dataUrl") ?: return null
-        val fileName = getJsonProperty(json, "fileName") ?: "photo.jpg"
-        ImagePickResult(dataUrl = dataUrl, fileName = fileName)
+        val fileName = getJsonProperty(json, "fileName") ?: "file"
+        val mimeType = getJsonProperty(json, "mimeType") ?: "image/jpeg"
+        val duration = getJsonPropertyDouble(json, "durationSeconds")
+        MediaPickResult(dataUrl = dataUrl, fileName = fileName, mimeType = mimeType, durationSeconds = duration)
     } catch (_: Exception) {
-        null // User cancelled or error
+        null
     }
 }
 
-// ── Composable launcher (used by common ImagePicker) ────────────
-
 @Composable
-actual fun rememberImagePickerLauncher(
-    onResult: (result: ImagePickResult?) -> Unit
+actual fun rememberMediaPickerLauncher(
+    allowVideo: Boolean,
+    maxDurationSeconds: Int,
+    onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     val scope = rememberCoroutineScope()
     return {
         scope.launch {
-            val result = pickImageFromGallery()
+            val result = pickMediaFromGallery(allowVideo)
             onResult(result)
         }
     }
+}
+
+@Composable
+actual fun rememberImagePickerLauncher(
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit {
+    return rememberMediaPickerLauncher(allowVideo = false, onResult = onResult)
 }
 
 // ── Camera / Photo launcher (wasmJs: uses capture input) ─────────

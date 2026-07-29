@@ -26,8 +26,6 @@ import com.dschangmarket.ui.components.decodeDataUrlToImageBitmap
 import com.dschangmarket.ui.components.rememberImagePickerLauncher
 import com.dschangmarket.data.models.SampleData
 import com.dschangmarket.theme.*
-import com.dschangmarket.ui.components.ImagePicker
-import com.dschangmarket.ui.components.ImagePickResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

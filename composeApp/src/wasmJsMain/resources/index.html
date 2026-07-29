@@ -20,11 +20,6 @@
   <meta name="twitter:card" content="summary">
   <!-- Theme -->
   <meta name="theme-color" content="#1B5E20">
-  <!-- Preload critical wasm modules for early loading -->
-  <link rel="preload" as="fetch" crossorigin="anonymous" href="dschangmarket.wasm">
-  <link rel="preload" as="fetch" crossorigin="anonymous" href="skiko.wasm">
-  <link rel="modulepreload" href="dschangmarket.mjs">
-  <link rel="modulepreload" href="skiko.mjs">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -244,7 +239,7 @@
     </div>
   </div>
 
-  <script type="module" src="dschangmarket.mjs"></script>
+  <script src="composeApp.js"></script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
@@ -334,7 +329,8 @@
         }
       });
 
-      // ── PWA Install prompt ──
+      // ── PWA Install prompt (disabled to avoid unwanted popups) ──
+      /*
       var deferredPrompt = null;
       window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
@@ -348,11 +344,14 @@
           }
         }, 60000);
       });
+      */
 
-      // ── Service Worker ──
+      // ── Service Worker (disabled to avoid background caching downloads) ──
+      /*
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js').catch(function() {});
       }
+      */
     })();
   </script>
 </body>

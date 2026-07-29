@@ -87,8 +87,10 @@ private fun getFileName(context: Context, uri: Uri): String? {
  * Android actual: uses ActivityResultContracts.GetContent() to pick images.
  */
 @Composable
-actual fun rememberImagePickerLauncher(
-    onResult: (result: ImagePickResult?) -> Unit
+actual fun rememberMediaPickerLauncher(
+    allowVideo: Boolean,
+    maxDurationSeconds: Int,
+    onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -98,8 +100,17 @@ actual fun rememberImagePickerLauncher(
                 try {
                     val dataUrl = contentUriToDataUrl(context, uri)
                     if (dataUrl != null) {
-                        val fileName = getFileName(context, uri) ?: "photo.jpg"
-                        onResult(ImagePickResult(dataUrl, fileName))
+                        val fileName = getFileName(context, uri) ?: "file"
+                        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+                        var duration = 0.0
+                        if (mimeType.startsWith("video/")) {
+                            val retriever = android.media.MediaMetadataRetriever()
+                            retriever.setDataSource(context, uri)
+                            val time = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                            duration = (time?.toLong() ?: 0L) / 1000.0
+                            retriever.release()
+                        }
+                        onResult(MediaPickResult(dataUrl, fileName, mimeType, duration))
                     } else {
                         onResult(null)
                     }
@@ -111,7 +122,14 @@ actual fun rememberImagePickerLauncher(
             onResult(null)
         }
     }
-    return remember { { launcher.launch("image/*") } }
+    return remember { { launcher.launch(if (allowVideo) "image/*,video/*" else "image/*") } }
+}
+
+@Composable
+actual fun rememberImagePickerLauncher(
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit {
+    return rememberMediaPickerLauncher(allowVideo = false, onResult = onResult)
 }
 
 /**
@@ -207,6 +225,7 @@ actual fun rememberPickFileLauncher(
  */
 actual fun decodeDataUrlToImageBitmap(dataUrl: String): ImageBitmap? {
     return try {
+        if (!dataUrl.startsWith("data:image")) return null
         val base64 = dataUrl.substringAfter(",")
         val bytes = Base64.decode(base64, Base64.DEFAULT)
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)

@@ -726,8 +726,8 @@ object ApiClient {
         return safeRequest("GET", "${Endpoints.STORIES}?id=$storyId")
     }
 
-    suspend fun createStory(shopId: Int, mediaUrl: String, mediaType: String = "image", caption: String? = null): ApiStory {
-        val body = json.encodeToString(ApiCreateStoryBody(shopId, mediaUrl, mediaType, caption))
+    suspend fun createStory(shopId: Int, mediaUrl: String, mediaType: String = "image", caption: String? = null, duration: Int = 0): ApiStory {
+        val body = json.encodeToString(ApiCreateStoryBody(shopId, mediaUrl, mediaType, caption, duration))
         return safeRequest("POST", Endpoints.STORIES, body)
     }
 
