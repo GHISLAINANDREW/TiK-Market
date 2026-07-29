@@ -89,7 +89,16 @@ fun OrdersScreen(
                             scope.launch {
                                 try {
                                     ApiClient.confirmOrderReceived(order.id)
-                                    snackbarHostState.showSnackbar("✅ Réception confirmée. Merci !")
+                                    try {
+                                        val resp = ApiClient.earnPoints(order.totalAmount, order.id)
+                                        if (resp.success) {
+                                            snackbarHostState.showSnackbar("✅ Réception confirmée ! ${resp.earnedPoints} pts de fidélité gagnés !")
+                                        } else {
+                                            snackbarHostState.showSnackbar("✅ Réception confirmée. Merci !")
+                                        }
+                                    } catch (_: Exception) {
+                                        snackbarHostState.showSnackbar("✅ Réception confirmée. Merci !")
+                                    }
                                     refreshOrders()
                                 } catch (e: Exception) {
                                     snackbarHostState.showSnackbar("Erreur : ${e.message ?: "action impossible"}")

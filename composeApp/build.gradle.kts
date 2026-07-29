@@ -11,7 +11,7 @@ plugins {
 kotlin {
     @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "dschangmarket"
+        moduleName = "composeApp"
         browser {
         }
         binaries.executable()

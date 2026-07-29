@@ -48,6 +48,9 @@ fun ProfileScreen(
     onNotifPrefsClick: () -> Unit = {},
     onGroupBuysClick: () -> Unit = {},
     onShopsMapClick: () -> Unit = {},
+    walletBalance: Double = 0.0,
+    walletPoints: Int = 0,
+    walletTier: String = "bronze",
     onLogout: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -77,22 +80,7 @@ fun ProfileScreen(
     }
 
     val currentUser = ApiClient.getCurrentUser()
-    var walletBalance by remember { mutableStateOf(0.0) }
-    var walletPoints by remember { mutableStateOf(0) }
-    var walletTier by remember { mutableStateOf("bronze") }
 
-    // Load wallet data
-    LaunchedEffect(Unit) {
-        try {
-            val w = ApiClient.fetchWallet()
-            if (w != null) {
-                walletBalance = w.balance
-                walletPoints = w.currentPoints
-                walletTier = w.tier
-            }
-        } catch (_: Exception) { }
-    }
-    
     // Attempt to load existing avatar if any
     LaunchedEffect(currentUser?.avatar) {
         val avatarUrl = currentUser?.avatar ?: ""

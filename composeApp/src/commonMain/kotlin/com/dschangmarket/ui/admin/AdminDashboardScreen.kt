@@ -3,6 +3,8 @@ package com.dschangmarket.ui.admin
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +30,7 @@ import com.dschangmarket.api.ApiOnlineUser
 import com.dschangmarket.api.ApiOnlineUsersResponse
 import com.dschangmarket.api.ApiStory
 import com.dschangmarket.api.ApiPromoCreateBody
+import com.dschangmarket.api.ApiNotification
 import com.dschangmarket.data.models.SampleData
 import com.dschangmarket.data.models.OrderStatus
 import com.dschangmarket.theme.*
@@ -35,16 +38,26 @@ import com.dschangmarket.ui.components.*
 import com.dschangmarket.utils.FormatUtils
 import kotlinx.coroutines.launch
 
+// ── Admin menu items ──
+private data class AdminMenuItem(
+    val id: Int,
+    val title: String,
+    val subtitle: String,
+    val icon: @Composable () -> Unit,
+    val color: Color
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
+    var selectedOption by remember { mutableStateOf<Int?>(null) }
 
+    // Shared data
     var users by remember { mutableStateOf<List<AdminUser>>(emptyList()) }
     var shops by remember { mutableStateOf<List<AdminShop>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var selectedTab by remember { mutableStateOf(0) }
 
     // Promotion dialog state
     var showPromoDialog by remember { mutableStateOf(false) }
@@ -75,6 +88,18 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
     var userNotifSending by remember { mutableStateOf(false) }
     var userNotifResult by remember { mutableStateOf<String?>(null) }
 
+    val menuItems = remember {
+        listOf(
+            AdminMenuItem(0, "Utilisateurs", "Gérer les comptes", { Icon(Icons.Default.People, null, tint = Color.White) }, BlueAccent),
+            AdminMenuItem(1, "Boutiques", "Vérifier et gérer", { Icon(Icons.Default.Store, null, tint = Color.White) }, Orange),
+            AdminMenuItem(2, "Notifications", "Diffuser des messages", { Icon(Icons.Default.Notifications, null, tint = Color.White) }, Violet),
+            AdminMenuItem(3, "Dashboard", "Statistiques et KPIs", { Icon(Icons.Default.Dashboard, null, tint = Color.White) }, Green),
+            AdminMenuItem(4, "En ligne", "Utilisateurs actifs", { Icon(Icons.Default.PersonPin, null, tint = Color.White) }, Color(0xFF00897B)),
+            AdminMenuItem(5, "Stories", "Contenu éphémère", { Icon(Icons.Default.PhotoLibrary, null, tint = Color.White) }, Color(0xFFE91E63)),
+            AdminMenuItem(6, "Promo Hero", "Bannières accueil", { Icon(Icons.Default.Star, null, tint = Color.White) }, Color(0xFFFF6F00)),
+        )
+    }
+
     fun loadData() {
         scope.launch {
             isLoading = true
@@ -86,41 +111,26 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     println("AdminUsers error: ${e.message}")
                     null
                 }
-
                 val rawShops = try {
                     ApiClient.fetchAdminShops()
                 } catch (e: Exception) {
                     println("AdminShops error: ${e.message}")
                     null
                 }
-
                 if (rawUsers != null) {
                     users = rawUsers.map { AdminUser(it.id, it.name, it.email, it.phone, it.role, it.status, it.createdAt) }
                 }
-
                 if (rawShops != null && rawShops.isNotEmpty()) {
                     shops = rawShops.map {
                         AdminShop(
-                            id = it.id,
-                            name = it.name,
-                            logo = it.logo,
-                            location = it.location,
-                            phone = it.phone,
-                            vendorName = it.vendorName,
-                            vendorEmail = it.vendorEmail,
-                            vendorPhone = it.vendorPhone,
-                            category = it.category,
-                            status = it.status,
-                            isFeatured = it.isFeatured,
-                            productCount = it.productCount,
-                            totalSales = it.totalSales,
-                            isVerified = it.isVerified,
-                            createdAt = it.createdAt,
-                            updatedAt = it.updatedAt
+                            id = it.id, name = it.name, logo = it.logo, location = it.location,
+                            phone = it.phone, vendorName = it.vendorName, vendorEmail = it.vendorEmail,
+                            vendorPhone = it.vendorPhone, category = it.category, status = it.status,
+                            isFeatured = it.isFeatured, productCount = it.productCount, totalSales = it.totalSales,
+                            isVerified = it.isVerified, createdAt = it.createdAt, updatedAt = it.updatedAt
                         )
                     }
                 }
-
                 if (rawUsers == null && rawShops == null) {
                     errorMessage = "Erreur de connexion au serveur d'administration."
                 }
@@ -131,10 +141,46 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
         }
     }
 
-    LaunchedEffect(Unit) {
-        loadData()
+    LaunchedEffect(Unit) { loadData() }
+
+    // ── If a sub-screen is selected, show it full page ──
+    if (selectedOption != null) {
+        AdminSubScreen(
+            optionId = selectedOption!!,
+            title = menuItems.firstOrNull { it.id == selectedOption }?.title ?: "",
+            onBack = { selectedOption = null },
+            scope = scope, users = users, shops = shops, loadData = { loadData() },
+            // Promo dialog
+            showPromoDialog = showPromoDialog, setShowPromoDialog = { showPromoDialog = it },
+            promoShop = promoShop, setPromoShop = { promoShop = it },
+            promoCode = promoCode, setPromoCode = { promoCode = it },
+            promoDiscountPct = promoDiscountPct, setPromoDiscountPct = { promoDiscountPct = it },
+            promoDiscountFixed = promoDiscountFixed, setPromoDiscountFixed = { promoDiscountFixed = it },
+            promoMinAmount = promoMinAmount, setPromoMinAmount = { promoMinAmount = it },
+            promoSending = promoSending, setPromoSending = { promoSending = it },
+            promoMessage = promoMessage, setPromoMessage = { promoMessage = it },
+            // Add user dialog
+            showAddUserDialog = showAddUserDialog, setShowAddUserDialog = { showAddUserDialog = it },
+            addUserName = addUserName, setAddUserName = { addUserName = it },
+            addUserEmail = addUserEmail, setAddUserEmail = { addUserEmail = it },
+            addUserPhone = addUserPhone, setAddUserPhone = { addUserPhone = it },
+            addUserPassword = addUserPassword, setAddUserPassword = { addUserPassword = it },
+            addUserRole = addUserRole, setAddUserRole = { addUserRole = it },
+            addUserSending = addUserSending, setAddUserSending = { addUserSending = it },
+            addUserResult = addUserResult, setAddUserResult = { addUserResult = it },
+            addUserError = addUserError, setAddUserError = { addUserError = it },
+            // User notif dialog
+            showUserNotifDialog = showUserNotifDialog, setShowUserNotifDialog = { showUserNotifDialog = it },
+            targetNotifUser = targetNotifUser, setTargetNotifUser = { targetNotifUser = it },
+            userNotifTitle = userNotifTitle, setUserNotifTitle = { userNotifTitle = it },
+            userNotifMessage = userNotifMessage, setUserNotifMessage = { userNotifMessage = it },
+            userNotifSending = userNotifSending, setUserNotifSending = { userNotifSending = it },
+            userNotifResult = userNotifResult, setUserNotifResult = { userNotifResult = it }
+        )
+        return
     }
 
+    // ── Main grid menu ──
     Scaffold(
         topBar = {
             TopAppBar(
@@ -150,507 +196,210 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     actionIconContentColor = Color.White
                 )
             )
-        },
-        floatingActionButton = {
-            if (selectedTab == 0) {
-                FloatingActionButton(
-                    onClick = {
-                        addUserName = ""
-                        addUserEmail = ""
-                        addUserPhone = ""
-                        addUserPassword = ""
-                        addUserRole = "buyer"
-                        addUserResult = null
-                        addUserError = null
-                        showAddUserDialog = true
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+        }
+    ) { padding ->
+        Box(
+            Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            } else if (errorMessage != null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚠️", fontSize = 48.sp)
+                    Text(errorMessage!!, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
+                    Button(onClick = { loadData() }) { Text("Réessayer") }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.Add, "Ajouter utilisateur")
+                    items(menuItems.size) { index ->
+                        val item = menuItems[index]
+                        AdminMenuTile(item = item, onClick = { selectedOption = item.id })
+                    }
                 }
             }
         }
+    }
+}
+
+// ── Admin Menu Tile ──
+@Composable
+private fun AdminMenuTile(item: AdminMenuItem, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(140.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(Modifier.fillMaxSize().padding(16.dp)) {
+            Column {
+                Box(
+                    Modifier.size(48.dp).background(item.color, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) { item.icon() }
+                Spacer(Modifier.weight(1f))
+                Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(item.subtitle, style = MaterialTheme.typography.bodySmall, color = TextSecondary, maxLines = 1)
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  SUB-SCREEN (full page per option)
+// ═══════════════════════════════════════════════
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AdminSubScreen(
+    optionId: Int, title: String, onBack: () -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    users: List<AdminUser>, shops: List<AdminShop>, loadData: () -> Unit,
+    // Promo dialog
+    showPromoDialog: Boolean, setShowPromoDialog: (Boolean) -> Unit,
+    promoShop: AdminShop?, setPromoShop: (AdminShop?) -> Unit,
+    promoCode: String, setPromoCode: (String) -> Unit,
+    promoDiscountPct: String, setPromoDiscountPct: (String) -> Unit,
+    promoDiscountFixed: String, setPromoDiscountFixed: (String) -> Unit,
+    promoMinAmount: String, setPromoMinAmount: (String) -> Unit,
+    promoSending: Boolean, setPromoSending: (Boolean) -> Unit,
+    promoMessage: String?, setPromoMessage: (String?) -> Unit,
+    // Add user
+    showAddUserDialog: Boolean, setShowAddUserDialog: (Boolean) -> Unit,
+    addUserName: String, setAddUserName: (String) -> Unit,
+    addUserEmail: String, setAddUserEmail: (String) -> Unit,
+    addUserPhone: String, setAddUserPhone: (String) -> Unit,
+    addUserPassword: String, setAddUserPassword: (String) -> Unit,
+    addUserRole: String, setAddUserRole: (String) -> Unit,
+    addUserSending: Boolean, setAddUserSending: (Boolean) -> Unit,
+    addUserResult: String?, setAddUserResult: (String?) -> Unit,
+    addUserError: String?, setAddUserError: (String?) -> Unit,
+    // User notif
+    showUserNotifDialog: Boolean, setShowUserNotifDialog: (Boolean) -> Unit,
+    targetNotifUser: AdminUser?, setTargetNotifUser: (AdminUser?) -> Unit,
+    userNotifTitle: String, setUserNotifTitle: (String) -> Unit,
+    userNotifMessage: String, setUserNotifMessage: (String) -> Unit,
+    userNotifSending: Boolean, setUserNotifSending: (Boolean) -> Unit,
+    userNotifResult: String?, setUserNotifResult: (String?) -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
+                actions = {
+                    if (optionId == 0) {
+                        IconButton(onClick = {
+                            setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword("")
+                            setAddUserRole("buyer"); setAddUserResult(null); setAddUserError(null)
+                            setShowAddUserDialog(true)
+                        }) {
+                            Icon(Icons.Default.PersonAdd, "Ajouter utilisateur", tint = Color.White)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BrandTopBarColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
+        }
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background)) {
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary
-            ) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Utilisateurs", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Boutiques", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Notifications", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 3, onClick = { selectedTab = 3 }, text = { Text("Dashboard", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 4, onClick = { selectedTab = 4 }, text = { Text("En ligne", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 5, onClick = { selectedTab = 5 }, text = { Text("Stories", style = MaterialTheme.typography.labelLarge) })
-                Tab(selected = selectedTab == 6, onClick = { selectedTab = 6 }, text = { Text("Promo Hero", style = MaterialTheme.typography.labelLarge) })
+        Box(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background)) {
+            when (optionId) {
+                0 -> AdminUsersList(
+                    users = users, isLoading = false, errorMessage = null,
+                    scope = scope, loadData = loadData,
+                    setAddUserError = setAddUserError,
+                    setTargetNotifUser = setTargetNotifUser,
+                    setUserNotifTitle = setUserNotifTitle,
+                    setUserNotifMessage = setUserNotifMessage,
+                    setUserNotifResult = setUserNotifResult,
+                    setShowUserNotifDialog = setShowUserNotifDialog
+                )
+                1 -> AdminShopsList(
+                    shops = shops, scope = scope,
+                    setPromoShop = setPromoShop,
+                    setPromoCode = setPromoCode,
+                    setPromoDiscountPct = setPromoDiscountPct,
+                    setPromoDiscountFixed = setPromoDiscountFixed,
+                    setPromoMinAmount = setPromoMinAmount,
+                    setPromoMessage = setPromoMessage,
+                    setShowPromoDialog = setShowPromoDialog
+                )
+                2 -> AdminNotificationsContent(scope = scope, users = users)
+                3 -> AdminDashboardContent(scope = scope)
+                4 -> AdminOnlineUsersContent(scope = scope)
+                5 -> AdminStoriesContent(scope = scope)
+                6 -> AdminHeroContent(scope = scope, shops = shops)
             }
 
-            if (isLoading && users.isEmpty() && shops.isEmpty() && selectedTab != 2 && selectedTab != 5) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else if (errorMessage != null && users.isEmpty() && shops.isEmpty() && selectedTab != 2 && selectedTab != 5) {
-                Box(Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("⚠️", fontSize = 48.sp)
-                        Text(errorMessage!!, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                        Button(onClick = { loadData() }) { Text("Réessayer") }
-                    }
-                }
-            } else {
-                when (selectedTab) {
-                    0 -> LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(users) { user ->
-                            AdminUserCard(user,
-                                onRoleChange = { role ->
-                                    scope.launch {
-                                        try {
-                                            ApiClient.updateUserRole(user.id, role)
-                                            users = users.map { if (it.id == user.id) it.copy(role = role) else it }
-                                        } catch (e: Exception) {
-                                            addUserError = "Erreur changement rôle: ${e.message}"
-                                        }
-                                    }
-                                },
-                                onDelete = {
-                                    scope.launch {
-                                        try {
-                                            ApiClient.deleteUser(user.id)
-                                            users = users.filter { it.id != user.id }
-                                        } catch (e: Exception) {
-                                            addUserError = "Erreur suppression: ${e.message}"
-                                        }
-                                    }
-                                },
-                                onBan = { newStatus ->
-                                    scope.launch {
-                                        try {
-                                            ApiClient.banUser(user.id, newStatus)
-                                            users = users.map { if (it.id == user.id) it.copy(status = newStatus) else it }
-                                        } catch (e: Exception) {
-                                            addUserError = "Erreur: ${e.message}"
-                                        }
-                                    }
-                                },
-                                onNotify = {
-                                    targetNotifUser = user
-                                    userNotifTitle = ""
-                                    userNotifMessage = ""
-                                    userNotifResult = null
-                                    showUserNotifDialog = true
-                                }
-                            )
-                        }
-                    }
-                        1 -> LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (shops.isEmpty()) {
-                                item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("Aucune boutique trouvée", color = TextSecondary) } }
+            // ─── Promotion Dialog ───
+            if (showPromoDialog && promoShop != null) {
+                AlertDialog(
+                    onDismissRequest = { if (!promoSending) setShowPromoDialog(false) },
+                    title = { Text("Promouvoir : ${promoShop!!.name}") },
+                    text = {
+                        Column(Modifier.width(300.dp).verticalScroll(rememberScrollState())) {
+                            if (promoMessage != null) {
+                                Text(promoMessage!!, color = if (promoMessage!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Spacer(Modifier.height(8.dp))
                             }
-                            items(shops) { shop ->
-                                AdminShopCard(
-                                    shop = shop,
-                                    onToggleVerify = {
-                                        scope.launch {
-                                            try {
-                                                ApiClient.toggleShopVerification(shop.id, !shop.isVerified)
-                                                shops = shops.map { if (it.id == shop.id) it.copy(isVerified = !shop.isVerified) else it }
-                                            } catch (e: Exception) {
-                                                errorMessage = "Erreur vérification: ${e.message}"
-                                            }
-                                        }
-                                    },
-                                    onPromote = { featured ->
-                                        scope.launch {
-                                            try {
-                                                ApiClient.promoteShop(shop.id, featured)
-                                                shops = shops.map { if (it.id == shop.id) it.copy(isFeatured = featured) else it }
-                                            } catch (e: Exception) {
-                                                errorMessage = "Erreur promotion: ${e.message}"
-                                            }
-                                        }
-                                    },
-                                    onBan = { newStatus ->
-                                        scope.launch {
-                                            try {
-                                                ApiClient.banShop(shop.id, newStatus)
-                                                shops = shops.map { if (it.id == shop.id) it.copy(status = newStatus) else it }
-                                            } catch (e: Exception) {
-                                                errorMessage = "Erreur: ${e.message}"
-                                            }
-                                        }
-                                    },
-                                    onDelete = {
-                                        scope.launch {
-                                            try {
-                                                ApiClient.deleteShop(shop.id)
-                                                shops = shops.filter { it.id != shop.id }
-                                            } catch (e: Exception) {
-                                                errorMessage = "Erreur suppression: ${e.message}"
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                     2 -> {
-                        var notifTitle by remember { mutableStateOf("") }
-                        var notifMessage by remember { mutableStateOf("") }
-                        var sending by remember { mutableStateOf(false) }
-                        var notifResult by remember { mutableStateOf<String?>(null) }
-                        // Notification individuelle
-                        var indivUserId by remember { mutableStateOf<Int?>(null) }
-                        var indivUserName by remember { mutableStateOf("") }
-                        var indivTitle by remember { mutableStateOf("") }
-                        var indivMessage by remember { mutableStateOf("") }
-                        var indivSending by remember { mutableStateOf(false) }
-                        var indivResult by remember { mutableStateOf<String?>(null) }
-                        var showUserSearch by remember { mutableStateOf(false) }
-                        var userSearchQuery by remember { mutableStateOf("") }
-
-                        var history by remember { mutableStateOf<List<com.dschangmarket.api.ApiNotification>>(emptyList()) }
-                        var isHistoryLoading by remember { mutableStateOf(false) }
-
-                        fun loadHistory() {
-                            scope.launch {
-                                isHistoryLoading = true
-                                history = try { ApiClient.fetchAdminNotifications() } catch (e: Exception) { emptyList() }
-                                isHistoryLoading = false
-                            }
-                        }
-
-                        LaunchedEffect(Unit) { loadHistory() }
-
-                        Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-                            // ── Historique des notifications envoyées ──
-                            Text("Historique des envois", style = MaterialTheme.typography.titleLarge)
+                            OutlinedTextField(value = promoCode, onValueChange = { setPromoCode(it.uppercase().take(20)) }, label = { Text("Code promo") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(CardShapeMedium),
-                                colors = CardDefaults.cardColors(containerColor = CardWhite),
-                                elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
-                            ) {
-                                Column(Modifier.padding(12.dp)) {
-                                    if (isHistoryLoading) {
-                                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).size(24.dp))
-                                    } else if (history.isEmpty()) {
-                                        Text("Aucun historique", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
-                                    } else {
-                                        history.take(10).forEach { h ->
-                                            Column {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(
-                                                        if (h.userId == null) Icons.Default.Public else Icons.Default.Person,
-                                                        null,
-                                                        modifier = Modifier.size(16.dp),
-                                                        tint = if (h.userId == null) BlueAccent else Green
-                                                    )
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(h.title, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                    Spacer(Modifier.weight(1f))
-                                                    IconButton(onClick = {
-                                                        scope.launch {
-                                                            try {
-                                                                ApiClient.deleteNotification(h.id)
-                                                                loadHistory()
-                                                            } catch (e: Exception) {}
-                                                        }
-                                                    }, modifier = Modifier.size(24.dp)) {
-                                                        Icon(Icons.Default.Delete, null, tint = RedAccent, modifier = Modifier.size(16.dp))
-                                                    }
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(h.createdAt.take(16).replace("T", " "), fontSize = 10.sp, color = TextTertiary)
-                                                }
-                                                Text(h.message, fontSize = 12.sp, color = TextSecondary, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                                HorizontalDivider(Modifier.padding(vertical = 8.dp), color = DividerGray.copy(alpha = 0.5f))
-                                            }
-                                        }
-                                        if (history.size > 10) {
-                                            Text("Et ${history.size - 10} autres...", style = MaterialTheme.typography.labelSmall, color = TextTertiary, modifier = Modifier.align(Alignment.CenterHorizontally))
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(Modifier.height(24.dp))
-
-                            // ── Notification systémique (broadcast) ──
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(CardShapeMedium),
-                                colors = CardDefaults.cardColors(containerColor = CardWhite),
-                                elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
-                            ) {
-                                Column(Modifier.padding(20.dp)) {
-                                    Text("Notification système", style = MaterialTheme.typography.titleLarge)
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("Sera reçue par tous les utilisateurs.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                    Spacer(Modifier.height(16.dp))
-
-                                    OutlinedTextField(
-                                        value = notifTitle,
-                                        onValueChange = { notifTitle = it; notifResult = null },
-                                        label = { Text("Titre") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(CardShapeSmall),
-                                        singleLine = true
-                                    )
-                                    Spacer(Modifier.height(12.dp))
-                                    OutlinedTextField(
-                                        value = notifMessage,
-                                        onValueChange = { notifMessage = it; notifResult = null },
-                                        label = { Text("Message") },
-                                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                                        shape = RoundedCornerShape(CardShapeSmall)
-                                    )
-                                    Spacer(Modifier.height(20.dp))
-
-                                    if (notifResult != null) {
-                                        val isSuccess = notifResult!!.startsWith("✅")
-                                        Text(notifResult!!, color = if (isSuccess) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp))
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                sending = true
-                                                notifResult = null
-                                                try {
-                                                    ApiClient.sendSystemNotification(notifTitle, notifMessage)
-                                                    notifTitle = ""
-                                                    notifMessage = ""
-                                                    notifResult = "✅ Notification diffusée à tous les utilisateurs"
-                                                    loadHistory()
-                                                } catch (e: Exception) {
-                                                    notifResult = "❌ Échec : ${e.message}"
-                                                }
-                                                sending = false
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                                        enabled = !sending && notifTitle.isNotBlank() && notifMessage.isNotBlank(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                        shape = RoundedCornerShape(CardShapeSmall)
-                                    ) {
-                                        if (sending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                        else Text("Diffuser à tous", style = MaterialTheme.typography.labelLarge)
-                                    }
-                                }
-                            }
-
-                            Spacer(Modifier.height(20.dp))
-
-                            // ── Notification individuelle ──
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(CardShapeMedium),
-                                colors = CardDefaults.cardColors(containerColor = CardWhite),
-                                elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
-                            ) {
-                                Column(Modifier.padding(20.dp)) {
-                                    Text("Notification individuelle", style = MaterialTheme.typography.titleLarge)
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("Envoyer à un utilisateur spécifique.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                    Spacer(Modifier.height(16.dp))
-
-                                    // Sélecteur d'utilisateur
-                                    if (indivUserId == null) {
-                                        OutlinedTextField(
-                                            value = userSearchQuery,
-                                            onValueChange = { userSearchQuery = it; showUserSearch = it.length >= 2 },
-                                            label = { Text("Rechercher un utilisateur (min 2 caractères)") },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(CardShapeSmall),
-                                            singleLine = true,
-                                            trailingIcon = { Icon(Icons.Default.Search, null) }
-                                        )
-
-                                        if (showUserSearch) {
-                                            Spacer(Modifier.height(4.dp))
-                                            val filtered = users.filter { it.name.contains(userSearchQuery, ignoreCase = true) || it.email.contains(userSearchQuery, ignoreCase = true) }
-                                            if (filtered.isEmpty()) {
-                                                Text("Aucun utilisateur trouvé", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(8.dp))
-                                            } else {
-                                                Surface(shape = RoundedCornerShape(CardShapeSmall), color = Color(0xFFF5F5F5), modifier = Modifier.fillMaxWidth()) {
-                                                    Column {
-                                                        filtered.take(10).forEach { u ->
-                                                            Row(
-                                                                Modifier.fillMaxWidth().clickable { indivUserId = u.id; indivUserName = u.name; userSearchQuery = ""; showUserSearch = false }.padding(12.dp),
-                                                                verticalAlignment = Alignment.CenterVertically
-                                                            ) {
-                                                                Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-                                                                    Text(u.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
-                                                                }
-                                                                Spacer(Modifier.width(12.dp))
-                                                                Column(Modifier.weight(1f)) {
-                                                                    Text(u.name, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                                                    Text(u.email, fontSize = 11.sp, color = Color.Gray)
-                                                                }
-                                                                Text(u.role, fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(CardShapeSmall)).background(Color(0xFFF0F0F0)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Box(Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
-                                                Text(indivUserName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                            }
-                                            Spacer(Modifier.width(12.dp))
-                                            Text(indivUserName, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                                            TextButton(onClick = { indivUserId = null; indivUserName = ""; indivTitle = ""; indivMessage = ""; indivResult = null }) {
-                                                Text("Changer", color = RedAccent)
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(12.dp))
-
-                                    OutlinedTextField(
-                                        value = indivTitle,
-                                        onValueChange = { indivTitle = it; indivResult = null },
-                                        label = { Text("Titre") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(CardShapeSmall),
-                                        singleLine = true,
-                                        enabled = indivUserId != null
-                                    )
-                                    Spacer(Modifier.height(12.dp))
-                                    OutlinedTextField(
-                                        value = indivMessage,
-                                        onValueChange = { indivMessage = it; indivResult = null },
-                                        label = { Text("Message") },
-                                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                                        shape = RoundedCornerShape(CardShapeSmall),
-                                        enabled = indivUserId != null
-                                    )
-                                    Spacer(Modifier.height(16.dp))
-
-                                    if (indivResult != null) {
-                                        val isSuccess = indivResult!!.startsWith("✅")
-                                        Text(indivResult!!, color = if (isSuccess) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp))
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                indivSending = true
-                                                indivResult = null
-                                                try {
-                                                    val ok = ApiClient.sendIndividualNotification(indivUserId!!, indivTitle, indivMessage)
-                                                    if (ok) {
-                                                        indivResult = "✅ Notification envoyée à $indivUserName"
-                                                        indivTitle = ""
-                                                        indivMessage = ""
-                                                        loadHistory()
-                                                    } else {
-                                                        indivResult = "❌ Échec de l'envoi"
-                                                    }
-                                                } catch (e: Exception) {
-                                                    indivResult = "❌ Échec : ${e.message}"
-                                                }
-                                                indivSending = false
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                                        enabled = !indivSending && indivUserId != null && indivTitle.isNotBlank() && indivMessage.isNotBlank(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
-                                        shape = RoundedCornerShape(CardShapeSmall)
-                                    ) {
-                                        if (indivSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                        else Text("Envoyer à $indivUserName", style = MaterialTheme.typography.labelLarge)
-                                    }
-                                }
-                            }
+                            OutlinedTextField(value = promoDiscountPct, onValueChange = { setPromoDiscountPct(it.filter { c -> c.isDigit() || c == '.' }.take(5)) }, label = { Text("Réduction % (ex: 10)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Ou", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Spacer(Modifier.height(4.dp))
+                            OutlinedTextField(value = promoDiscountFixed, onValueChange = { setPromoDiscountFixed(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text("Réduction fixe FCFA") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(value = promoMinAmount, onValueChange = { setPromoMinAmount(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text("Montant minimum (FCFA)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                         }
-                    }
-                    3 -> AdminDashboardContent(scope = scope)
-                    4 -> AdminOnlineUsersContent(scope = scope)
-                    5 -> AdminStoriesContent(scope = scope)
-                    6 -> AdminHeroContent(scope = scope, shops = shops)
-                }
-
-                // ─── Promotion Dialog ───
-                if (showPromoDialog && promoShop != null) {
-                    AlertDialog(
-                        onDismissRequest = { if (!promoSending) showPromoDialog = false },
-                        title = { Text("Promouvoir : ${promoShop!!.name}") },
-                        text = {
-                            Column(modifier = Modifier.width(300.dp).verticalScroll(rememberScrollState())) {
-                                if (promoMessage != null) {
-                                    Text(promoMessage!!, color = if (promoMessage!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                    Spacer(Modifier.height(8.dp))
-                                }
-
-                                OutlinedTextField(value = promoCode, onValueChange = { promoCode = it.uppercase().take(20) }, label = { Text("Code promo") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                                Spacer(Modifier.height(8.dp))
-
-                                OutlinedTextField(value = promoDiscountPct, onValueChange = { promoDiscountPct = it.filter { c -> c.isDigit() || c == '.' }.take(5) }, label = { Text("Réduction % (ex: 10)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                                Spacer(Modifier.height(4.dp))
-                                Text("Ou", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
-                                Spacer(Modifier.height(4.dp))
-                                OutlinedTextField(value = promoDiscountFixed, onValueChange = { promoDiscountFixed = it.filter { c -> c.isDigit() }.take(7) }, label = { Text("Réduction fixe FCFA (ex: 1000)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                                Spacer(Modifier.height(8.dp))
-
-                                OutlinedTextField(value = promoMinAmount, onValueChange = { promoMinAmount = it.filter { c -> c.isDigit() }.take(7) }, label = { Text("Montant minimum (FCFA)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                            }
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    scope.launch {
-                                        promoSending = true
-                                        promoMessage = null
-                                        try {
-                                            val pct = promoDiscountPct.toDoubleOrNull() ?: 0.0
-                                            val fixed = promoDiscountFixed.toIntOrNull() ?: 0
-                                            if (promoCode.isBlank() || (pct <= 0 && fixed <= 0)) {
-                                                promoMessage = "❌ Code et réduction requis"
-                                            } else {
-                                                ApiClient.createPromotion(ApiPromoCreateBody(
-                                                    shopId = promoShop!!.id,
-                                                    code = promoCode,
-                                                    discountPct = pct,
-                                                    discountFixed = fixed,
-                                                    minAmount = promoMinAmount.toIntOrNull() ?: 0,
-                                                    maxUses = 100
-                                                ))
-                                                ApiClient.sendSystemNotification(
-                                                    "🎉 Promotion chez ${promoShop!!.name}",
-                                                    "Utilisez le code \"$promoCode\" pour obtenir ${if (pct > 0) "$pct% de réduction" else "$fixed FCFA de réduction"} sur les produits ${promoShop!!.name} !"
-                                                )
-                                                promoMessage = "✅ Promotion créée et notifiée à tous !"
-                                            }
-                                        } catch (e: Exception) {
-                                            promoMessage = "❌ Erreur: ${e.message}"
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    setPromoSending(true); setPromoMessage(null)
+                                    try {
+                                        val pct = promoDiscountPct.toDoubleOrNull() ?: 0.0
+                                        val fixed = promoDiscountFixed.toIntOrNull() ?: 0
+                                        if (promoCode.isBlank() || (pct <= 0 && fixed <= 0)) {
+                                            setPromoMessage("❌ Code et réduction requis")
+                                        } else {
+                                            ApiClient.createPromotion(ApiPromoCreateBody(shopId = promoShop!!.id, code = promoCode, discountPct = pct, discountFixed = fixed, minAmount = promoMinAmount.toIntOrNull() ?: 0, maxUses = 100))
+                                            ApiClient.sendSystemNotification("🎉 Promotion chez ${promoShop!!.name}", "Utilisez le code \"$promoCode\" pour obtenir ${if (pct > 0) "$pct% de réduction" else "$fixed FCFA de réduction"} sur les produits ${promoShop!!.name} !")
+                                            setPromoMessage("✅ Promotion créée et notifiée à tous !")
                                         }
-                                        promoSending = false
-                                    }
-                                },
-                                enabled = !promoSending && promoCode.isNotBlank()
-                            ) {
-                                if (promoSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
-                                else Text("Créer & Notifier")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showPromoDialog = false }, enabled = !promoSending) { Text("Fermer") }
+                                    } catch (e: Exception) { setPromoMessage("❌ Erreur: ${e.message}") }
+                                    setPromoSending(false)
+                                }
+                            },
+                            enabled = !promoSending && promoCode.isNotBlank()
+                        ) {
+                            if (promoSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
+                            else Text("Créer & Notifier")
                         }
-                    )
-                }
+                    },
+                    dismissButton = { TextButton(onClick = { setShowPromoDialog(false) }, enabled = !promoSending) { Text("Fermer") } }
+                )
             }
 
             // ─── Add User Dialog ───
             if (showAddUserDialog) {
                 AlertDialog(
-                    onDismissRequest = { if (!addUserSending) showAddUserDialog = false },
+                    onDismissRequest = { if (!addUserSending) setShowAddUserDialog(false) },
                     title = { Text("Ajouter un utilisateur") },
                     text = {
-                        Column(modifier = Modifier.width(320.dp).verticalScroll(rememberScrollState())) {
+                        Column(Modifier.width(320.dp).verticalScroll(rememberScrollState())) {
                             if (addUserResult != null) {
                                 Text(addUserResult!!, color = if (addUserResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(8.dp))
@@ -659,22 +408,20 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                                 Text(addUserError!!, color = RedAccent, style = MaterialTheme.typography.bodySmall)
                                 Spacer(Modifier.height(8.dp))
                             }
-
-                            OutlinedTextField(value = addUserName, onValueChange = { addUserName = it }, label = { Text("Nom") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserName, onValueChange = { setAddUserName(it) }, label = { Text("Nom") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserEmail, onValueChange = { addUserEmail = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserEmail, onValueChange = { setAddUserEmail(it) }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserPhone, onValueChange = { addUserPhone = it }, label = { Text("Téléphone") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserPhone, onValueChange = { setAddUserPhone(it) }, label = { Text("Téléphone") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserPassword, onValueChange = { addUserPassword = it }, label = { Text("Mot de passe") }, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserPassword, onValueChange = { setAddUserPassword(it) }, label = { Text("Mot de passe") }, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-
                             Text("Rôle", style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                FilterChip(selected = addUserRole == "buyer", onClick = { addUserRole = "buyer" }, label = { Text("Client") })
-                                FilterChip(selected = addUserRole == "vendor", onClick = { addUserRole = "vendor" }, label = { Text("Vendeur") })
-                                FilterChip(selected = addUserRole == "admin", onClick = { addUserRole = "admin" }, label = { Text("Admin") })
+                                FilterChip(selected = addUserRole == "buyer", onClick = { setAddUserRole("buyer") }, label = { Text("Client") })
+                                FilterChip(selected = addUserRole == "vendor", onClick = { setAddUserRole("vendor") }, label = { Text("Vendeur") })
+                                FilterChip(selected = addUserRole == "admin", onClick = { setAddUserRole("admin") }, label = { Text("Admin") })
                             }
                         }
                     },
@@ -682,22 +429,18 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                         Button(
                             onClick = {
                                 scope.launch {
-                                    addUserSending = true
-                                    addUserResult = null
-                                    addUserError = null
+                                    setAddUserSending(true); setAddUserResult(null); setAddUserError(null)
                                     try {
                                         if (addUserName.isBlank() || addUserEmail.isBlank() || addUserPhone.isBlank() || addUserPassword.isBlank()) {
-                                            addUserResult = "❌ Tous les champs sont obligatoires"
+                                            setAddUserResult("❌ Tous les champs sont obligatoires")
                                         } else {
                                             ApiClient.addUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole)
-                                            addUserResult = "✅ Utilisateur ${addUserName} créé avec succès !"
-                                            addUserName = ""; addUserEmail = ""; addUserPhone = ""; addUserPassword = ""
+                                            setAddUserResult("✅ Utilisateur $addUserName créé avec succès !")
+                                            setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword("")
                                             loadData()
                                         }
-                                    } catch (e: Exception) {
-                                        addUserResult = "❌ Erreur: ${e.message}"
-                                    }
-                                    addUserSending = false
+                                    } catch (e: Exception) { setAddUserResult("❌ Erreur: ${e.message}") }
+                                    setAddUserSending(false)
                                 }
                             },
                             enabled = !addUserSending
@@ -706,47 +449,39 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                             else Text("Créer")
                         }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { showAddUserDialog = false }, enabled = !addUserSending) { Text("Fermer") }
-                    }
+                    dismissButton = { TextButton(onClick = { setShowAddUserDialog(false) }, enabled = !addUserSending) { Text("Fermer") } }
                 )
             }
 
             // ─── Individual User Notification Dialog ───
             if (showUserNotifDialog && targetNotifUser != null) {
                 AlertDialog(
-                    onDismissRequest = { if (!userNotifSending) showUserNotifDialog = false },
+                    onDismissRequest = { if (!userNotifSending) setShowUserNotifDialog(false) },
                     title = { Text("Notifier : ${targetNotifUser!!.name}") },
                     text = {
-                        Column(modifier = Modifier.width(300.dp)) {
+                        Column(Modifier.width(300.dp)) {
                             if (userNotifResult != null) {
                                 Text(userNotifResult!!, color = if (userNotifResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(8.dp))
                             }
-                            OutlinedTextField(value = userNotifTitle, onValueChange = { userNotifTitle = it }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = userNotifTitle, onValueChange = { setUserNotifTitle(it) }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = userNotifMessage, onValueChange = { userNotifMessage = it }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = userNotifMessage, onValueChange = { setUserNotifMessage(it) }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall))
                         }
                     },
                     confirmButton = {
                         Button(
                             onClick = {
                                 scope.launch {
-                                    userNotifSending = true
-                                    userNotifResult = null
+                                    setUserNotifSending(true); setUserNotifResult(null)
                                     try {
                                         val ok = ApiClient.sendIndividualNotification(targetNotifUser!!.id, userNotifTitle, userNotifMessage)
                                         if (ok) {
-                                            userNotifResult = "✅ Notification envoyée !"
-                                            userNotifTitle = ""
-                                            userNotifMessage = ""
-                                        } else {
-                                            userNotifResult = "❌ Échec de l'envoi"
-                                        }
-                                    } catch (e: Exception) {
-                                        userNotifResult = "❌ Erreur: ${e.message}"
-                                    }
-                                    userNotifSending = false
+                                            setUserNotifResult("✅ Notification envoyée !")
+                                            setUserNotifTitle(""); setUserNotifMessage("")
+                                        } else { setUserNotifResult("❌ Échec de l'envoi") }
+                                    } catch (e: Exception) { setUserNotifResult("❌ Échec : ${e.message}") }
+                                    setUserNotifSending(false)
                                 }
                             },
                             enabled = !userNotifSending && userNotifTitle.isNotBlank() && userNotifMessage.isNotBlank()
@@ -755,34 +490,312 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                             else Text("Envoyer")
                         }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { showUserNotifDialog = false }, enabled = !userNotifSending) { Text("Fermer") }
-                    }
+                    dismissButton = { TextButton(onClick = { setShowUserNotifDialog(false) }, enabled = !userNotifSending) { Text("Fermer") } }
                 )
             }
         }
     }
 }
 
+// ═══════════════════════════════════════════════
+//  USERS LIST
+// ═══════════════════════════════════════════════
+
+@Composable
+private fun AdminUsersList(
+    users: List<AdminUser>,
+    isLoading: Boolean, errorMessage: String?,
+    scope: kotlinx.coroutines.CoroutineScope, loadData: () -> Unit,
+    setAddUserError: (String?) -> Unit,
+    setTargetNotifUser: (AdminUser?) -> Unit,
+    setUserNotifTitle: (String) -> Unit,
+    setUserNotifMessage: (String) -> Unit,
+    setUserNotifResult: (String?) -> Unit,
+    setShowUserNotifDialog: (Boolean) -> Unit
+) {
+    LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(users) { user ->
+            AdminUserCard(user,
+                onRoleChange = { role ->
+                    scope.launch {
+                        try { ApiClient.updateUserRole(user.id, role) } catch (e: Exception) { setAddUserError("Erreur changement rôle: ${e.message}") }
+                    }
+                },
+                onDelete = {
+                    scope.launch {
+                        try { ApiClient.deleteUser(user.id) } catch (e: Exception) { setAddUserError("Erreur suppression: ${e.message}") }
+                    }
+                },
+                onBan = { newStatus ->
+                    scope.launch {
+                        try { ApiClient.banUser(user.id, newStatus) } catch (e: Exception) { setAddUserError("Erreur: ${e.message}") }
+                    }
+                },
+                onNotify = {
+                    setTargetNotifUser(user)
+                    setUserNotifTitle(""); setUserNotifMessage(""); setUserNotifResult(null)
+                    setShowUserNotifDialog(true)
+                }
+            )
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  SHOPS LIST
+// ═══════════════════════════════════════════════
+
+@Composable
+private fun AdminShopsList(
+    shops: List<AdminShop>,
+    scope: kotlinx.coroutines.CoroutineScope,
+    setPromoShop: (AdminShop?) -> Unit,
+    setPromoCode: (String) -> Unit,
+    setPromoDiscountPct: (String) -> Unit,
+    setPromoDiscountFixed: (String) -> Unit,
+    setPromoMinAmount: (String) -> Unit,
+    setPromoMessage: (String?) -> Unit,
+    setShowPromoDialog: (Boolean) -> Unit
+) {
+    LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (shops.isEmpty()) {
+            item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("Aucune boutique trouvée", color = TextSecondary) } }
+        }
+        items(shops) { shop ->
+            AdminShopCard(
+                shop = shop,
+                onToggleVerify = {
+                    scope.launch { try { ApiClient.toggleShopVerification(shop.id, !shop.isVerified) } catch (_: Exception) {} }
+                },
+                onPromote = { featured ->
+                    scope.launch { try { ApiClient.promoteShop(shop.id, featured) } catch (_: Exception) {} }
+                },
+                onBan = { newStatus ->
+                    scope.launch { try { ApiClient.banShop(shop.id, newStatus) } catch (_: Exception) {} }
+                },
+                onDelete = {
+                    scope.launch { try { ApiClient.deleteShop(shop.id) } catch (_: Exception) {} }
+                }
+            )
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  NOTIFICATIONS CONTENT
+// ═══════════════════════════════════════════════
+
+@Composable
+private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, users: List<AdminUser>) {
+    var notifTitle by remember { mutableStateOf("") }
+    var notifMessage by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var notifResult by remember { mutableStateOf<String?>(null) }
+
+    var indivUserId by remember { mutableStateOf<Int?>(null) }
+    var indivUserName by remember { mutableStateOf("") }
+    var indivTitle by remember { mutableStateOf("") }
+    var indivMessage by remember { mutableStateOf("") }
+    var indivSending by remember { mutableStateOf(false) }
+    var indivResult by remember { mutableStateOf<String?>(null) }
+    var showUserSearch by remember { mutableStateOf(false) }
+    var userSearchQuery by remember { mutableStateOf("") }
+
+    var history by remember { mutableStateOf<List<ApiNotification>>(emptyList()) }
+    var isHistoryLoading by remember { mutableStateOf(false) }
+
+    fun loadHistory() {
+        scope.launch {
+            isHistoryLoading = true
+            history = try { ApiClient.fetchAdminNotifications() } catch (e: Exception) { emptyList() }
+            isHistoryLoading = false
+        }
+    }
+
+    LaunchedEffect(Unit) { loadHistory() }
+
+    Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+        // ── Historique ──
+        Text("Historique des envois", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(8.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(CardShapeMedium),
+            colors = CardDefaults.cardColors(containerColor = CardWhite),
+            elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
+        ) {
+            Column(Modifier.padding(12.dp)) {
+                if (isHistoryLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).size(24.dp))
+                } else if (history.isEmpty()) {
+                    Text("Aucun historique", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                } else {
+                    history.take(10).forEach { h ->
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(if (h.userId == null) Icons.Default.Public else Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = if (h.userId == null) BlueAccent else Green)
+                                Spacer(Modifier.width(8.dp))
+                                Text(h.title, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Spacer(Modifier.weight(1f))
+                                IconButton(onClick = { scope.launch { try { ApiClient.deleteNotification(h.id); loadHistory() } catch (_: Exception) {} } }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Delete, null, tint = RedAccent, modifier = Modifier.size(16.dp))
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(h.createdAt.take(16).replace("T", " "), fontSize = 10.sp, color = TextTertiary)
+                            }
+                            Text(h.message, fontSize = 12.sp, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = DividerGray.copy(alpha = 0.5f))
+                        }
+                    }
+                    if (history.size > 10) {
+                        Text("Et ${history.size - 10} autres...", style = MaterialTheme.typography.labelSmall, color = TextTertiary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // ── Notification broadcast ──
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(CardShapeMedium),
+            colors = CardDefaults.cardColors(containerColor = CardWhite),
+            elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Notification système", style = MaterialTheme.typography.titleLarge)
+                Text("Sera reçue par tous les utilisateurs.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(value = notifTitle, onValueChange = { notifTitle = it; notifResult = null }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = notifMessage, onValueChange = { notifMessage = it; notifResult = null }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(CardShapeSmall))
+                Spacer(Modifier.height(20.dp))
+                if (notifResult != null) {
+                    Text(notifResult!!, color = if (notifResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            sending = true; notifResult = null
+                            try { ApiClient.sendSystemNotification(notifTitle, notifMessage); notifTitle = ""; notifMessage = ""; notifResult = "✅ Notification diffusée à tous les utilisateurs"; loadHistory() } catch (e: Exception) { notifResult = "❌ Échec : ${e.message}" }
+                            sending = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    enabled = !sending && notifTitle.isNotBlank() && notifMessage.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(CardShapeSmall)
+                ) {
+                    if (sending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    else Text("Diffuser à tous", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ── Notification individuelle ──
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(CardShapeMedium),
+            colors = CardDefaults.cardColors(containerColor = CardWhite),
+            elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Notification individuelle", style = MaterialTheme.typography.titleLarge)
+                Text("Envoyer à un utilisateur spécifique.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Spacer(Modifier.height(16.dp))
+
+                if (indivUserId == null) {
+                    OutlinedTextField(value = userSearchQuery, onValueChange = { userSearchQuery = it; showUserSearch = it.length >= 2 }, label = { Text("Rechercher un utilisateur (min 2)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, trailingIcon = { Icon(Icons.Default.Search, null) })
+                    if (showUserSearch) {
+                        Spacer(Modifier.height(4.dp))
+                        val filtered = users.filter { it.name.contains(userSearchQuery, ignoreCase = true) || it.email.contains(userSearchQuery, ignoreCase = true) }
+                        if (filtered.isEmpty()) {
+                            Text("Aucun utilisateur trouvé", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(8.dp))
+                        } else {
+                            Surface(shape = RoundedCornerShape(CardShapeSmall), color = Color(0xFFF5F5F5), modifier = Modifier.fillMaxWidth()) {
+                                Column {
+                                    filtered.take(10).forEach { u ->
+                                        Row(
+                                            Modifier.fillMaxWidth().clickable { indivUserId = u.id; indivUserName = u.name; userSearchQuery = ""; showUserSearch = false }.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
+                                                Text(u.name.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
+                                            }
+                                            Spacer(Modifier.width(12.dp))
+                                            Column(Modifier.weight(1f)) {
+                                                Text(u.name, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                                Text(u.email, fontSize = 11.sp, color = Color.Gray)
+                                            }
+                                            Text(u.role, fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(CardShapeSmall)).background(Color(0xFFF0F0F0)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) { Text(indivUserName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(indivUserName, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { indivUserId = null; indivUserName = ""; indivTitle = ""; indivMessage = ""; indivResult = null }) { Text("Changer", color = RedAccent) }
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = indivTitle, onValueChange = { indivTitle = it; indivResult = null }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, enabled = indivUserId != null)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = indivMessage, onValueChange = { indivMessage = it; indivResult = null }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall), enabled = indivUserId != null)
+                Spacer(Modifier.height(16.dp))
+
+                if (indivResult != null) {
+                    Text(indivResult!!, color = if (indivResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            indivSending = true; indivResult = null
+                            try {
+                                val ok = ApiClient.sendIndividualNotification(indivUserId!!, indivTitle, indivMessage)
+                                if (ok) { indivResult = "✅ Notification envoyée à $indivUserName"; indivTitle = ""; indivMessage = ""; loadHistory() } else { indivResult = "❌ Échec de l'envoi" }
+                            } catch (e: Exception) { indivResult = "❌ Échec : ${e.message}" }
+                            indivSending = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    enabled = !indivSending && indivUserId != null && indivTitle.isNotBlank() && indivMessage.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                    shape = RoundedCornerShape(CardShapeSmall)
+                ) {
+                    if (indivSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    else Text("Envoyer à $indivUserName", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════
+//  DATA CLASSES
+// ═══════════════════════════════════════════════
+
 data class AdminUser(val id: Int, val name: String, val email: String, val phone: String, val role: String, val status: String = "active", val createdAt: String)
 data class AdminShop(
-    val id: Int,
-    val name: String,
-    val logo: String = "",
-    val location: String = "",
-    val phone: String = "",
-    val vendorName: String,
-    val vendorEmail: String = "",
-    val vendorPhone: String = "",
-    val category: String,
-    val status: String = "active",
-    val isFeatured: Boolean = false,
-    val productCount: Int = 0,
-    val totalSales: Int = 0,
-    val isVerified: Boolean = false,
-    val createdAt: String = "",
-    val updatedAt: String = ""
+    val id: Int, val name: String, val logo: String = "", val location: String = "",
+    val phone: String = "", val vendorName: String, val vendorEmail: String = "",
+    val vendorPhone: String = "", val category: String, val status: String = "active",
+    val isFeatured: Boolean = false, val productCount: Int = 0, val totalSales: Int = 0,
+    val isVerified: Boolean = false, val createdAt: String = "", val updatedAt: String = ""
 )
+
+// ═══════════════════════════════════════════════
+//  USER CARD
+// ═══════════════════════════════════════════════
 
 @Composable
 fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () -> Unit, onBan: (String) -> Unit, onNotify: () -> Unit) {
@@ -810,11 +823,7 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
             Box {
                 IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary) }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Envoyer notification") },
-                        leadingIcon = { Icon(Icons.Default.Notifications, null, tint = Green) },
-                        onClick = { onNotify(); showMenu = false }
-                    )
+                    DropdownMenuItem(text = { Text("Envoyer notification") }, leadingIcon = { Icon(Icons.Default.Notifications, null, tint = Green) }, onClick = { onNotify(); showMenu = false })
                     HorizontalDivider()
                     DropdownMenuItem(text = { Text("Rôle Vendeur") }, onClick = { onRoleChange("vendor"); showMenu = false })
                     DropdownMenuItem(text = { Text("Rôle Client") }, onClick = { onRoleChange("buyer"); showMenu = false })
@@ -824,30 +833,22 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
                         leadingIcon = { Icon(if (user.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (user.status == "banned") Green else RedAccent) },
                         onClick = { onBan(if (user.status == "banned") "active" else "banned"); showMenu = false }
                     )
-                    DropdownMenuItem(
-                        text = { Text("Supprimer", color = RedAccent) },
-                        leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) },
-                        onClick = { onDelete(); showMenu = false }
-                    )
+                    DropdownMenuItem(text = { Text("Supprimer", color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { onDelete(); showMenu = false })
                 }
             }
         }
     }
 }
 
+// ═══════════════════════════════════════════════
+//  SHOP CARD
+// ═══════════════════════════════════════════════
+
 @Composable
-fun AdminShopCard(
-    shop: AdminShop,
-    onToggleVerify: () -> Unit,
-    onPromote: (Boolean) -> Unit,
-    onBan: (String) -> Unit,
-    onDelete: () -> Unit
-) {
+fun AdminShopCard(shop: AdminShop, onToggleVerify: () -> Unit, onPromote: (Boolean) -> Unit, onBan: (String) -> Unit, onDelete: () -> Unit) {
     var logoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(shop.logo) {
-        if (shop.logo.isNotBlank()) {
-            logoBitmap = loadImageFromUrl(shop.logo)
-        }
+        if (shop.logo.isNotBlank()) { logoBitmap = loadImageFromUrl(shop.logo) }
     }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -858,119 +859,60 @@ fun AdminShopCard(
         elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            // ── Logo ──
-            Box(
-                Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                if (logoBitmap != null) {
-                    Image(bitmap = logoBitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape))
-                } else {
-                    Icon(Icons.Default.Store, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                }
+            Box(Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                if (logoBitmap != null) { Image(bitmap = logoBitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape)) }
+                else { Icon(Icons.Default.Store, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
             }
             Spacer(Modifier.width(12.dp))
-
-            // ── Info ──
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(shop.name, style = MaterialTheme.typography.titleSmall)
-                    if (shop.isFeatured) {
-                        Spacer(Modifier.width(4.dp))
-                        Icon(Icons.Default.Star, null, tint = Orange, modifier = Modifier.size(14.dp))
-                    }
-                    if (shop.status == "banned") {
-                        Spacer(Modifier.width(4.dp))
-                        Surface(color = RedAccent.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
-                            Text("BANNIE", style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
-                        }
-                    }
+                    if (shop.isFeatured) { Spacer(Modifier.width(4.dp)); Icon(Icons.Default.Star, null, tint = Orange, modifier = Modifier.size(14.dp)) }
+                    if (shop.status == "banned") { Spacer(Modifier.width(4.dp)); Surface(color = RedAccent.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) { Text("BANNIE", style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)) } }
                 }
-                Spacer(Modifier.height(2.dp))
                 Text(shop.vendorName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("${shop.productCount} produits", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
                     Text("•", style = MaterialTheme.typography.labelSmall, color = DividerGray)
                     Text("${shop.totalSales} ventes", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                    if (shop.location.isNotBlank()) {
-                        Text("•", style = MaterialTheme.typography.labelSmall, color = DividerGray)
-                        Text(shop.location, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                    }
+                    if (shop.location.isNotBlank()) { Text("•", style = MaterialTheme.typography.labelSmall, color = DividerGray); Text(shop.location, style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
-
-            // ── Actions ──
             var showActions by remember { mutableStateOf(false) }
             Box {
-                IconButton(onClick = { showActions = true }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.MoreVert, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-                }
+                IconButton(onClick = { showActions = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) }
                 DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
-                    DropdownMenuItem(
-                        text = { Text(if (shop.isVerified) "Dé-vérifier" else "Vérifier") },
-                        leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) },
-                        onClick = { onToggleVerify(); showActions = false }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(if (shop.isFeatured) "Retirer promo" else "Mettre en avant", color = Orange) },
-                        leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) },
-                        onClick = { onPromote(!shop.isFeatured); showActions = false }
-                    )
+                    DropdownMenuItem(text = { Text(if (shop.isVerified) "Dé-vérifier" else "Vérifier") }, leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) }, onClick = { onToggleVerify(); showActions = false })
+                    DropdownMenuItem(text = { Text(if (shop.isFeatured) "Retirer promo" else "Mettre en avant", color = Orange) }, leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) }, onClick = { onPromote(!shop.isFeatured); showActions = false })
                     HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text(if (shop.status == "banned") "Réactiver" else "Bannir", color = if (shop.status == "banned") Green else RedAccent) },
-                        leadingIcon = { Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (shop.status == "banned") Green else RedAccent) },
-                        onClick = { onBan(if (shop.status == "banned") "active" else "banned"); showActions = false }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Supprimer", color = RedAccent) },
-                        leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) },
-                        onClick = { showDeleteConfirm = true; showActions = false }
-                    )
+                    DropdownMenuItem(text = { Text(if (shop.status == "banned") "Réactiver" else "Bannir", color = if (shop.status == "banned") Green else RedAccent) }, leadingIcon = { Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (shop.status == "banned") Green else RedAccent) }, onClick = { onBan(if (shop.status == "banned") "active" else "banned"); showActions = false })
+                    DropdownMenuItem(text = { Text("Supprimer", color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { showDeleteConfirm = true; showActions = false })
                 }
             }
         }
     }
 
-    // ── Delete confirmation dialog ──
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text("Supprimer la boutique ?") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer « ${shop.name} » ?\nTous les produits, avis et commandes liés seront définitivement supprimés.") },
-            confirmButton = {
-                Button(
-                    onClick = { showDeleteConfirm = false; onDelete() },
-                    colors = ButtonDefaults.buttonColors(containerColor = RedAccent)
-                ) { Text("Supprimer", color = Color.White) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuler") }
-            }
+            text = { Text("Êtes-vous sûr de vouloir supprimer « ${shop.name} » ?\nTous les produits et commandes liés seront définitivement supprimés.") },
+            confirmButton = { Button(onClick = { showDeleteConfirm = false; onDelete() }, colors = ButtonDefaults.buttonColors(containerColor = RedAccent)) { Text("Supprimer", color = Color.White) } },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuler") } }
         )
     }
 }
 
 @Composable
 fun RoleBadge(role: String) {
-    val color = when(role) {
-        "admin" -> BlueAccent
-        "vendor" -> Orange
-        else -> Green
-    }
+    val color = when(role) { "admin" -> BlueAccent; "vendor" -> Orange; else -> Green }
     Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(4.dp)) {
-        Text(
-            when(role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" },
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
+        Text(when(role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
     }
 }
 
 // ═══════════════════════════════════════════════
-//  ADMIN DASHBOARD ANALYTICS (onglet Dashboard)
+//  ADMIN DASHBOARD ANALYTICS
 // ═══════════════════════════════════════════════
 
 @Composable
@@ -980,33 +922,16 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
     var error by remember { mutableStateOf<String?>(null) }
 
     fun load() {
-        scope.launch {
-            isLoading = true; error = null
-            try {
-                data = ApiClient.fetchAdminDashboard()
-            } catch (e: Exception) { error = e.message }
-            isLoading = false
-        }
+        scope.launch { isLoading = true; error = null; try { data = ApiClient.fetchAdminDashboard() } catch (e: Exception) { error = e.message }; isLoading = false }
     }
-
     LaunchedEffect(Unit) { load() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
-        if (isLoading && data == null) {
-            repeat(6) {
-                DschangShimmer(modifier = Modifier.fillMaxWidth().height(80.dp).padding(bottom = 8.dp))
-            }
-            return@Column
-        }
-        if (error != null && data == null) {
-            DschangErrorState(message = error!!, onRetry = { load() })
-            return@Column
-        }
-
+        if (isLoading && data == null) { repeat(6) { DschangShimmer(modifier = Modifier.fillMaxWidth().height(80.dp).padding(bottom = 8.dp)) }; return@Column }
+        if (error != null && data == null) { DschangErrorState(message = error!!, onRetry = { load() }); return@Column }
         val d = data ?: return@Column
         val kpis = d.kpis
 
-        // ── Ligne des KPIs ──
         Text("Vue d'ensemble", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             KpiCard(title = "Clients", value = "${kpis.totalUsers}", color = BlueAccent, modifier = Modifier.weight(1f))
@@ -1027,10 +952,8 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
             KpiCard(title = "CA Total", value = FormatUtils.formatPrice(kpis.totalRevenue), color = GreenDark, modifier = Modifier.weight(1f))
             KpiCard(title = "Aujourd'hui", value = FormatUtils.formatPrice(kpis.revenueToday), color = Orange, modifier = Modifier.weight(1f))
         }
-
         Spacer(Modifier.height(16.dp))
 
-        // ── Alertes ──
         if (kpis.pendingShops > 0 || kpis.bannedShops > 0) {
             Text("Alertes", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
             if (kpis.pendingShops > 0) {
@@ -1038,10 +961,7 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.VerifiedUser, null, tint = Orange, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("$kpis.pendingShops boutiques en attente de vérification", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
-                            Text("Allez dans l'onglet Boutiques pour les vérifier", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                        }
+                        Column(Modifier.weight(1f)) { Text("$kpis.pendingShops boutiques en attente de vérification", style = MaterialTheme.typography.bodyMedium); Text("Allez dans l'onglet Boutiques pour les vérifier", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
@@ -1051,140 +971,90 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Block, null, tint = RedAccent, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("$kpis.bannedShops boutiques bannies", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
-                            Text("Consultez l'onglet Boutiques pour plus de détails", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                        }
+                        Column(Modifier.weight(1f)) { Text("$kpis.bannedShops boutiques bannies", style = MaterialTheme.typography.bodyMedium); Text("Consultez l'onglet Boutiques pour plus de détails", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
             Spacer(Modifier.height(16.dp))
         }
 
-        // ── Nouveaux inscrits (30j) ──
-        Text("Inscriptions (30 jours)", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 4.dp))
+        Text("Inscriptions (30 jours)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
         Text("+${kpis.newUsers30d} nouveaux utilisateurs ce mois", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(bottom = 8.dp))
-        DschangCard(elevation = DschangCardElevation.Low) {
-            SimpleBarChart(
-                data = d.registrations.map { it.count },
-                modifier = Modifier.fillMaxWidth().height(80.dp)
-            )
-        }
-
+        DschangCard(elevation = DschangCardElevation.Low) { SimpleBarChart(data = d.registrations.map { it.count }, modifier = Modifier.fillMaxWidth().height(80.dp)) }
         Spacer(Modifier.height(16.dp))
 
-        // ── Revenu mensuel ──
-        Text("Revenu mensuel (12 mois)", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+        Text("Revenu mensuel (12 mois)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         DschangCard(elevation = DschangCardElevation.Low) {
             Column {
-                val months = d.monthlyRevenue
-                months.forEach { m ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                d.monthlyRevenue.forEach { m ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(m.month.takeLast(2) + "/" + m.month.take(4), style = MaterialTheme.typography.labelSmall, color = TextSecondary, modifier = Modifier.width(50.dp))
-                        Box(
-                            Modifier.weight(1f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(GreenSurface)
-                        ) {
-                            val maxRev = months.maxOfOrNull { it.revenue } ?: 1.0
-                            Box(Modifier.fillMaxHeight().fillMaxWidth((m.revenue / maxRev).toFloat()).clip(RoundedCornerShape(4.dp)).background(Green))
-                        }
-                        Spacer(Modifier.width(6.dp))
-                        Text(FormatUtils.formatPrice(m.revenue), style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(60.dp))
+                        val maxRev = d.monthlyRevenue.maxOfOrNull { it.revenue } ?: 1.0
+                        Box(Modifier.weight(1f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(GreenSurface)) { Box(Modifier.fillMaxHeight().fillMaxWidth((m.revenue / maxRev).toFloat()).clip(RoundedCornerShape(4.dp)).background(Green)) }
+                        Spacer(Modifier.width(6.dp)); Text(FormatUtils.formatPrice(m.revenue), style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(60.dp))
                     }
                 }
             }
         }
-
         Spacer(Modifier.height(16.dp))
 
-        // ── Top 10 vendeurs ──
-        Text("Top vendeurs (CA)", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+        Text("Top vendeurs (CA)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         d.topVendors.forEachIndexed { idx, v ->
             DschangCard(elevation = DschangCardElevation.Low, modifier = Modifier.padding(bottom = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("#${idx + 1}", style = MaterialTheme.typography.titleSmall, color = if (idx < 3) Orange else TextTertiary, modifier = Modifier.width(28.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(v.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(v.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(FormatUtils.formatPrice(v.revenue), style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold)
-                        Text("${v.orderCount} commandes", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                    }
+                    Column(Modifier.weight(1f)) { Text(v.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text(v.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                    Column(horizontalAlignment = Alignment.End) { Text(FormatUtils.formatPrice(v.revenue), style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text("${v.orderCount} commandes", style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
         }
-
         Spacer(Modifier.height(16.dp))
 
-        // ── Top produits ──
-        Text("Top produits vendus", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+        Text("Top produits vendus", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         d.topProducts.forEachIndexed { idx, p ->
             DschangCard(elevation = DschangCardElevation.Low, modifier = Modifier.padding(bottom = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("#${idx + 1}", style = MaterialTheme.typography.titleSmall, color = if (idx < 3) Orange else TextTertiary, modifier = Modifier.width(28.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(p.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1)
-                        Text(p.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("${p.totalSold} vendus", style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold)
-                        Text(FormatUtils.formatPrice(p.totalGenerated), style = MaterialTheme.typography.labelSmall, color = TextTertiary)
-                    }
+                    Column(Modifier.weight(1f)) { Text(p.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1); Text(p.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                    Column(horizontalAlignment = Alignment.End) { Text("${p.totalSold} vendus", style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text(FormatUtils.formatPrice(p.totalGenerated), style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
         }
 
-        // ── Répartition des commandes ──
         if (d.ordersByStatus.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("Commandes par statut", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Commandes par statut", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             DschangCard(elevation = DschangCardElevation.Low) {
                 Column {
                     val total = d.ordersByStatus.values.sum().toFloat()
                     d.ordersByStatus.forEach { (status, count) ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val orderStatus = OrderStatus.fromCode(status)
-                            Text(orderStatus.label, style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(80.dp))
-                            Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(4.dp)).background(GreenSurface)) {
-                                Box(Modifier.fillMaxHeight().fillMaxWidth(count / total).clip(RoundedCornerShape(4.dp)).background(Green))
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            Text("$count", style = MaterialTheme.typography.labelSmall, color = TextSecondary, modifier = Modifier.width(30.dp))
+                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                            val orderStatus = OrderStatus.fromCode(status); Text(orderStatus.label, style = MaterialTheme.typography.labelSmall, color = TextPrimary, modifier = Modifier.width(80.dp))
+                            Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(4.dp)).background(GreenSurface)) { Box(Modifier.fillMaxHeight().fillMaxWidth(count / total).clip(RoundedCornerShape(4.dp)).background(Green)) }
+                            Spacer(Modifier.width(6.dp)); Text("$count", style = MaterialTheme.typography.labelSmall, color = TextSecondary, modifier = Modifier.width(30.dp))
                         }
                     }
                 }
             }
         }
 
-        // ── Répartition des rôles ──
         if (d.usersByRole.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("Utilisateurs par rôle", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+            Text("Utilisateurs par rôle", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             DschangCard(elevation = DschangCardElevation.Low) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     d.usersByRole.forEach { (role, count) ->
                         val label = when (role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }
                         val color = when (role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("$count", style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold)
-                            Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("$count", style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold); Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary) }
                     }
                 }
             }
         }
-
         Spacer(Modifier.height(24.dp))
     }
 }
 
-// ── Mini carte KPI ──
 @Composable
 private fun KpiCard(title: String, value: String, color: Color, modifier: Modifier = Modifier) {
     DschangCard(elevation = DschangCardElevation.Low, modifier = modifier) {
@@ -1196,7 +1066,7 @@ private fun KpiCard(title: String, value: String, color: Color, modifier: Modifi
 }
 
 // ═══════════════════════════════════════════════
-//  ONLINE USERS TAB (onglet En ligne)
+//  ONLINE USERS
 // ═══════════════════════════════════════════════
 
 @Composable
@@ -1205,161 +1075,58 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    fun load() {
-        scope.launch {
-            isLoading = true; error = null
-            try {
-                data = ApiClient.fetchOnlineUsers()
-            } catch (e: Exception) { error = e.message }
-            isLoading = false
-        }
-    }
-
+    fun load() { scope.launch { isLoading = true; error = null; try { data = ApiClient.fetchOnlineUsers() } catch (e: Exception) { error = e.message }; isLoading = false } }
     LaunchedEffect(Unit) { load() }
 
     Column(Modifier.fillMaxSize()) {
-        // Header with auto-refresh
-        Row(
-            Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Utilisateurs en ligne", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
             TextButton(onClick = { load() }) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Actualiser")
-                }
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                else { Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Actualiser") }
             }
         }
-
-        if (isLoading && data == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            return@Column
-        }
-        if (error != null && data == null) {
-            DschangErrorState(message = error!!, onRetry = { load() })
-            return@Column
-        }
-
+        if (isLoading && data == null) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }; return@Column }
+        if (error != null && data == null) { DschangErrorState(message = error!!, onRetry = { load() }); return@Column }
         val d = data ?: return@Column
 
-        // Total counter badge
-        Surface(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = Green.copy(alpha = 0.1f)
-        ) {
-            Row(
-                Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(Modifier.size(10.dp).background(Green, CircleShape))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "${d.totalOnline} utilisateur${if (d.totalOnline > 1) "s" else ""} en ligne actuellement",
-                    fontWeight = FontWeight.SemiBold,
-                    color = GreenDark
-                )
+        Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), shape = RoundedCornerShape(12.dp), color = Green.copy(alpha = 0.1f)) {
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(10.dp).background(Green, CircleShape)); Spacer(Modifier.width(8.dp))
+                Text("${d.totalOnline} utilisateur${if (d.totalOnline > 1) "s" else ""} en ligne actuellement", fontWeight = FontWeight.SemiBold, color = GreenDark)
             }
         }
 
-        Spacer(Modifier.height(8.dp))
-
         if (d.onlineUsers.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.PersonOff, null, Modifier.size(48.dp), tint = Color.LightGray)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Personne en ligne pour le moment", color = Color.Gray)
-                }
-            }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.PersonOff, null, Modifier.size(48.dp), tint = Color.LightGray); Spacer(Modifier.height(8.dp)); Text("Personne en ligne pour le moment", color = Color.Gray) } }
         } else {
-            LazyColumn(
-                Modifier.fillMaxSize().padding(horizontal = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(d.onlineUsers) { user ->
-                    OnlineUserCard(user)
-                }
-            }
+            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { items(d.onlineUsers) { user -> OnlineUserCard(user) } }
         }
     }
 }
 
 @Composable
 private fun OnlineUserCard(user: ApiOnlineUser) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar with online dot
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box {
-                Box(
-                    Modifier.size(44.dp).clip(CircleShape).background(GreenSurface),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.size(44.dp).clip(CircleShape).background(GreenSurface), contentAlignment = Alignment.Center) {
                     if (user.avatar.isNotBlank()) {
                         var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                        LaunchedEffect(user.avatar) {
-                            val cleanBase = ApiClient.baseUrl.trimEnd('/')
-                            val cleanPath = user.avatar.trimStart('/', '\\').replace("\\", "/")
-                            val finalUrl = if (user.avatar.startsWith("http")) user.avatar else "$cleanBase/$cleanPath"
-                            bitmap = try { loadImageFromUrl(finalUrl) } catch (_: Exception) { null }
-                        }
-                        if (bitmap != null) {
-                            Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                        } else {
-                            Icon(Icons.Default.Person, null, Modifier.size(24.dp), tint = Green)
-                        }
-                    } else {
-                        Icon(Icons.Default.Person, null, Modifier.size(24.dp), tint = Green)
-                    }
+                        LaunchedEffect(user.avatar) { bitmap = try { loadImageFromUrl(user.avatar) } catch (_: Exception) { null } }
+                        if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) else Icon(Icons.Default.Person, null, Modifier.size(24.dp), tint = Green)
+                    } else { Icon(Icons.Default.Person, null, Modifier.size(24.dp), tint = Green) }
                 }
-                // Green online dot
-                Box(
-                    Modifier.size(14.dp).offset(x = (-2).dp, y = (-2).dp).align(Alignment.BottomEnd)
-                        .background(Color.White, CircleShape)
-                        .padding(2.dp)
-                ) {
-                    Box(Modifier.fillMaxSize().background(Green, CircleShape))
-                }
+                Box(Modifier.size(14.dp).offset(x = (-2).dp, y = (-2).dp).align(Alignment.BottomEnd).background(Color.White, CircleShape).padding(2.dp)) { Box(Modifier.fillMaxSize().background(Green, CircleShape)) }
             }
-
             Spacer(Modifier.width(12.dp))
-
             Column(Modifier.weight(1f)) {
-                Text(user.name, fontWeight = FontWeight.Medium, fontSize = 15.sp)
-                Text(user.email, fontSize = 12.sp, color = TextSecondary)
+                Text(user.name, fontWeight = FontWeight.Medium, fontSize = 15.sp); Text(user.email, fontSize = 12.sp, color = TextSecondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = when (user.role) {
-                            "admin" -> RedAccent.copy(alpha = 0.1f)
-                            "vendor" -> Orange.copy(alpha = 0.1f)
-                            else -> Green.copy(alpha = 0.1f)
-                        }
-                    ) {
-                        Text(
-                            when (user.role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" },
-                            fontSize = 10.sp,
-                            color = when (user.role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green },
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                    Surface(shape = RoundedCornerShape(4.dp), color = when (user.role) { "admin" -> RedAccent.copy(alpha = 0.1f); "vendor" -> Orange.copy(alpha = 0.1f); else -> Green.copy(alpha = 0.1f) }) {
+                        Text(when (user.role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }, fontSize = 10.sp, color = when (user.role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green }, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Text("il y a ${user.secondsAgo}s", fontSize = 11.sp, color = TextTertiary)
+                    Spacer(Modifier.width(8.dp)); Text("il y a ${user.secondsAgo}s", fontSize = 11.sp, color = TextTertiary)
                 }
             }
         }
@@ -1367,7 +1134,7 @@ private fun OnlineUserCard(user: ApiOnlineUser) {
 }
 
 // ═══════════════════════════════════════════════
-//  STORIES TAB (onglet Stories)
+//  STORIES
 // ═══════════════════════════════════════════════
 
 @Composable
@@ -1376,120 +1143,131 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        isLoading = true
-        try {
-            stories = ApiClient.fetchStories()
-        } catch (e: Exception) {
-            error = e.message
-        }
-        isLoading = false
-    }
+    // Create story state
+    var showAddDialog by remember { mutableStateOf(false) }
+    var newCaption by remember { mutableStateOf("") }
+    var newMediaUrl by remember { mutableStateOf("") }
+    var newMediaType by remember { mutableStateOf("image") }
+    var newMediaDuration by remember { mutableStateOf(0) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    fun load() { scope.launch { isLoading = true; try { stories = ApiClient.fetchStories() } catch (e: Exception) { error = e.message }; isLoading = false } }
+    LaunchedEffect(Unit) { load() }
 
     Column(Modifier.fillMaxSize().padding(12.dp)) {
-        Text("Toutes les stories", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Spacer(Modifier.height(8.dp))
-
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (error != null) {
-            DschangErrorState(message = error!!, onRetry = { scope.launch {
-                isLoading = true
-                try {
-                    stories = ApiClient.fetchStories()
-                    error = null
-                } catch (e: Exception) { error = e.message }
-                isLoading = false
-            }})
-        } else if (stories.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Aucune story pour le moment", color = TextSecondary)
-            }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(stories) { story ->
-                    AdminStoryCard(story = story, onDelete = {
-                        scope.launch {
-                            try {
-                                ApiClient.deleteStory(story.id)
-                                stories = stories.filter { it.id != story.id }
-                            } catch (e: Exception) {
-                                error = "Erreur suppression: ${e.message}"
-                            }
-                        }
-                    })
-                }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("Toutes les stories", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Button(onClick = { showAddDialog = true }, shape = RoundedCornerShape(8.dp)) {
+                Icon(Icons.Default.Add, null)
+                Spacer(Modifier.width(4.dp))
+                Text("Ajouter")
             }
         }
+        Spacer(Modifier.height(8.dp))
+        if (isLoading) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+        else if (error != null) { DschangErrorState(message = error!!, onRetry = { load() }) }
+        else if (stories.isEmpty()) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Aucune story pour le moment", color = TextSecondary) } }
+        else { LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(stories) { story -> AdminStoryCard(story = story, onDelete = { scope.launch { try { ApiClient.deleteStory(story.id); stories = stories.filter { it.id != story.id } } catch (e: Exception) { error = "Erreur suppression: ${e.message}" } } }) } } }
+    }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isSubmitting) showAddDialog = false },
+            title = { Text("Nouvelle Story (Admin)") },
+            text = {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                    Text("Média (Photo ou Vidéo max 30s)", style = MaterialTheme.typography.labelSmall)
+                    Text("Note : L'ajustement est automatique (30s max)", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    MediaPicker(
+                        currentUrl = newMediaUrl,
+                        onMediaPicked = { res ->
+                            scope.launch {
+                                try {
+                                    isSubmitting = true
+                                    val url = ApiClient.uploadImage(res.dataUrl, res.fileName)
+                                    newMediaUrl = url
+                                    newMediaType = if (res.mimeType.startsWith("video/")) "video" else "image"
+                                    newMediaDuration = res.durationSeconds.toInt()
+                                } catch (_: Exception) {
+                                } finally { isSubmitting = false }
+                            }
+                        },
+                        label = "Sélectionner Média",
+                        allowVideo = true,
+                        maxDurationSeconds = 30
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = newCaption,
+                        onValueChange = { newCaption = it },
+                        label = { Text("Légende (Optionnel)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            isSubmitting = true
+                            try {
+                                ApiClient.createStory(shopId = 0, mediaUrl = newMediaUrl, mediaType = newMediaType, caption = newCaption, duration = newMediaDuration)
+                                showAddDialog = false
+                                newMediaUrl = ""; newCaption = ""; newMediaDuration = 0; load()
+                            } catch (e: Exception) { error = e.message }
+                            isSubmitting = false
+                        }
+                    },
+                    enabled = !isSubmitting && newMediaUrl.isNotBlank()
+                ) {
+                    if (isSubmitting) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White)
+                    else Text("Publier")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }, enabled = !isSubmitting) { Text("Annuler") }
+            }
+        )
     }
 }
 
 @Composable
 private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            // Story thumbnail (circular)
             Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFE0E0E0))) {
                 var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                LaunchedEffect(story.mediaUrl) {
-                    bitmap = try { loadImageFromUrl(story.mediaUrl) } catch (_: Exception) { null }
-                }
-                if (bitmap != null) {
-                    Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                } else {
-                    Icon(Icons.Default.PhotoLibrary, null, Modifier.size(24.dp), tint = Color.Gray)
-                }
+                LaunchedEffect(story.mediaUrl) { bitmap = try { loadImageFromUrl(story.mediaUrl) } catch (_: Exception) { null } }
+                if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                else Icon(Icons.Default.PhotoLibrary, null, Modifier.size(24.dp), tint = Color.Gray)
             }
-
             Spacer(Modifier.width(12.dp))
-
             Column(Modifier.weight(1f)) {
                 Text(if (story.isAdmin != 0) "DSCHANG MARKET" else story.shopName.ifBlank { story.userName }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                if (!story.caption.isNullOrBlank()) {
-                    Text(story.caption!!, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
-                Text(
-                    "${story.mediaType} · ${story.replyCount} réponses",
-                    fontSize = 11.sp, color = TextTertiary
-                )
+                if (!story.caption.isNullOrBlank()) Text(story.caption!!, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("${story.mediaType} · ${story.replyCount} réponses", fontSize = 11.sp, color = TextTertiary)
             }
-
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Supprimer", tint = RedAccent)
-            }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, "Supprimer", tint = RedAccent) }
         }
     }
 }
 
-// ── Mini barres ──
+// ═══════════════════════════════════════════════
+//  HERO PROMO
+// ═══════════════════════════════════════════════
+
 @Composable
 fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>) {
     var heroItems by remember { mutableStateOf<List<com.dschangmarket.api.ApiHeroItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    // Form state
     var newTitle by remember { mutableStateOf("") }
     var newSubtitle by remember { mutableStateOf("") }
     var newImageUrl by remember { mutableStateOf("") }
     var selectedShopId by remember { mutableStateOf<Int?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    fun load() {
-        scope.launch {
-            isLoading = true; error = null
-            try { heroItems = ApiClient.fetchHeroItems() } catch (e: Exception) { error = e.message }
-            isLoading = false
-        }
-    }
-
+    fun load() { scope.launch { isLoading = true; error = null; try { heroItems = ApiClient.fetchHeroItems() } catch (e: Exception) { error = e.message }; isLoading = false } }
     LaunchedEffect(Unit) { load() }
 
     LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
@@ -1498,66 +1276,57 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
             Text("Modifiez les bannières promotionnelles de l'accueil.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             Spacer(Modifier.height(16.dp))
         }
-
-        // ── Formulaire d'ajout ──
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Ajouter une promotion", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(12.dp))
-                    
+                    Text("Ajouter une promotion", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(12.dp))
                     OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, label = { Text("Titre (ex: Saveurs locales)") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = newSubtitle, onValueChange = { newSubtitle = it }, label = { Text("Sous-titre (ex: Fruits du terroir)") }, modifier = Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text("URL de l'image (Unsplash ou autre)") }, modifier = Modifier.fillMaxWidth())
-                    
                     Spacer(Modifier.height(12.dp))
+
+                    Text("Image ou Vidéo (max 10s)", style = MaterialTheme.typography.labelSmall)
+                    MediaPicker(
+                        currentUrl = newImageUrl,
+                        onMediaPicked = { res ->
+                            scope.launch {
+                                try {
+                                    val url = ApiClient.uploadImage(res.dataUrl, res.fileName)
+                                    newImageUrl = url
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        label = "Sélectionner Média",
+                        allowVideo = true,
+                        maxDurationSeconds = 10,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text("Ou URL directe") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(12.dp))
+
                     Text("Boutique à promouvoir (optionnel)", style = MaterialTheme.typography.labelSmall)
                     var showShopList by remember { mutableStateOf(false) }
                     Box {
-                        OutlinedButton(
-                            onClick = { showShopList = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val shopName = shops.find { it.id == selectedShopId }?.name ?: "Aucune boutique sélectionnée"
-                            Text(shopName)
-                            Spacer(Modifier.weight(1f))
-                            Icon(Icons.Default.ArrowDropDown, null)
+                        OutlinedButton(onClick = { showShopList = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(shops.find { it.id == selectedShopId }?.name ?: "Aucune boutique"); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown, null)
                         }
                         DropdownMenu(expanded = showShopList, onDismissRequest = { showShopList = false }) {
                             DropdownMenuItem(text = { Text("Aucune") }, onClick = { selectedShopId = null; showShopList = false })
-                            shops.forEach { shop ->
-                                DropdownMenuItem(text = { Text(shop.name) }, onClick = { selectedShopId = shop.id; showShopList = false })
-                            }
+                            shops.forEach { shop -> DropdownMenuItem(text = { Text(shop.name) }, onClick = { selectedShopId = shop.id; showShopList = false }) }
                         }
                     }
-
                     Spacer(Modifier.height(16.dp))
                     Button(
                         onClick = {
                             scope.launch {
-                                isSubmitting = true
-                                try {
-                                    ApiClient.createHeroItem(com.dschangmarket.api.ApiCreateHeroBody(
-                                        title = newTitle,
-                                        subtitle = newSubtitle,
-                                        imageUrl = newImageUrl,
-                                        shopId = selectedShopId
-                                    ))
-                                    newTitle = ""; newSubtitle = ""; newImageUrl = ""; selectedShopId = null
-                                    load()
-                                } catch (e: Exception) { error = e.message }
-                                isSubmitting = false
+                                isSubmitting = true; try {
+                                    ApiClient.createHeroItem(com.dschangmarket.api.ApiCreateHeroBody(title = newTitle, subtitle = newSubtitle, imageUrl = newImageUrl, shopId = selectedShopId))
+                                    newTitle = ""; newSubtitle = ""; newImageUrl = ""; selectedShopId = null; load()
+                                } catch (e: Exception) { error = e.message }; isSubmitting = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSubmitting && newTitle.isNotBlank() && newImageUrl.isNotBlank()
+                        modifier = Modifier.fillMaxWidth(), enabled = !isSubmitting && newTitle.isNotBlank() && newImageUrl.isNotBlank()
                     ) {
                         if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
                         else Text("Ajouter à l'accueil")
@@ -1565,24 +1334,12 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                 }
             }
         }
-
-        // ── Liste des bannières actuelles ──
-        item {
-            Text("Bannières actives", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-        }
-
-        if (isLoading) {
-            item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-        } else if (heroItems.isEmpty()) {
-            item { Text("Aucune bannière personnalisée. Les bannières par défaut seront affichées.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) }
-        } else {
+        item { Text("Bannières actives", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)) }
+        if (isLoading) { item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } } }
+        else if (heroItems.isEmpty()) { item { Text("Aucune bannière personnalisée.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) } }
+        else {
             items(heroItems) { item ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
+                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(60.dp).clip(RoundedCornerShape(4.dp)).background(Color.LightGray)) {
                             var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -1593,20 +1350,9 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         Column(Modifier.weight(1f)) {
                             Text(item.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text(item.subtitle, fontSize = 12.sp, color = TextSecondary)
-                            if (item.shopName != null) {
-                                Text("Lien: ${item.shopName}", fontSize = 10.sp, color = Orange, fontWeight = FontWeight.Bold)
-                            }
+                            if (item.shopName != null) Text("Lien: ${item.shopName}", fontSize = 10.sp, color = Orange, fontWeight = FontWeight.Bold)
                         }
-                        IconButton(onClick = {
-                            scope.launch {
-                                try {
-                                    ApiClient.deleteHeroItem(item.id)
-                                    load()
-                                } catch (e: Exception) { error = e.message }
-                            }
-                        }) {
-                            Icon(Icons.Default.Delete, null, tint = RedAccent)
-                        }
+                        IconButton(onClick = { scope.launch { try { ApiClient.deleteHeroItem(item.id); load() } catch (_: Exception) {} } }) { Icon(Icons.Default.Delete, null, tint = RedAccent) }
                     }
                 }
             }
@@ -1618,11 +1364,6 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
 private fun SimpleBarChart(data: List<Int>, modifier: Modifier = Modifier) {
     val max = data.maxOrNull()?.let { if (it == 0) 1 else it } ?: 1
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
-        data.forEach { v ->
-            Box(Modifier.weight(1f).fillMaxHeight().background(GreenSurface, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))) {
-                val fraction = v.toFloat() / max
-                Box(Modifier.fillMaxWidth().fillMaxHeight(fraction).background(Green, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)))
-            }
-        }
+        data.forEach { v -> Box(Modifier.weight(1f).fillMaxHeight().background(GreenSurface, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))) { Box(Modifier.fillMaxWidth().fillMaxHeight(v.toFloat() / max).background(Green, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))) } }
     }
 }

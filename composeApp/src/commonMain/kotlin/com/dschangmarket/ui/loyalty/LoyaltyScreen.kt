@@ -42,9 +42,12 @@ private val tierNames = mapOf("bronze" to "Bronze", "argent" to "Argent", "or" t
 @Composable
 fun LoyaltyScreen(
     onBack: () -> Unit,
-    onCouponClick: (String) -> Unit = {}
+    onCouponClick: (String) -> Unit = {},
+    currentPoints: Int = 0,
+    totalPoints: Int = 0,
+    walletBalance: Double = 0.0,
+    walletTier: String = "bronze"
 ) {
-    var wallet by remember { mutableStateOf<ApiWallet?>(null) }
     var transactions by remember { mutableStateOf<List<ApiWalletTransaction>>(emptyList()) }
     var coupons by remember { mutableStateOf<List<ApiCoupon>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -54,10 +57,17 @@ fun LoyaltyScreen(
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
+    val nextTierData = remember(totalPoints, walletTier) {
+        when (walletTier) {
+            "bronze" -> Pair("argent", 100 - totalPoints)
+            "argent" -> Pair("or", 500 - totalPoints)
+            else -> null
+        }
+    }
+
     LaunchedEffect(Unit) {
         isLoading = true
         try {
-            wallet = ApiClient.fetchWallet()
             transactions = ApiClient.fetchWalletTransactions()
             coupons = ApiClient.fetchCoupons()
         } catch (_: Exception) { }
@@ -84,12 +94,12 @@ fun LoyaltyScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // ── Carte de fidélité ──
-                item { LoyaltyCard(wallet) }
+                item { LoyaltyCard(walletBalance, currentPoints, totalPoints, walletTier) }
 
                 // ── Niveau suivant ──
-                wallet?.nextTier?.let { next ->
-                    if (next.name.isNotBlank()) {
-                        item { NextTierCard(wallet!!, next) }
+                nextTierData?.let { (nextName, pointsNeeded) ->
+                    if (pointsNeeded > 0) {
+                        item { NextTierCard(walletTier, nextName, pointsNeeded, totalPoints) }
                     }
                 }
 
@@ -149,9 +159,9 @@ fun LoyaltyScreen(
                         Column(Modifier.padding(16.dp)) {
                             Text("Avantages par niveau", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(12.dp))
-                            TierAdvantageRow("Bronze", "0 pts", "1% cashback", Color(0xFF8D6E63), isActive = wallet?.tier == "bronze")
-                            TierAdvantageRow("Argent", "500 pts", "2% cashback + 5% bonus", Color(0xFF9E9E9E), isActive = wallet?.tier == "argent")
-                            TierAdvantageRow("Or", "2000 pts", "3.5% cashback + 10% bonus", Color(0xFFFFD700), isActive = wallet?.tier == "or")
+                            TierAdvantageRow("Bronze", "0 pts", "1% cashback", Color(0xFF8D6E63), isActive = walletTier == "bronze")
+                            TierAdvantageRow("Argent", "100 pts", "2% cashback + 5% bonus", Color(0xFF9E9E9E), isActive = walletTier == "argent")
+                            TierAdvantageRow("Or", "500 pts", "3.5% cashback + 10% bonus", Color(0xFFFFD700), isActive = walletTier == "or")
                         }
                     }
                 }
@@ -164,7 +174,7 @@ fun LoyaltyScreen(
     // ─── Dialog échange points ───
     if (showRedeemDialog) {
         RedeemPointsDialog(
-            currentPoints = wallet?.currentPoints ?: 0,
+            currentPoints = currentPoints,
             onDismiss = { showRedeemDialog = false },
             onRedeem = { points ->
                 scope.launch {
@@ -173,7 +183,6 @@ fun LoyaltyScreen(
                         if (resp.success && resp.coupon != null) {
                             snackbar.showSnackbar("Coupon ${resp.coupon.code} généré !")
                             showRedeemDialog = false
-                            wallet = ApiClient.fetchWallet()
                             coupons = ApiClient.fetchCoupons()
                         } else {
                             snackbar.showSnackbar("Erreur lors de l'échange")
@@ -197,7 +206,6 @@ fun LoyaltyScreen(
                         if (resp.success) {
                             snackbar.showSnackbar("Recharge de ${amount.toInt()} FCFA effectuée")
                             showRechargeDialog = false
-                            wallet = ApiClient.fetchWallet()
                             transactions = ApiClient.fetchWalletTransactions()
                         } else {
                             snackbar.showSnackbar("Erreur de recharge")
@@ -213,10 +221,9 @@ fun LoyaltyScreen(
 
 // ── Carte de fidélité principale ──
 @Composable
-private fun LoyaltyCard(wallet: ApiWallet?) {
-    val w = wallet ?: return
-    val tierColor = tierColors[w.tier] ?: Color(0xFF8D6E63)
-    val gradient = tierGradients[w.tier] ?: listOf(Color(0xFF8D6E63), Color(0xFFA1887F))
+private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, tier: String) {
+    val tierColor = tierColors[tier] ?: Color(0xFF8D6E63)
+    val gradient = tierGradients[tier] ?: listOf(Color(0xFF8D6E63), Color(0xFFA1887F))
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -227,19 +234,19 @@ private fun LoyaltyCard(wallet: ApiWallet?) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.MilitaryTech, null, Modifier.size(28.dp), tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("Carte ${tierNames[w.tier] ?: w.tier}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                    Text("Carte ${tierNames[tier] ?: tier}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
-                Text("${w.balance.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
+                Text("${balance.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
                 Text("Solde cashback disponible", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("${w.currentPoints} pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                        Text("Points actuels", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text("$currentPoints pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                        Text("Points utilisables", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("${w.totalPoints} pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                        Text("$totalPoints pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                         Text("Points cumulés", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                 }
@@ -250,27 +257,27 @@ private fun LoyaltyCard(wallet: ApiWallet?) {
 
 // ── Carte progression niveau suivant ──
 @Composable
-private fun NextTierCard(wallet: ApiWallet, next: ApiNextTier) {
-    val currentTierPoints = when (wallet.tier) {
+private fun NextTierCard(currentTier: String, nextTierName: String, pointsNeeded: Int, totalPoints: Int) {
+    val currentTierPoints = when (currentTier) {
         "bronze" -> 0
-        "argent" -> 500
-        else -> 2000
+        "argent" -> 100
+        else -> 500
     }
-    val nextTierPoints = when (next.name) {
-        "argent" -> 500
-        "or" -> 2000
-        else -> 2000
+    val nextTierPoints = when (nextTierName) {
+        "argent" -> 100
+        "or" -> 500
+        else -> 500
     }
     val range = (nextTierPoints - currentTierPoints).coerceAtLeast(1)
-    val progress = ((wallet.totalPoints - currentTierPoints).toFloat() / range).coerceIn(0f, 1f)
-    val nextColor = tierColors[next.name] ?: Color.Gray
+    val progress = ((totalPoints - currentTierPoints).toFloat() / range).coerceIn(0f, 1f)
+    val nextColor = tierColors[nextTierName] ?: Color.Gray
 
     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.TrendingUp, null, Modifier.size(20.dp), tint = nextColor)
                 Spacer(Modifier.width(8.dp))
-                Text("Prochain niveau : ${tierNames[next.name] ?: next.name}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = nextColor)
+                Text("Prochain niveau : ${tierNames[nextTierName] ?: nextTierName}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = nextColor)
             }
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(
@@ -281,7 +288,7 @@ private fun NextTierCard(wallet: ApiWallet, next: ApiNextTier) {
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             Spacer(Modifier.height(6.dp))
-            Text("Plus que ${next.pointsNeeded} points pour atteindre ${tierNames[next.name] ?: next.name}", fontSize = 12.sp, color = Color.Gray)
+            Text("Plus que $pointsNeeded points pour atteindre ${tierNames[nextTierName] ?: nextTierName}", fontSize = 12.sp, color = Color.Gray)
         }
     }
 }

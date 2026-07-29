@@ -68,22 +68,22 @@ actual fun setupTabFocusRefresh(callback: () -> Unit) {
 }
 
 @JsFun("""(callback) => {
-    var onlineHandler = function() { callback(true); };
-    var offlineHandler = function() { callback(false); };
+    var onlineHandler = function() { callback(1); };
+    var offlineHandler = function() { callback(0); };
     window.addEventListener('online', onlineHandler);
     window.addEventListener('offline', offlineHandler);
     // Run once to set initial state
-    setTimeout(function() { callback(navigator.onLine); }, 0);
+    setTimeout(function() { callback(navigator.onLine ? 1 : 0); }, 0);
     // Return a cleanup function
     return function() {
         window.removeEventListener('online', onlineHandler);
         window.removeEventListener('offline', offlineHandler);
     };
 }""")
-private external fun jsObserveConnectivity(callback: (Boolean) -> Unit): () -> Unit
+private external fun jsObserveConnectivity(callback: (Int) -> Unit): () -> Unit
 
 actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
-    return jsObserveConnectivity(onChange)
+    return jsObserveConnectivity { onChange(it == 1) }
 }
 
 @JsFun("""(url, filename) => {
