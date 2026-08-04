@@ -89,7 +89,7 @@ fun OrdersScreen(
                             scope.launch {
                                 try {
                                     ApiClient.confirmOrderReceived(order.id)
-                                    snackbarHostState.showSnackbar("✅ Réception confirmée ! Points de fidélité ajoutés.")
+                                    snackbarHostState.showSnackbar("✅ Réception confirmée ! La commande sera finalisée après validation du vendeur.")
                                     refreshOrders()
                                 } catch (e: Exception) {
                                     snackbarHostState.showSnackbar("Erreur : ${e.message ?: "action impossible"}")
@@ -191,23 +191,28 @@ private fun OrderCard(
                 }
 
                 Surface(
-                    color = when (orderStatus) {
-                        OrderStatus.PENDING -> Color(0xFFFFF3E0)
-                        OrderStatus.DELIVERED -> Color(0xFFE8F5E9)
-                        OrderStatus.CANCELLED -> Color(0xFFFFEBEE)
+                    color = when {
+                        orderStatus == OrderStatus.DELIVERED -> Color(0xFFE8F5E9)
+                        orderStatus == OrderStatus.DELIVERING && order.clientConfirmed == 1 -> Color(0xFFFFF3E0) // Orange "Waiting"
+                        orderStatus == OrderStatus.PENDING -> Color(0xFFFFF3E0)
+                        orderStatus == OrderStatus.CANCELLED -> Color(0xFFFFEBEE)
                         else -> Color(0xFFE3F2FD)
                     },
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        orderStatus.label,
+                        text = when {
+                            orderStatus == OrderStatus.DELIVERING && order.clientConfirmed == 1 -> "En attente vendeur"
+                            else -> orderStatus.label
+                        },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = when (orderStatus) {
-                            OrderStatus.PENDING -> Color(0xFFE65100)
-                            OrderStatus.DELIVERED -> Green
-                            OrderStatus.CANCELLED -> Color(0xFFC62828)
+                        color = when {
+                            orderStatus == OrderStatus.DELIVERED -> Green
+                            orderStatus == OrderStatus.DELIVERING && order.clientConfirmed == 1 -> Color(0xFFE65100)
+                            orderStatus == OrderStatus.PENDING -> Color(0xFFE65100)
+                            orderStatus == OrderStatus.CANCELLED -> Color(0xFFC62828)
                             else -> Color(0xFF1565C0)
                         }
                     )
@@ -296,15 +301,38 @@ private fun OrderCard(
 
                 // Delivery confirmation button for client
                 if (canConfirmDelivery) {
-                    Button(
-                        onClick = { showConfirmDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Green)
-                    ) {
-                        Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Confirmer la réception", fontWeight = FontWeight.Bold)
+                    if (order.clientConfirmed == 1) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Green.copy(alpha = 0.1f),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.HourglassEmpty, null, Modifier.size(16.dp), tint = Green)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "En attente de confirmation du vendeur",
+                                    color = Green,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = { showConfirmDialog = true },
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Green)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Confirmer la réception", fontWeight = FontWeight.Bold)
+                        }
                     }
                     Spacer(Modifier.height(8.dp))
                 }

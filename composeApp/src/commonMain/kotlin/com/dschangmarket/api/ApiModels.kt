@@ -119,7 +119,9 @@ data class ApiOrder(
     @SerialName("created_at") val createdAt: String = "",
     val items: List<ApiOrderItem>? = null,
     @SerialName("vendor_info") val vendorInfo: List<ApiVendorInfo>? = null,
-    @SerialName("shop_total") val shopTotal: Double? = null
+    @SerialName("shop_total") val shopTotal: Double? = null,
+    @SerialName("vendor_confirmed") val vendorConfirmed: Int = 0,
+    @SerialName("client_confirmed") val clientConfirmed: Int = 0
 )
 
 @Serializable
