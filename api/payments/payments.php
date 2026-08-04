@@ -38,7 +38,7 @@ try {
         }
 
         // Vérifier que la commande appartient à l'utilisateur
-        $stmt = $db->prepare('SELECT id, total FROM orders WHERE id = ? AND user_id = ?');
+        $stmt = $db->prepare('SELECT id, total_amount FROM orders WHERE id = ? AND user_id = ?');
         $stmt->execute([$order_id, $userId]);
         $order = $stmt->fetch();
         if (!$order) json(404, ['error' => 'Commande non trouvée']);
@@ -50,10 +50,11 @@ try {
 
         // Simulation : générer un ID de transaction
         $txId = strtoupper(bin2hex(random_bytes(8)));
+        $amount = (float)$order['total_amount'];
 
         // Insérer le paiement
         $stmt = $db->prepare("INSERT INTO payments (order_id, amount, provider, phone, transaction_id, status, message) VALUES (?, ?, ?, ?, ?, 'completed', 'Paiement simulé avec succès')");
-        $stmt->execute([$order_id, $order['total'], $provider, $phone, $txId]);
+        $stmt->execute([$order_id, $amount, $provider, $phone, $txId]);
         $paymentId = (int)$db->lastInsertId();
 
         // Mettre à jour le statut de la commande
@@ -61,7 +62,7 @@ try {
         $stmt->execute([$provider, $order_id]);
 
         // Notification à l'acheteur
-        sendNotification($userId, "Paiement confirmé", "Votre paiement de " . number_format($order['total'], 0, ',', ' ') . " FCFA pour la commande #$order_id a été reçu.", 'order', $order_id);
+        sendNotification($userId, "Paiement confirmé", "Votre paiement de " . number_format($amount, 0, ',', ' ') . " FCFA pour la commande #$order_id a été reçu.", 'order', $order_id);
 
         // Notification au vendeur (trouver le vendeur via les produits de la commande)
         $stmtV = $db->prepare('SELECT DISTINCT s.vendor_id FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN shops s ON p.shop_id = s.id WHERE oi.order_id = ?');
@@ -75,7 +76,7 @@ try {
             'payment' => [
                 'id' => $paymentId,
                 'order_id' => $order_id,
-                'amount' => (float)$order['total'],
+                'amount' => $amount,
                 'provider' => $provider,
                 'phone' => $phone,
                 'transaction_id' => $txId,
