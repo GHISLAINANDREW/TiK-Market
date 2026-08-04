@@ -74,6 +74,11 @@ try {
 
     $userId = (int)$db->lastInsertId();
 
+    // Ensure wallet exists for new user
+    try {
+        $db->prepare("INSERT IGNORE INTO wallets (user_id) VALUES (?)")->execute([$userId]);
+    } catch (Exception $e) {}
+
     // Reward referrer if exists
     if ($referrerId) {
         try {
