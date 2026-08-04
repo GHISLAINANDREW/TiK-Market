@@ -136,6 +136,7 @@ try {
                 } else {
                     json(200, ['success' => true, 'message' => 'Vente confirmée. En attente de la réception par le client.']);
                 }
+                exit; // IMPORTANT: Stop execution here for 'delivered' status
             }
 
             // Other statuses
