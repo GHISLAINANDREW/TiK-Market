@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $userId = getAuthUserId();
 
 // --- Configuration ---
-$maxSize = 10 * 1024 * 1024; // 10MB
+$maxSize = 15 * 1024 * 1024; // 15MB (photos HD + videos courtes; PHP post_max_size=25M via php.ini)
 $fileData = null;
 $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 

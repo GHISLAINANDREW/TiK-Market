@@ -1226,7 +1226,8 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
                                     newMediaUrl = url
                                     newMediaType = if (res.mimeType.startsWith("video/")) "video" else "image"
                                     newMediaDuration = res.durationSeconds.toInt()
-                                } catch (_: Exception) {
+                                } catch (e: Exception) {
+                                    error = "Upload média : ${e.message}"
                                 } finally { isSubmitting = false }
                             }
                         },
@@ -1234,6 +1235,10 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
                         allowVideo = true,
                         maxDurationSeconds = 30
                     )
+                    if (error != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                    }
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = newCaption,
@@ -1336,7 +1341,7 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                                 try {
                                     val url = ApiClient.uploadImage(res.dataUrl, res.fileName)
                                     newImageUrl = url
-                                } catch (_: Exception) {}
+                                } catch (e: Exception) { error = "Upload média : ${e.message}" }
                             }
                         },
                         label = "Sélectionner Média",
@@ -1344,6 +1349,10 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         maxDurationSeconds = 10,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+                    if (error != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                    }
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text("Ou URL directe") }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(12.dp))
