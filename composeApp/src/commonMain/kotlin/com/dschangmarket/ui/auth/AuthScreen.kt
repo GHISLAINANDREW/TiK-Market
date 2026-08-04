@@ -247,6 +247,7 @@ fun AuthScreen(
                                         }
                                     }
                                 )
+                                /*
                                 Spacer(Modifier.height(8.dp))
                                 SocialButton(
                                     text = "Téléphone (Cameroun)",
@@ -256,6 +257,7 @@ fun AuthScreen(
                                     borderColor = DividerGray,
                                     onClick = { authMode = AuthMode.Phone }
                                 )
+                                */
                             }
 
                             if (!form.isOtpStep && authMode == AuthMode.Phone) {
