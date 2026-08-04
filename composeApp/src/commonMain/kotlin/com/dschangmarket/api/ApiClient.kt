@@ -595,12 +595,8 @@ object ApiClient {
     // ── Orders ──
 
     suspend fun fetchOrders(): List<ApiOrder> {
-        return try {
-            val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS)
-            resp.orders
-        } catch (_: Exception) {
-            emptyList()
-        }
+        val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS)
+        return resp.orders
     }
 
     suspend fun createOrder(
@@ -811,12 +807,8 @@ object ApiClient {
     // ── Vendor Orders ──
 
     suspend fun fetchVendorOrders(): List<ApiOrder> {
-        return try {
-            val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS_VENDOR)
-            resp.orders
-        } catch (_: Exception) {
-            emptyList()
-        }
+        val resp = safeRequest<ApiOrdersResponse>("GET", Endpoints.ORDERS_VENDOR)
+        return resp.orders
     }
 
     suspend fun updateOrderStatus(orderId: Int, status: String) {

@@ -9,13 +9,6 @@ try {
     $db = getDB();
     $userId = getAuthUserId();
 
-    // ── Ensure payment_type column exists ──
-    try {
-        $db->exec("ALTER TABLE orders ADD COLUMN payment_type VARCHAR(20) DEFAULT 'delivery' AFTER payment_status");
-    } catch (PDOException $e) {
-        // Column already exists — ignore
-    }
-
     // ── GET ──
     if ($method === 'GET') {
         if ($id) {
@@ -52,7 +45,7 @@ try {
         }
 
         $stmt = $db->prepare('
-            SELECT o.*, o.vendor_confirmed, o.client_confirmed
+            SELECT o.*
             FROM orders o
             WHERE o.user_id = ?
             ORDER BY o.created_at DESC
