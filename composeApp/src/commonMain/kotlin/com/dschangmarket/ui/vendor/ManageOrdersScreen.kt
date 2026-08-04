@@ -152,8 +152,27 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
                     OrderStatus.PENDING -> ActionButton("Confirmer la commande", Orange, Modifier.weight(1f)) { onUpdateStatus("confirmed") }
                     OrderStatus.CONFIRMED -> ActionButton("Commencer préparation", GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
                     OrderStatus.PREPARING -> ActionButton("Prêt pour livraison", Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
-                    OrderStatus.DELIVERING -> ActionButton("Marquer comme Livrée", Green, Modifier.weight(1f)) { 
-                        onUpdateStatus("delivered")
+                    OrderStatus.DELIVERING -> {
+                        if (order.clientConfirmed == 1) {
+                            ActionButton("Confirmer la livraison finale", Green, Modifier.weight(1f)) { 
+                                onUpdateStatus("delivered")
+                            }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Gray.copy(alpha = 0.1f),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Text(
+                                    "En attente de réception par le client",
+                                    modifier = Modifier.padding(12.dp),
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
                     }
                     else -> {}
                 }

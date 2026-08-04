@@ -45,6 +45,11 @@ try {
         json(400, ['error' => "Transition de statut invalide: $current → $newStatus"]);
     }
 
+    if ($newStatus === 'delivered') {
+        // Protection : Utiliser vendor.php pour la double confirmation
+        json(400, ['error' => "Pour marquer comme livré, utilisez l'endpoint vendor.php qui gère la double confirmation client/vendeur."]);
+    }
+
     $stmt = $db->prepare('UPDATE orders SET status = ? WHERE id = ?');
     $stmt->execute([$newStatus, $order_id]);
 

@@ -44,13 +44,15 @@ try {
 
             $order['id'] = (int)$order['id'];
             $order['total_amount'] = (float)$order['total_amount'];
+            $order['vendor_confirmed'] = (int)($order['vendor_confirmed'] ?? 0);
+            $order['client_confirmed'] = (int)($order['client_confirmed'] ?? 0);
             $order['items'] = $items;
 
             json(200, ['order' => $order]);
         }
 
         $stmt = $db->prepare('
-            SELECT o.*
+            SELECT o.*, o.vendor_confirmed, o.client_confirmed
             FROM orders o
             WHERE o.user_id = ?
             ORDER BY o.created_at DESC
@@ -61,6 +63,8 @@ try {
         foreach ($orders as &$o) {
             $o['id'] = (int)$o['id'];
             $o['total_amount'] = (float)$o['total_amount'];
+            $o['vendor_confirmed'] = (int)($o['vendor_confirmed'] ?? 0);
+            $o['client_confirmed'] = (int)($o['client_confirmed'] ?? 0);
 
             // Fetch items for this order
             $stmtItems = $db->prepare('
