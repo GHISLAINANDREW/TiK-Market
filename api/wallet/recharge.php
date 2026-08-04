@@ -20,14 +20,17 @@ try {
     $stmt->execute([$userId]);
     $wallet = $stmt->fetch();
 
+    // 1 point pour chaque 500 FCFA rechargés
+    $points = (int)floor($amount / 500);
+
     if (!$wallet) {
-        $stmt = $db->prepare('INSERT INTO wallets (user_id, balance) VALUES (?, ?)');
-        $stmt->execute([$userId, $amount]);
+        $stmt = $db->prepare('INSERT INTO wallets (user_id, balance, total_points, current_points) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$userId, $amount, $points, $points]);
         $newBalance = $amount;
         $walletId = (int)$db->lastInsertId();
     } else {
-        $stmt = $db->prepare('UPDATE wallets SET balance = balance + ? WHERE id = ?');
-        $stmt->execute([$amount, $wallet['id']]);
+        $stmt = $db->prepare('UPDATE wallets SET balance = balance + ?, total_points = total_points + ?, current_points = current_points + ? WHERE id = ?');
+        $stmt->execute([$amount, $points, $points, $wallet['id']]);
         $newBalance = (int)$wallet['balance'] + $amount;
         $walletId = (int)$wallet['id'];
     }
@@ -38,7 +41,7 @@ try {
         VALUES (?, ?, ?, ?, ?)
     ');
     $stmt->execute([
-        $walletId, 'recharge', $amount, 0,
+        $walletId, 'recharge', $amount, $points,
         "Recharge via {$methodLabels[$method]}"
     ]);
 

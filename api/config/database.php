@@ -362,7 +362,7 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
         $stmtW = $db->prepare('
             SELECT w.id, w.tier, lt.bonus_pct, lt.cashback_pct
             FROM wallets w
-            JOIN loyalty_tiers lt ON w.tier = lt.name
+            LEFT JOIN loyalty_tiers lt ON w.tier = lt.name
             WHERE w.user_id = ?
         ');
         $stmtW->execute([$buyerId]);
@@ -379,11 +379,11 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
             $walletId = (int)$wallet['id'];
 
             // ─── Check if points already awarded for this order to this buyer ───
-            $stmtCheck = $db->prepare("SELECT id FROM wallet_transactions WHERE wallet_id = ? AND reference_type = 'order' AND reference_id = ? AND type = 'bonus' LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT id FROM wallet_transactions WHERE wallet_id = ? AND reference_type = 'order' AND reference_id = ? AND (type = 'bonus' OR type = 'earn') LIMIT 1");
             $stmtCheck->execute([$walletId, $orderId]);
             if (!$stmtCheck->fetch()) {
-                $bonusPct = (float)$wallet['bonus_pct'];
-                $cashbackPct = (float)$wallet['cashback_pct'];
+                $bonusPct = (float)($wallet['bonus_pct'] ?? 0);
+                $cashbackPct = (float)($wallet['cashback_pct'] ?? 1.0); // 1% par défaut pour bronze
 
                 // Points: 1 point per 100 FCFA + tier bonus
                 $basePoints = (int)floor($amount / 100);
@@ -411,7 +411,7 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     ');
                     if ($cashbackAmount > 0) {
-                        $stmtTrans->execute([$walletId, 'earn', $cashbackAmount, 0, "Cashback {$cashbackPct}% sur achat #$orderId", 'order', $orderId]);
+                        $stmtTrans->execute([$walletId, 'earn', $cashbackAmount, 0, "Cashback " . ($cashbackPct) . "% sur achat #$orderId", 'order', $orderId]);
                     }
                     if ($totalBuyerPoints > 0) {
                         $stmtTrans->execute([$walletId, 'bonus', 0, $totalBuyerPoints, "Points fidélité sur achat #$orderId", 'order', $orderId]);
