@@ -78,37 +78,32 @@ private external fun getJsonProperty(json: String, key: String): String?
 @JsFun("(json, key) => { const obj = JSON.parse(json); return obj[key] || 0; }")
 private external fun getJsonPropertyDouble(json: String, key: String): Double
 
-private suspend fun pickMediaFromGallery(allowVideo: Boolean): MediaPickResult? {
-    return try {
-        val json = suspendCoroutine<String> { cont ->
-            nativePickMedia(
-                allowVideo = allowVideo,
-                onResult = { cont.resume(it) },
-                onError = { cont.resumeWithException(Exception(it)) }
-            )
-        }
-        val dataUrl = getJsonProperty(json, "dataUrl") ?: return null
-        val fileName = getJsonProperty(json, "fileName") ?: "file"
-        val mimeType = getJsonProperty(json, "mimeType") ?: "image/jpeg"
-        val duration = getJsonPropertyDouble(json, "durationSeconds")
-        MediaPickResult(dataUrl = dataUrl, fileName = fileName, mimeType = mimeType, durationSeconds = duration)
-    } catch (_: Exception) {
-        null
-    }
-}
-
 @Composable
 actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
-    val scope = rememberCoroutineScope()
+    // IMPORTANT: input.click() doit être appelé de manière SYNCHRONE dans le
+    // gestionnaire d'événement utilisateur, sinon le navigateur bloque l'ouverture
+    // du sélecteur de fichiers (popup bloquée). On appelle donc nativePickMedia
+    // directement, sans passer par une coroutine.
     return {
-        scope.launch {
-            val result = pickMediaFromGallery(allowVideo)
-            onResult(result)
-        }
+        nativePickMedia(
+            allowVideo = allowVideo,
+            onResult = { json ->
+                val dataUrl = getJsonProperty(json, "dataUrl")
+                if (dataUrl == null) {
+                    onResult(null)
+                    return@nativePickMedia
+                }
+                val fileName = getJsonProperty(json, "fileName") ?: "file"
+                val mimeType = getJsonProperty(json, "mimeType") ?: "image/jpeg"
+                val duration = getJsonPropertyDouble(json, "durationSeconds")
+                onResult(MediaPickResult(dataUrl = dataUrl, fileName = fileName, mimeType = mimeType, durationSeconds = duration))
+            },
+            onError = { onResult(null) }
+        )
     }
 }
 

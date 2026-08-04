@@ -43,10 +43,17 @@ actual fun VideoPlayer(
 
         document.body?.appendChild(video)
 
-        // Try playing the video (returns a Promise that we safely ignore)
+        // Try playing the video. Les navigateurs bloquent l'autoplay avec du son si
+        // l'utilisateur n'a pas interagi. On tente d'abord avec le son ; si la promesse
+        // est rejetée, on relance en mode muet pour au moins démarrer la lecture.
         try {
-            video.play()
-        } catch (_: Exception) { }
+            video.play().catch {
+                video.muted = true
+                video.play()
+            }
+        } catch (_: Exception) {
+            try { video.muted = true; video.play() } catch (_: Exception) { }
+        }
 
         onDispose {
             video.removeEventListener("ended", onEndedHandler)

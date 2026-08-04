@@ -71,9 +71,13 @@ fun StoryViewerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val storyDurationMs = 5000L // 5 seconds per story
 
-    // Auto-advance timer using delay
+    // Auto-advance timer using delay.
+    // NOTE: les stories vidéo avancent via onEnded du lecteur vidéo (pas ce timer),
+    // sinon une vidéo serait coupée après 5 secondes fixes.
+    val currentStoryForTimer = stories.getOrNull(currentIndex)
     LaunchedEffect(currentIndex, isPaused) {
         if (isPaused || stories.isEmpty()) return@LaunchedEffect
+        if (currentStoryForTimer?.mediaType == "video") return@LaunchedEffect
         val totalTicks = 100
         val tickMs = storyDurationMs / totalTicks
         for (step in 1..totalTicks) {
