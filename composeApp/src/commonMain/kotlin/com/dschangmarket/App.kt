@@ -666,6 +666,17 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                                 appState.vendorShopName = shop?.name ?: ""
                             } catch (_: Exception) {}
                         }
+                        
+                        // Fetch wallet points immediately after login
+                        try {
+                            val w = ApiClient.fetchWallet()
+                            if (w != null) {
+                                appState.currentPoints = w.currentPoints
+                                appState.totalPoints = w.totalPoints
+                                appState.walletBalance = w.balance
+                                appState.walletTier = w.tier
+                            }
+                        } catch (_: Exception) {}
 
                         appState.goHome()
                     }

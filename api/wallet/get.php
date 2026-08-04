@@ -61,30 +61,35 @@ try {
     $stmt = $db->prepare('
         SELECT w.*, lt.name as tier_name, lt.cashback_pct, lt.bonus_pct, lt.color as tier_color
         FROM wallets w
-        JOIN loyalty_tiers lt ON w.tier = lt.name
+        LEFT JOIN loyalty_tiers lt ON w.tier = lt.name
         WHERE w.user_id = ?
     ');
     $stmt->execute([$userId]);
     $wallet = $stmt->fetch();
 
     if (!$wallet) {
-        $stmt = $db->prepare('INSERT INTO wallets (user_id) VALUES (?)');
+        $stmt = $db->prepare('INSERT IGNORE INTO wallets (user_id) VALUES (?)');
         $stmt->execute([$userId]);
+
         $stmt = $db->prepare('
             SELECT w.*, lt.name as tier_name, lt.cashback_pct, lt.bonus_pct, lt.color as tier_color
             FROM wallets w
-            JOIN loyalty_tiers lt ON w.tier = lt.name
+            LEFT JOIN loyalty_tiers lt ON w.tier = lt.name
             WHERE w.user_id = ?
         ');
         $stmt->execute([$userId]);
         $wallet = $stmt->fetch();
     }
 
-    $currentPoints = (int)$wallet['total_points'];
+    if (!$wallet) json(404, ['error' => 'Portefeuille introuvable']);
+
+    $currentPoints = (int)($wallet['total_points'] ?? 0);
     $tiers = $db->query('SELECT name, min_points FROM loyalty_tiers ORDER BY min_points ASC')->fetchAll();
     $nextTier = null;
+
+    $userTier = $wallet['tier'] ?? 'bronze';
     for ($i = 0; $i < count($tiers); $i++) {
-        if ($tiers[$i]['name'] === $wallet['tier'] && isset($tiers[$i + 1])) {
+        if ($tiers[$i]['name'] === $userTier && isset($tiers[$i + 1])) {
             $nextTier = [
                 'name' => $tiers[$i + 1]['name'],
                 'points_needed' => max(0, (int)$tiers[$i + 1]['min_points'] - $currentPoints)
@@ -98,15 +103,15 @@ try {
         'wallet' => [
             'id' => (int)$wallet['id'],
             'user_id' => (int)$wallet['user_id'],
-            'balance' => (int)$wallet['balance'],
+            'balance' => (float)$wallet['balance'],
             'total_points' => (int)$wallet['total_points'],
             'current_points' => (int)$wallet['current_points'],
-            'tier' => $wallet['tier'],
-            'tier_name' => $wallet['tier_name'],
-            'tier_color' => $wallet['tier_color'],
-            'cashback_pct' => (float)$wallet['cashback_pct'],
-            'bonus_pct' => (float)$wallet['bonus_pct'],
-            'lifetime_spent' => (int)$wallet['lifetime_spent'],
+            'tier' => $userTier,
+            'tier_name' => $wallet['tier_name'] ?: ucfirst($userTier),
+            'tier_color' => $wallet['tier_color'] ?: '#8D6E63',
+            'cashback_pct' => (float)($wallet['cashback_pct'] ?: 1.0),
+            'bonus_pct' => (float)($wallet['bonus_pct'] ?: 0.0),
+            'lifetime_spent' => (float)$wallet['lifetime_spent'],
             'created_at' => $wallet['created_at'],
             'updated_at' => $wallet['updated_at'],
         ],
