@@ -23,4 +23,11 @@ try {
     $migrations[] = "ℹ️ Colonne `client_confirmed` existe peut-être déjà : " . $e->getMessage();
 }
 
+try {
+    $db->exec("ALTER TABLE orders ADD COLUMN payment_type ENUM('delivery', 'direct') DEFAULT 'delivery' AFTER payment_status");
+    $migrations[] = "✅ Colonne `payment_type` ajoutée à orders";
+} catch (PDOException $e) {
+    $migrations[] = "ℹ️ Colonne `payment_type` existe peut-être déjà : " . $e->getMessage();
+}
+
 echo json_encode(['migrations' => $migrations]);
