@@ -112,10 +112,10 @@ try {
             'cashback_pct' => (float)($wallet['cashback_pct'] ?: 1.0),
             'bonus_pct' => (float)($wallet['bonus_pct'] ?: 0.0),
             'lifetime_spent' => (float)$wallet['lifetime_spent'],
-            'created_at' => $wallet['created_at'],
-            'updated_at' => $wallet['updated_at'],
-        ],
-        'next_tier' => $nextTier
+            'next_tier' => $nextTier,
+            'created_at' => (string)($wallet['created_at'] ?: ''),
+            'updated_at' => (string)($wallet['updated_at'] ?: ''),
+        ]
     ]);
 } catch (PDOException $e) {
     json(500, ['error' => 'Erreur serveur']);
