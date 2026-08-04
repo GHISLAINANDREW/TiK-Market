@@ -169,6 +169,44 @@ fun ProfileScreen(
                         Spacer(Modifier.height(12.dp))
                         Text(userName.ifEmpty { "Utilisateur" }, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                         Text(userName.lowercase().replace(" ", ".") + "@gmail.com", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+
+                        // ── Points & Balance Quick Access ──
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.weight(1f).clickable { onLoyaltyClick() },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.2f)
+                            ) {
+                                Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(walletPoints.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text("Points", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f).clickable { onLoyaltyClick() },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.2f)
+                            ) {
+                                Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("${walletBalance.toInt()} F", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                    Text("Cashback", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f).clickable { onLoyaltyClick() },
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.2f)
+                            ) {
+                                Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(walletTier.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Niveau", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                                }
+                            }
+                        }
                         
                         if (userRole == "vendor") {
                             Spacer(Modifier.height(12.dp))

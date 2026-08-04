@@ -65,6 +65,7 @@ data class ApiProduct(
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("is_verified") val isVerified: Boolean = false,
     @SerialName("is_story") val isStory: Boolean = false,
+    @SerialName("user_purchase_count") val userPurchaseCount: Int = 0,
     val reviews: List<ApiReview>? = null
 )
 
@@ -497,6 +498,7 @@ fun ApiProduct.toProduct(): Product {
         rating = rating,
         totalReviews = totalReviews,
         totalSales = totalSales,
+        userPurchaseCount = userPurchaseCount,
         shopVerified = isVerified,
         isStory = isStory
     )

@@ -219,6 +219,7 @@ object ApiClient {
     // ── Routes ──
     private object Endpoints {
         const val LOGIN = "/auth/login.php"
+        const val GOOGLE_LOGIN = "/auth/google_login.php"
         const val REGISTER = "/auth/register.php"
         const val ME = "/auth/me.php"
         const val OTP_SEND = "/auth/send-otp.php"
@@ -266,12 +267,26 @@ object ApiClient {
         coerceInputValues = true
     }
 
-    private var _baseUrl: String = "https://dschang-market.onrender.com"
+    /**
+     * API endpoints, in priority order.
+     * Le premier domaine (Render) peut être bloqué par certains opérateurs mobiles
+     * (ex: Orange Cameroun bloque onrender.com). En cas d'échec réseau, on tente
+     * automatiquement les URLs de secours (domaine personnalisé / proxy Cloudflare).
+     */
+    private var _baseUrls: List<String> = listOf(
+        "https://dschang-market.onrender.com"
+    )
+    private var _activeBaseUrlIndex = 0
+
     var baseUrl: String
-        get() = _baseUrl
+        get() = _baseUrls[_activeBaseUrlIndex]
         set(value) {
-            _baseUrl = value.trimEnd('/')
+            _baseUrls = listOf(value.trimEnd('/'))
+            _activeBaseUrlIndex = 0
         }
+
+    /** Liste complète des endpoints utilisables (utile pour le diagnostic). */
+    fun getBaseUrls(): List<String> = _baseUrls.toList()
 
     // ── Session Helpers ──
     
@@ -317,17 +332,39 @@ object ApiClient {
         path: String,
         body: String? = null
     ): String {
-        val url = if (path.startsWith("http")) path else "$baseUrl$path"
-        if (isLoggingEnabled) println("[API] $method $url" + (body?.let { " | Body: $it" } ?: ""))
-        
-        return try {
-            val response = HttpEngine.request(method, url, buildHeaders(), body)
-            if (isLoggingEnabled) println("[API] Response: ${response.take(200)}...")
-            response
-        } catch (e: Exception) {
-            if (isLoggingEnabled) println("[API] Error: ${e.message}")
-            throw e
+        // Les URLs en dur (uploads directs, etc.) ne passent pas par le fallback.
+        if (path.startsWith("http")) {
+            val directUrl = path
+            if (isLoggingEnabled) println("[API] $method $directUrl")
+            return try {
+                val response = HttpEngine.request(method, directUrl, buildHeaders(), body)
+                if (isLoggingEnabled) println("[API] Response: ${response.take(200)}...")
+                response
+            } catch (e: Exception) {
+                if (isLoggingEnabled) println("[API] Error: ${e.message}")
+                throw e
+            }
         }
+
+        // Fallback multi-URL : si le domaine actif échoue (timeout/blocage réseau),
+        // on tente les suivants et on mémorise celui qui fonctionne.
+        var lastError: Exception? = null
+        val startIndex = _activeBaseUrlIndex
+        for (offset in 0 until _baseUrls.size) {
+            val index = (startIndex + offset) % _baseUrls.size
+            val url = "${_baseUrls[index]}$path"
+            if (isLoggingEnabled) println("[API] $method $url" + (body?.let { " | Body: $it" } ?: ""))
+            try {
+                val response = HttpEngine.request(method, url, buildHeaders(), body)
+                if (isLoggingEnabled) println("[API] Response: ${response.take(200)}...")
+                _activeBaseUrlIndex = index
+                return response
+            } catch (e: Exception) {
+                if (isLoggingEnabled) println("[API] Error on ${_baseUrls[index]}: ${e.message}")
+                lastError = e
+            }
+        }
+        throw lastError ?: Exception("Network error")
     }
 
     private fun buildUrl(path: String, params: Map<String, Any?> = emptyMap()): String {
@@ -362,6 +399,15 @@ object ApiClient {
         return result
     }
 
+    suspend fun googleLogin(idToken: String): ApiAuthResponse {
+        val body = buildJsonObject { put("id_token", idToken) }.toString()
+        val result = safeRequest<ApiAuthResponse>("POST", Endpoints.GOOGLE_LOGIN, body)
+        sessionToken = result.token
+        sessionUser = result.user
+        TokenStorage.save(result.token)
+        return result
+    }
+
     suspend fun register(
         name: String,
         email: String,
@@ -376,6 +422,8 @@ object ApiClient {
         TokenStorage.save(result.token)
         return result
     }
+
+
 
     suspend fun fetchMe(): ApiUser {
         val user = safeRequest<ApiUserResponse>("GET", Endpoints.ME).user

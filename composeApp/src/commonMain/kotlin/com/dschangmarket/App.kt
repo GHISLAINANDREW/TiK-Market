@@ -865,10 +865,9 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                         scope.launch {
                             snackbarHostState.showSnackbar("Paiement réussi ! Points fidélité à la livraison.")
                         }
-                    },
                     }
                 )
-            }
+            } ?: appState.goHome()
             NavScreen.Settings -> SettingsScreen(
                 onBack = { appState.goBack() },
                 isDarkMode = appState.isDarkMode,
