@@ -155,5 +155,5 @@ try {
 
     json(405, ['error' => 'Méthode non autorisée']);
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur serveur']);
+    json(500, ['error' => 'Erreur serveur : ' . $e->getMessage()]);
 }
