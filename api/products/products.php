@@ -14,6 +14,16 @@ try {
             $db->exec("ALTER TABLE products ADD COLUMN is_story TINYINT(1) DEFAULT 0 AFTER total_sales");
         }
 
+        // Auto-migration: ensure is_featured column exists on shops (boutiques en avant)
+        try {
+            $checkF = $db->query("SHOW COLUMNS FROM shops LIKE 'is_featured'")->fetch();
+            if (!$checkF) {
+                $db->exec("ALTER TABLE shops ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 0 AFTER is_verified");
+            }
+        } catch (Exception $e) {
+            error_log("Migration is_featured error: " . $e->getMessage());
+        }
+
         // AUTO-CLEANUP: Handle stories expiration (run max once per hour)
         // Only remove the story flag after 24h — NEVER deactivate a product
         $cleanupFile = sys_get_temp_dir() . '/products_story_cleanup';
@@ -156,6 +166,10 @@ try {
             'name_desc' => 'p.title DESC',
         ];
         $orderClause = $orderMap[$sort_by] ?? 'p.created_at DESC';
+
+        // Les produits des boutiques mises en avant s'affichent TOUJOURS en premier,
+        // quel que soit le mode de tri choisi (s.is_featured = 1 d'abord).
+        $orderClause = 's.is_featured DESC, ' . $orderClause;
 
         $stmt = $db->prepare("
             SELECT p.*, s.name AS shop_name, s.vendor_id, s.is_verified,
