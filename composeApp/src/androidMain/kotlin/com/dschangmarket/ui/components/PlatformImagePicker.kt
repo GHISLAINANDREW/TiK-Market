@@ -84,7 +84,9 @@ private fun getFileName(context: Context, uri: Uri): String? {
 }
 
 /**
- * Android actual: uses ActivityResultContracts.GetContent() to pick images.
+ * Android actual: uses ActivityResultContracts.OpenDocument() with an array of
+ * MIME types so that both images and videos can be selected. GetContent accepts
+ * only one MIME type, so the old "image plus video" combination broke the picker.
  */
 @Composable
 actual fun rememberMediaPickerLauncher(
@@ -94,7 +96,7 @@ actual fun rememberMediaPickerLauncher(
 ): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
                 try {
@@ -122,7 +124,7 @@ actual fun rememberMediaPickerLauncher(
             onResult(null)
         }
     }
-    return remember { { launcher.launch(if (allowVideo) "image/*,video/*" else "image/*") } }
+    return remember { { launcher.launch(if (allowVideo) arrayOf("image/*", "video/*") else arrayOf("image/*")) } }
 }
 
 @Composable
