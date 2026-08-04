@@ -44,7 +44,9 @@ fun OrdersScreen(
         scope.launch {
             try {
                 orders = ApiClient.fetchOrders()
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar("Erreur : ${e.message}")
+            }
             isLoading = false
         }
     }
