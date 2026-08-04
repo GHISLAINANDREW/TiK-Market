@@ -471,39 +471,6 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
         }
 
     } catch (Exception $e) {
-        error_log("handleOrderDelivery error (#$orderId): " . $e->getMessage());
-    }
-}
-
-        // 4. Award points to Vendors (Fixed 5 points per successful sale)
-        $stmtV = $db->prepare('
-            SELECT DISTINCT s.vendor_id
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            JOIN shops s ON p.shop_id = s.id
-            WHERE oi.order_id = ?
-        ');
-        $stmtV->execute([$orderId]);
-        $vendorIds = $stmtV->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($vendorIds as $vId) {
-            $vId = (int)$vId;
-            if ($vId > 0) {
-                // Check if vendor already awarded points for this order
-                $stmtCheckV = $db->prepare("
-                    SELECT wt.id FROM wallet_transactions wt
-                    JOIN wallets w ON wt.wallet_id = w.id
-                    WHERE w.user_id = ? AND wt.reference_type = 'order' AND wt.reference_id = ? AND wt.type = 'bonus'
-                    LIMIT 1
-                ");
-                $stmtCheckV->execute([$vId, $orderId]);
-                if (!$stmtCheckV->fetch()) {
-                    awardPoints($db, $vId, 5, "Vente réussie #$orderId", 'order', $orderId);
-                    sendNotification($vId, "Point fidélité gagné 🎉", "Vous avez gagné 5 points de fidélité pour la vente #$orderId.", 'order', $orderId);
-                }
-            }
-        }
-
-    } catch (Exception $e) {
         if ($db->inTransaction()) $db->rollBack();
         error_log("handleOrderDelivery error (#$orderId): " . $e->getMessage());
     }
