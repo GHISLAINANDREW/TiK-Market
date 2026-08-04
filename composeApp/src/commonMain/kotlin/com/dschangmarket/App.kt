@@ -973,7 +973,20 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 currentPoints = appState.currentPoints,
                 totalPoints = appState.totalPoints,
                 walletBalance = appState.walletBalance,
-                walletTier = appState.walletTier
+                walletTier = appState.walletTier,
+                onRefresh = {
+                    scope.launch {
+                        try {
+                            val w = ApiClient.fetchWallet()
+                            if (w != null) {
+                                appState.currentPoints = w.currentPoints
+                                appState.totalPoints = w.totalPoints
+                                appState.walletBalance = w.balance
+                                appState.walletTier = w.tier
+                            }
+                        } catch (_: Exception) {}
+                    }
+                }
             )
             NavScreen.NotifPrefs -> NotificationPrefsScreen(onBack = { appState.goBack() })
             NavScreen.StoryViewer -> StoryViewerScreen(

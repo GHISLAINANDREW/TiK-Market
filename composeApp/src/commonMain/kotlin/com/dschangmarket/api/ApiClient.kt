@@ -1111,7 +1111,8 @@ object ApiClient {
 
     suspend fun fetchWallet(): ApiWallet? {
         return try {
-            val resp = safeRequest<ApiWalletResponse>("GET", Endpoints.WALLET)
+            val ts = com.dschangmarket.currentTimeMillis()
+            val resp = safeRequest<ApiWalletResponse>("GET", "${Endpoints.WALLET}?t=$ts")
             resp.wallet
         } catch (_: Exception) { null }
     }

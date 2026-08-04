@@ -3,6 +3,10 @@ require_once __DIR__ . '/../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json(405, ['error' => 'Méthode non autorisée']);
 
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 try {
     $db = getDB();
     $userId = getAuthUserId();
@@ -26,37 +30,22 @@ try {
                 ('argent', 100, 2.0, 5, '#9E9E9E'),
                 ('or', 500, 3.0, 10, '#FFD700')");
         }
-    } catch (Exception $e) { error_log("Migration loyalty_tiers: " . $e->getMessage()); }
+    } catch (Exception $e) { }
 
     try {
         $db->exec("CREATE TABLE IF NOT EXISTS wallets (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL UNIQUE,
-            balance INT NOT NULL DEFAULT 0,
+            balance DECIMAL(12,0) NOT NULL DEFAULT 0,
             total_points INT NOT NULL DEFAULT 0,
             current_points INT NOT NULL DEFAULT 0,
             tier VARCHAR(20) NOT NULL DEFAULT 'bronze',
-            lifetime_spent INT NOT NULL DEFAULT 0,
+            lifetime_spent DECIMAL(12,0) NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )");
-    } catch (Exception $e) { error_log("Migration wallets: " . $e->getMessage()); }
-
-    try {
-        $db->exec("CREATE TABLE IF NOT EXISTS wallet_transactions (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            wallet_id INT NOT NULL,
-            type VARCHAR(20) NOT NULL DEFAULT 'earn',
-            amount_fcfa INT NOT NULL DEFAULT 0,
-            points INT NOT NULL DEFAULT 0,
-            description TEXT,
-            reference_type VARCHAR(20) DEFAULT NULL,
-            reference_id INT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE
-        )");
-    } catch (Exception $e) { error_log("Migration wallet_transactions: " . $e->getMessage()); }
+    } catch (Exception $e) { }
 
     $stmt = $db->prepare('
         SELECT w.*, lt.name as tier_name, lt.cashback_pct, lt.bonus_pct, lt.color as tier_color
