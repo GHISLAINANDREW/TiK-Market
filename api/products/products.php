@@ -58,6 +58,31 @@ try {
             $product['rating'] = $avgRating;
             $product['total_reviews'] = count($reviews);
             $product['reviews'] = $reviews;
+
+            // ── Purchase count for current user ──
+            $userPurchaseCount = 0;
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+            if (empty($authHeader)) {
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $authHeader = $headers['Authorization'] ?? '';
+            }
+            if (str_starts_with($authHeader, 'Bearer ')) {
+                $jwt = substr($authHeader, 7);
+                $payload = jwt_decode($jwt);
+                if ($payload && isset($payload['user_id'])) {
+                    $uId = (int)$payload['user_id'];
+                    $stmtPurchase = $db->prepare("
+                        SELECT COUNT(DISTINCT o.id)
+                        FROM order_items oi
+                        JOIN orders o ON oi.order_id = o.id
+                        WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'
+                    ");
+                    $stmtPurchase->execute([$uId, $id]);
+                    $userPurchaseCount = (int)$stmtPurchase->fetchColumn();
+                }
+            }
+            $product['user_purchase_count'] = $userPurchaseCount;
+
             $product['id'] = (int)$product['id'];
             $product['shop_id'] = (int)$product['shop_id'];
             $product['vendor_id'] = (int)$product['vendor_id'];

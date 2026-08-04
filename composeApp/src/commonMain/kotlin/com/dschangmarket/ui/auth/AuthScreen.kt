@@ -66,6 +66,7 @@ fun AuthScreen(
     var form by remember { mutableStateOf(AuthFormState()) }
     var showPassword by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val googleAuthManager = com.dschangmarket.utils.rememberGoogleAuthManager()
 
     // ── Animation du fond (dégradé vert/orange qui ondule) ──
     val infiniteTransition = rememberInfiniteTransition(label = "authBg")
@@ -231,8 +232,17 @@ fun AuthScreen(
                                     onClick = {
                                         scope.launch {
                                             form = form.copy(isLoading = true, error = null)
-                                            delay(1500)
-                                            onLoginSuccess("real-google-token", "Utilisateur Google", "buyer")
+                                            val data = googleAuthManager.signIn()
+                                            if (data?.idToken != null) {
+                                                try {
+                                                    val result = ApiClient.googleLogin(data.idToken)
+                                                    onLoginSuccess(result.token, result.user.name, result.user.role)
+                                                } catch (e: Exception) {
+                                                    form = form.copy(error = e.message ?: "Échec de la connexion au serveur")
+                                                }
+                                            } else {
+                                                form = form.copy(error = "Échec ou annulation de la connexion Google")
+                                            }
                                             form = form.copy(isLoading = false)
                                         }
                                     }

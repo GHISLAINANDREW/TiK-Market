@@ -271,6 +271,10 @@ fun ProductDetailScreen(
                     RatingBar(product.rating, product.totalReviews)
                     Text("|", color = Color.LightGray)
                     Text("${product.totalSales} vendus", fontSize = 13.sp, color = Color.Gray)
+                    if (product.userPurchaseCount > 0) {
+                        Text("|", color = Color.LightGray)
+                        Text("Déjà acheté : ${product.userPurchaseCount} fois", fontSize = 13.sp, color = Green, fontWeight = FontWeight.Bold)
+                    }
                     if (product.stock in 1..5) {
                         Spacer(Modifier.width(8.dp))
                         Surface(color = Color.Red.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {

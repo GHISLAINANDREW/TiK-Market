@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -36,6 +37,9 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation("androidx.activity:activity-compose:1.9.3")
+            implementation("androidx.credentials:credentials:1.3.0")
+            implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+            implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
         }
     }
 }
@@ -44,12 +48,27 @@ android {
     namespace = "com.dschangmarket"
     compileSdk = 34
 
+    val versionProps = Properties()
+    val versionFile = project.rootProject.file("version.properties")
+    if (versionFile.exists()) {
+        versionFile.inputStream().use { 
+            versionProps.load(it) 
+        }
+    }
+    val verCode = (versionProps.getProperty("VERSION_CODE") ?: "1").toInt()
+    val verName = versionProps.getProperty("VERSION_NAME") ?: "1.0.0"
+
     defaultConfig {
         applicationId = "com.dschangmarket.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = verCode
+        versionName = verName
+
+        // Assure que l'APK inclut les bibliothèques pour toutes les architectures de processeur communes
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
     }
 
     compileOptions {
@@ -59,6 +78,38 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        // Force l'inclusion des bibliothèques natives pour une meilleure compatibilité
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    // Tâche pour incrémenter la version avant le build
+    tasks.register("incrementVersion") {
+        doLast {
+            val vProps = Properties()
+            val vFile = project.rootProject.file("version.properties")
+            if (vFile.exists()) {
+                vFile.inputStream().use { vProps.load(it) }
+            }
+            val currentCode = (vProps.getProperty("VERSION_CODE") ?: "0").toInt()
+            val nextCode = currentCode + 1
+            
+            // On incrémente le code et on met à jour le nom (ex: 1.0.0 -> 1.0.1)
+            // Pour simplifier, on garde le préfixe 1.0. et on ajoute le code
+            val nextName = "1.0.$nextCode"
+            
+            vProps.setProperty("VERSION_CODE", nextCode.toString())
+            vProps.setProperty("VERSION_NAME", nextName)
+            vFile.outputStream().use { vProps.store(it, null) }
+            println("Version mise à jour : $nextName (Code: $nextCode)")
+        }
     }
 }
 

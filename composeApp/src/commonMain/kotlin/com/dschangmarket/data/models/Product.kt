@@ -18,6 +18,7 @@ data class Product(
     val rating: Float = 0f,
     val totalReviews: Int = 0,
     val totalSales: Int = 0,
+    val userPurchaseCount: Int = 0,
     val shopVerified: Boolean = false,
     val isStory: Boolean = false
 ) {

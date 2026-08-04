@@ -2,8 +2,8 @@ package com.dschangmarket.ui.admin
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -513,8 +513,14 @@ private fun AdminUsersList(
     setUserNotifResult: (String?) -> Unit,
     setShowUserNotifDialog: (Boolean) -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(users) { user ->
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(users.size) { index ->
+            val user = users[index]
             AdminUserCard(user,
                 onRoleChange = { role ->
                     scope.launch {
@@ -557,11 +563,17 @@ private fun AdminShopsList(
     setPromoMessage: (String?) -> Unit,
     setShowPromoDialog: (Boolean) -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         if (shops.isEmpty()) {
             item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("Aucune boutique trouvée", color = TextSecondary) } }
         }
-        items(shops) { shop ->
+        items(shops.size) { index ->
+            val shop = shops[index]
             AdminShopCard(
                 shop = shop,
                 onToggleVerify = {
@@ -575,6 +587,15 @@ private fun AdminShopsList(
                 },
                 onDelete = {
                     scope.launch { try { ApiClient.deleteShop(shop.id) } catch (_: Exception) {} }
+                },
+                onAddPromo = {
+                    setPromoShop(shop)
+                    setPromoCode("")
+                    setPromoDiscountPct("")
+                    setPromoDiscountFixed("")
+                    setPromoMinAmount("")
+                    setPromoMessage(null)
+                    setShowPromoDialog(true)
                 }
             )
         }
@@ -845,7 +866,14 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminShopCard(shop: AdminShop, onToggleVerify: () -> Unit, onPromote: (Boolean) -> Unit, onBan: (String) -> Unit, onDelete: () -> Unit) {
+fun AdminShopCard(
+    shop: AdminShop,
+    onToggleVerify: () -> Unit,
+    onPromote: (Boolean) -> Unit,
+    onBan: (String) -> Unit,
+    onDelete: () -> Unit,
+    onAddPromo: () -> Unit
+) {
     var logoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(shop.logo) {
         if (shop.logo.isNotBlank()) { logoBitmap = loadImageFromUrl(shop.logo) }
@@ -884,6 +912,7 @@ fun AdminShopCard(shop: AdminShop, onToggleVerify: () -> Unit, onPromote: (Boole
                 DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
                     DropdownMenuItem(text = { Text(if (shop.isVerified) "Dé-vérifier" else "Vérifier") }, leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) }, onClick = { onToggleVerify(); showActions = false })
                     DropdownMenuItem(text = { Text(if (shop.isFeatured) "Retirer promo" else "Mettre en avant", color = Orange) }, leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) }, onClick = { onPromote(!shop.isFeatured); showActions = false })
+                    DropdownMenuItem(text = { Text("Créer promotion", color = Green) }, leadingIcon = { Icon(Icons.Default.AddCircle, null, tint = Green) }, onClick = { onAddPromo(); showActions = false })
                     HorizontalDivider()
                     DropdownMenuItem(text = { Text(if (shop.status == "banned") "Réactiver" else "Bannir", color = if (shop.status == "banned") Green else RedAccent) }, leadingIcon = { Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (shop.status == "banned") Green else RedAccent) }, onClick = { onBan(if (shop.status == "banned") "active" else "banned"); showActions = false })
                     DropdownMenuItem(text = { Text("Supprimer", color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { showDeleteConfirm = true; showActions = false })
@@ -1100,7 +1129,16 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
         if (d.onlineUsers.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.PersonOff, null, Modifier.size(48.dp), tint = Color.LightGray); Spacer(Modifier.height(8.dp)); Text("Personne en ligne pour le moment", color = Color.Gray) } }
         } else {
-            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { items(d.onlineUsers) { user -> OnlineUserCard(user) } }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(d.onlineUsers.size) { index ->
+                    OnlineUserCard(d.onlineUsers[index])
+                }
+            }
         }
     }
 }
@@ -1167,7 +1205,7 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
         if (isLoading) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
         else if (error != null) { DschangErrorState(message = error!!, onRetry = { load() }) }
         else if (stories.isEmpty()) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Aucune story pour le moment", color = TextSecondary) } }
-        else { LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(stories) { story -> AdminStoryCard(story = story, onDelete = { scope.launch { try { ApiClient.deleteStory(story.id); stories = stories.filter { it.id != story.id } } catch (e: Exception) { error = "Erreur suppression: ${e.message}" } } }) } } }
+        else { LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { items(stories.size) { index -> val story = stories[index]; AdminStoryCard(story = story, onDelete = { scope.launch { try { ApiClient.deleteStory(story.id); stories = stories.filter { it.id != story.id } } catch (e: Exception) { error = "Erreur suppression: ${e.message}" } } }) } } }
     }
 
     if (showAddDialog) {
@@ -1270,13 +1308,18 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
     fun load() { scope.launch { isLoading = true; error = null; try { heroItems = ApiClient.fetchHeroItems() } catch (e: Exception) { error = e.message }; isLoading = false } }
     LaunchedEffect(Unit) { load() }
 
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
-        item {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp)
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Text("Gestion de la Hero Section", style = MaterialTheme.typography.titleLarge)
             Text("Modifiez les bannières promotionnelles de l'accueil.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             Spacer(Modifier.height(16.dp))
         }
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Text("Ajouter une promotion", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(12.dp))
@@ -1334,12 +1377,13 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                 }
             }
         }
-        item { Text("Bannières actives", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)) }
-        if (isLoading) { item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } } }
-        else if (heroItems.isEmpty()) { item { Text("Aucune bannière personnalisée.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) } }
+        item(span = { GridItemSpan(maxLineSpan) }) { Text("Bannières actives", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)) }
+        if (isLoading) { item(span = { GridItemSpan(maxLineSpan) }) { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } } }
+        else if (heroItems.isEmpty()) { item(span = { GridItemSpan(maxLineSpan) }) { Text("Aucune bannière personnalisée.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) } }
         else {
-            items(heroItems) { item ->
-                Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            items(heroItems.size) { index ->
+                val item = heroItems[index]
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(60.dp).clip(RoundedCornerShape(4.dp)).background(Color.LightGray)) {
                             var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }

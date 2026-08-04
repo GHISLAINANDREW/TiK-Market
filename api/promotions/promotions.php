@@ -113,10 +113,16 @@ try {
         if (!$shopId || !$code) json(400, ['error' => 'shop_id et code requis']);
         if ($discountPct <= 0 && $discountFixed <= 0) json(400, ['error' => 'Discount requis']);
 
-        // Verify ownership
-        $stmt = $db->prepare("SELECT id FROM shops WHERE id = ? AND vendor_id = ?");
-        $stmt->execute([$shopId, $userId]);
-        if (!$stmt->fetch()) json(403, ['error' => 'Non autorisé']);
+        // Verify ownership OR Admin
+        $stmt = $db->prepare("SELECT vendor_id FROM shops WHERE id = ?");
+        $stmt->execute([$shopId]);
+        $shop = $stmt->fetch();
+        if (!$shop) json(404, ['error' => 'Boutique introuvable']);
+
+        $isAdmin = (getUserRole() === 'admin');
+        if (!$isAdmin && (int)$shop['vendor_id'] !== $userId) {
+            json(403, ['error' => 'Non autorisé']);
+        }
 
         $stmt = $db->prepare("INSERT INTO promotions (shop_id, code, discount_pct, discount_fixed, min_amount, max_uses, expires_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)");
