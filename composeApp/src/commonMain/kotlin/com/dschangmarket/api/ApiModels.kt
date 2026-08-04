@@ -692,14 +692,14 @@ data class ApiWallet(
     @SerialName("total_points") val totalPoints: Int = 0,
     @SerialName("current_points") val currentPoints: Int = 0,
     val tier: String = "bronze",
-    @SerialName("tier_name") val tierName: String = "Bronze",
-    @SerialName("tier_color") val tierColor: String = "#8D6E63",
+    @SerialName("tier_name") val tierName: String? = null,
+    @SerialName("tier_color") val tierColor: String? = null,
     @SerialName("cashback_pct") val cashbackPct: Double = 1.0,
     @SerialName("bonus_pct") val bonusPct: Double = 0.0,
     @SerialName("lifetime_spent") val lifetimeSpent: Double = 0.0,
     @SerialName("next_tier") val nextTier: ApiNextTier? = null,
-    @SerialName("created_at") val createdAt: String = "",
-    @SerialName("updated_at") val updatedAt: String = ""
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
 )
 
 @Serializable

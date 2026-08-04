@@ -46,11 +46,13 @@ fun LoyaltyScreen(
     currentPoints: Int = 0,
     totalPoints: Int = 0,
     walletBalance: Double = 0.0,
-    walletTier: String = "bronze"
+    walletTier: String = "bronze",
+    onRefresh: () -> Unit = {}
 ) {
     var transactions by remember { mutableStateOf<List<ApiWalletTransaction>>(emptyList()) }
     var coupons by remember { mutableStateOf<List<ApiCoupon>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var showRedeemDialog by remember { mutableStateOf(false) }
     var showRechargeDialog by remember { mutableStateOf(false) }
     var tab by remember { mutableStateOf(0) }
@@ -58,19 +60,24 @@ fun LoyaltyScreen(
     val snackbar = remember { SnackbarHostState() }
 
     val nextTierData = remember(totalPoints, walletTier) {
-        when (walletTier) {
+        when (walletTier.lowercase()) {
             "bronze" -> Pair("argent", 100 - totalPoints)
             "argent" -> Pair("or", 500 - totalPoints)
             else -> null
         }
     }
 
-    LaunchedEffect(Unit) {
-        isLoading = true
+    suspend fun loadData() {
         try {
             transactions = ApiClient.fetchWalletTransactions()
             coupons = ApiClient.fetchCoupons()
+            onRefresh()
         } catch (_: Exception) { }
+    }
+
+    LaunchedEffect(Unit) {
+        isLoading = true
+        loadData()
         isLoading = false
     }
 
@@ -79,6 +86,19 @@ fun LoyaltyScreen(
             TopAppBar(
                 title = { Text("Programme fidélité", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
+                actions = {
+                    IconButton(onClick = { 
+                        scope.launch { 
+                            isRefreshing = true
+                            loadData()
+                            isRefreshing = false
+                            snackbar.showSnackbar("Données mises à jour")
+                        } 
+                    }) {
+                        if (isRefreshing) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        else Icon(Icons.Default.Refresh, null, tint = Color.White)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
         },

@@ -359,6 +359,9 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
         }
 
         // 3. Award points and cashback to Buyer
+        // Ensure wallet exists
+        $db->prepare('INSERT IGNORE INTO wallets (user_id) VALUES (?)')->execute([$buyerId]);
+
         $stmtW = $db->prepare('
             SELECT w.id, w.tier, lt.bonus_pct, lt.cashback_pct
             FROM wallets w
@@ -367,13 +370,6 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
         ');
         $stmtW->execute([$buyerId]);
         $wallet = $stmtW->fetch();
-
-        if (!$wallet) {
-            // Create wallet if missing
-            $db->prepare('INSERT IGNORE INTO wallets (user_id) VALUES (?)')->execute([$buyerId]);
-            $stmtW->execute([$buyerId]);
-            $wallet = $stmtW->fetch();
-        }
 
         if ($wallet) {
             $walletId = (int)$wallet['id'];
@@ -394,49 +390,90 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
                 $cashbackAmount = (int)round($amount * $cashbackPct / 100);
 
                 if ($totalBuyerPoints > 0 || $cashbackAmount > 0) {
-                    $db->beginTransaction();
-                    $stmtUpdWallet = $db->prepare('
-                        UPDATE wallets
-                        SET balance = COALESCE(balance, 0) + ?,
-                            total_points = COALESCE(total_points, 0) + ?,
-                            current_points = COALESCE(current_points, 0) + ?,
-                            lifetime_spent = COALESCE(lifetime_spent, 0) + ?
-                        WHERE id = ?
-                    ');
-                    $stmtUpdWallet->execute([$cashbackAmount, $totalBuyerPoints, $totalBuyerPoints, $amount, $walletId]);
+                    $wasInTransaction = $db->inTransaction();
+                    if (!$wasInTransaction) $db->beginTransaction();
 
-                    // Record transactions
-                    $stmtTrans = $db->prepare('
-                        INSERT INTO wallet_transactions (wallet_id, type, amount_fcfa, points, description, reference_type, reference_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ');
-                    if ($cashbackAmount > 0) {
-                        $stmtTrans->execute([$walletId, 'earn', $cashbackAmount, 0, "Cashback " . ($cashbackPct) . "% sur achat #$orderId", 'order', $orderId]);
+                    try {
+                        $stmtUpdWallet = $db->prepare('
+                            UPDATE wallets
+                            SET balance = balance + ?,
+                                total_points = total_points + ?,
+                                current_points = current_points + ?,
+                                lifetime_spent = lifetime_spent + ?
+                            WHERE id = ?
+                        ');
+                        $stmtUpdWallet->execute([$cashbackAmount, $totalBuyerPoints, $totalBuyerPoints, $amount, $walletId]);
+
+                        // Record transactions
+                        $stmtTrans = $db->prepare('
+                            INSERT INTO wallet_transactions (wallet_id, type, amount_fcfa, points, description, reference_type, reference_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ');
+                        if ($cashbackAmount > 0) {
+                            $stmtTrans->execute([$walletId, 'earn', (float)$cashbackAmount, 0, "Cashback " . ($cashbackPct) . "% sur achat #$orderId", 'order', $orderId]);
+                        }
+                        if ($totalBuyerPoints > 0) {
+                            $stmtTrans->execute([$walletId, 'bonus', 0, (int)$totalBuyerPoints, "Points fidélité sur achat #$orderId", 'order', $orderId]);
+                        }
+
+                        // Tier check
+                        $stmtSum = $db->prepare('SELECT total_points FROM wallets WHERE id = ?');
+                        $stmtSum->execute([$walletId]);
+                        $newTotal = (int)$stmtSum->fetchColumn();
+
+                        $tiers = $db->query('SELECT name, min_points FROM loyalty_tiers ORDER BY min_points DESC')->fetchAll();
+                        $newTier = 'bronze';
+                        foreach ($tiers as $t) {
+                            if ($newTotal >= (int)$t['min_points']) { $newTier = $t['name']; break; }
+                        }
+                        $db->prepare('UPDATE wallets SET tier = ? WHERE id = ?')->execute([$newTier, $walletId]);
+
+                        if (!$wasInTransaction) $db->commit();
+
+                        $notifMsg = "Vous avez gagné " . ($totalBuyerPoints > 0 ? "$totalBuyerPoints points" : "") .
+                                   ($totalBuyerPoints > 0 && $cashbackAmount > 0 ? " et " : "") .
+                                   ($cashbackAmount > 0 ? "$cashbackAmount FCFA de cashback" : "") . " !";
+                        sendNotification($buyerId, "Fidélité récompensée 🎉", $notifMsg, 'order', $orderId);
+                    } catch (Exception $e) {
+                        if (!$wasInTransaction) $db->rollBack();
+                        throw $e;
                     }
-                    if ($totalBuyerPoints > 0) {
-                        $stmtTrans->execute([$walletId, 'bonus', 0, $totalBuyerPoints, "Points fidélité sur achat #$orderId", 'order', $orderId]);
-                    }
-
-                    // Tier check
-                    $stmtSum = $db->prepare('SELECT total_points FROM wallets WHERE id = ?');
-                    $stmtSum->execute([$walletId]);
-                    $newTotal = (int)$stmtSum->fetchColumn();
-                    $tiers = $db->query('SELECT name, min_points FROM loyalty_tiers ORDER BY min_points DESC')->fetchAll();
-                    $newTier = 'bronze';
-                    foreach ($tiers as $t) {
-                        if ($newTotal >= (int)$t['min_points']) { $newTier = $t['name']; break; }
-                    }
-                    $db->prepare('UPDATE wallets SET tier = ? WHERE id = ?')->execute([$newTier, $walletId]);
-
-                    $db->commit();
-
-                    $notifMsg = "Vous avez gagné " . ($totalBuyerPoints > 0 ? "$totalBuyerPoints points" : "") .
-                               ($totalBuyerPoints > 0 && $cashbackAmount > 0 ? " et " : "") .
-                               ($cashbackAmount > 0 ? "$cashbackAmount FCFA de cashback" : "") . " !";
-                    sendNotification($buyerId, "Fidélité récompensée 🎉", $notifMsg, 'order', $orderId);
                 }
             }
         }
+
+        // 4. Award points to Vendors (Fixed 5 points per successful sale)
+        $stmtV = $db->prepare('
+            SELECT DISTINCT s.vendor_id
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            JOIN shops s ON p.shop_id = s.id
+            WHERE oi.order_id = ?
+        ');
+        $stmtV->execute([$orderId]);
+        $vendorIds = $stmtV->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($vendorIds as $vId) {
+            $vId = (int)$vId;
+            if ($vId > 0) {
+                // Check if vendor already awarded points for this order
+                $stmtCheckV = $db->prepare("
+                    SELECT wt.id FROM wallet_transactions wt
+                    JOIN wallets w ON wt.wallet_id = w.id
+                    WHERE w.user_id = ? AND wt.reference_type = 'order' AND wt.reference_id = ? AND wt.type = 'bonus'
+                    LIMIT 1
+                ");
+                $stmtCheckV->execute([$vId, $orderId]);
+                if (!$stmtCheckV->fetch()) {
+                    awardPoints($db, $vId, 5, "Vente réussie #$orderId", 'order', $orderId);
+                    sendNotification($vId, "Point fidélité gagné 🎉", "Vous avez gagné 5 points de fidélité pour la vente #$orderId.", 'order', $orderId);
+                }
+            }
+        }
+
+    } catch (Exception $e) {
+        error_log("handleOrderDelivery error (#$orderId): " . $e->getMessage());
+    }
+}
 
         // 4. Award points to Vendors (Fixed 5 points per successful sale)
         $stmtV = $db->prepare('
