@@ -98,11 +98,35 @@ try {
             $stmt->execute([$orderId]);
             $order = $stmt->fetch();
             if (!$order) json(404, ['error' => 'Commande introuvable']);
-            if ((int)$order['user_id'] !== $userId) json(403, ['error' => 'Non autorisé - cette commande ne vous appartient pas']);
-            if ($order['status'] !== 'delivering') json(400, ['error' => "La commande doit être en cours de livraison (statut actuel: {$order['status']})"]);
+
+            // On autorise maintenant le client OU le vendeur à confirmer la réception si le statut est 'delivering'
+            $isOwner = (int)$order['user_id'] === $userId;
+
+            // Vérifier si c'est le vendeur
+            $isVendor = false;
+            $stmtV = $db->prepare('
+                SELECT oi.id FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                JOIN shops s ON p.shop_id = s.id
+                WHERE oi.order_id = ? AND s.vendor_id = ?
+                LIMIT 1
+            ');
+            $stmtV->execute([$orderId, $userId]);
+            if ($stmtV->fetch()) $isVendor = true;
+
+            if (!$isOwner && !$isVendor) {
+                json(403, ['error' => 'Non autorisé']);
+            }
+
+            if ($order['status'] !== 'delivering') {
+                json(400, ['error' => "La commande doit être en cours de livraison (statut actuel: {$order['status']})"]);
+            }
+
             $stmt = $db->prepare("UPDATE orders SET status = 'delivered' WHERE id = ?");
             $stmt->execute([$orderId]);
-            sendNotification((int)$order['user_id'], "Livraison confirmée", "Vous avez confirmé la réception de la commande.", 'order', $orderId);
+
+            // Notifier les deux parties
+            sendNotification((int)$order['user_id'], "Livraison confirmée", "La réception de la commande #$orderId a été confirmée.", 'order', $orderId);
 
             // Award loyalty points and update sales on successful delivery
             handleOrderDelivery($db, $orderId);
