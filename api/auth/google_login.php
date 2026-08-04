@@ -40,8 +40,8 @@ try {
     if (!$user) {
         // 3. Créer l'utilisateur s'il n'existe pas
         $referralCode = strtoupper(substr(md5($email . time()), 0, 8));
-        $stmt = $db->prepare('INSERT INTO users (name, email, role, avatar, referral_code, password) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$name, $email, 'buyer', $avatar, $referralCode, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)]);
+        $stmt = $db->prepare('INSERT INTO users (name, email, role, avatar, referral_code, password, phone) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$name, $email, 'buyer', $avatar, $referralCode, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT), '']);
         $userId = (int)$db->lastInsertId();
 
         // Re-fetch
