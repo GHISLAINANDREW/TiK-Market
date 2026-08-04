@@ -371,15 +371,19 @@ fun PollingManager(appState: AppState) {
         if (!appState.isLoggedIn) return@LaunchedEffect
         while (true) {
             try {
-                // Poll Messages
-                val msgCount = ApiClient.fetchUnreadCount()
-                if (msgCount > previousUnreadMessages) {
-                    NotificationUtils.showNotification("Nouveau message", "Vous avez reçu un message")
+                // 1. Poll Messages
+                try {
+                    val msgCount = ApiClient.fetchUnreadCount()
+                    if (msgCount > previousUnreadMessages) {
+                        NotificationUtils.showNotification("Nouveau message", "Vous avez reçu un message")
+                    }
+                    previousUnreadMessages = msgCount
+                    appState.unreadMessages = msgCount
+                } catch (e: Exception) {
+                    println("[Polling] Message error: ${e.message}")
                 }
-                previousUnreadMessages = msgCount
-                appState.unreadMessages = msgCount
 
-                // Poll Wallet/Points
+                // 2. Poll Wallet/Points (Always do this)
                 try {
                     val w = ApiClient.fetchWallet()
                     if (w != null) {
@@ -388,25 +392,48 @@ fun PollingManager(appState: AppState) {
                         appState.walletBalance = w.balance
                         appState.walletTier = w.tier
                     }
-                } catch (_: Exception) {}
-
-                updateUnreadBadge(msgCount + appState.unreadNotifications)
-
-                // Poll Notifications
-                val notifications = ApiClient.fetchNotifications()
-                val unreadNotifs = notifications.count { !it.isRead }
-                if (unreadNotifs > previousUnreadNotifications) {
-                    notifications.filter { !it.isRead }.forEach { notif ->
-                        NotificationUtils.showNotification(notif.title, notif.message)
-                    }
+                } catch (e: Exception) {
+                    println("[Polling] Wallet error: ${e.message}")
                 }
-                previousUnreadNotifications = unreadNotifs
-                appState.unreadNotifications = unreadNotifs
+
+                // 3. Update Global Badge
+                updateUnreadBadge(appState.unreadMessages + appState.unreadNotifications)
+
+                // 4. Poll Notifications
+                try {
+                    val notifications = ApiClient.fetchNotifications()
+                    val unreadNotifs = notifications.count { !it.isRead }
+                    if (unreadNotifs > previousUnreadNotifications) {
+                        notifications.filter { !it.isRead }.forEach { notif ->
+                            NotificationUtils.showNotification(notif.title, notif.message)
+                        }
+                    }
+                    previousUnreadNotifications = unreadNotifs
+                    appState.unreadNotifications = unreadNotifs
+                } catch (e: Exception) {
+                    println("[Polling] Notif error: ${e.message}")
+                }
                 
-                delay(3000) // Reduced from 15s to 3s for better interactivity
-            } catch (_: Exception) {
+                delay(4000) // Slightly increased to be gentle on server
+            } catch (e: Exception) {
+                println("[Polling] Global loop error: ${e.message}")
                 delay(10000)
             }
+        }
+    }
+
+    // Force refresh on screen change to important screens
+    LaunchedEffect(appState.currentScreen) {
+        if (appState.isLoggedIn && (appState.currentScreen == NavScreen.Profile || appState.currentScreen == NavScreen.Loyalty)) {
+            try {
+                val w = ApiClient.fetchWallet()
+                if (w != null) {
+                    appState.currentPoints = w.currentPoints
+                    appState.totalPoints = w.totalPoints
+                    appState.walletBalance = w.balance
+                    appState.walletTier = w.tier
+                }
+            } catch (_: Exception) {}
         }
     }
 }
