@@ -15,4 +15,5 @@ EXPOSE 8080
 
 # Commande pour lancer le serveur PHP
 # On utilise la variable d'environnement $PORT fournie par Render
-CMD php -S 0.0.0.0:$PORT router.php
+# -c php.ini : augmente post_max_size (25M) pour les uploads média en base64
+CMD php -c /app/php.ini -S 0.0.0.0:$PORT router.php
