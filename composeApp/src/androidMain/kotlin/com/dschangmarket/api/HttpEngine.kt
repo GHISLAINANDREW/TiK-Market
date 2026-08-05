@@ -28,6 +28,15 @@ actual object HttpEngine {
 
         // Set headers
         headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
+        
+        // Add a standard User-Agent to avoid being blocked by Vercel/Cloudflare security
+        if (!headers.containsKey("User-Agent")) {
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+        }
+        // Vercel sometimes requires a Referer for its firewall
+        if (!headers.containsKey("Referer")) {
+            connection.setRequestProperty("Referer", "https://dschang-marke.vercel.app/")
+        }
 
         // Write body for POST/PUT
         if (body != null) {
