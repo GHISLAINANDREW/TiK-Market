@@ -357,7 +357,7 @@ object ApiClient {
             if (isLoggingEnabled) println("[API] $method $url" + (body?.let { " | Body: $it" } ?: ""))
             try {
                 val response = HttpEngine.request(method, url, buildHeaders(), body)
-                if (isLoggingEnabled) println("[API] Response: ${response.take(200)}...")
+                if (isLoggingEnabled) println("[API] Success on ${_baseUrls[index]}")
                 _activeBaseUrlIndex = index
                 return response
             } catch (e: Exception) {

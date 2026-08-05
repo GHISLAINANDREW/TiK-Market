@@ -113,7 +113,15 @@ fun HomeScreen(
     var textStoryContent by remember { mutableStateOf("") }
     var textStoryColor by remember { mutableStateOf(Green) }
 
-    val pickMedia = rememberImagePickerLauncher { result ->
+    val pickPhoto = rememberMediaPickerLauncher(allowVideo = false) { result ->
+        if (result != null) {
+            pendingStoryDataUrl = result.dataUrl
+            pendingStoryFileName = result.fileName
+            showCaptionDialog = true
+        }
+    }
+
+    val pickVideo = rememberMediaPickerLauncher(allowVideo = true, videoOnly = true) { result ->
         if (result != null) {
             pendingStoryDataUrl = result.dataUrl
             pendingStoryFileName = result.fileName
@@ -719,21 +727,33 @@ fun HomeScreen(
                 title = { Text("Ajouter une story") },
                 text = { Text("Choisissez le type de story à publier.") },
                 confirmButton = {
-                    TextButton(onClick = { 
-                        showStoryTypeDialog = false
-                        pickMedia() 
-                    }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Photo / Vidéo")
+                    Column {
+                        TextButton(onClick = {
+                            showStoryTypeDialog = false
+                            pickPhoto()
+                        }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Photo")
+                            }
+                        }
+                        TextButton(onClick = {
+                            showStoryTypeDialog = false
+                            pickVideo()
+                        }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Vidéo")
+                            }
                         }
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { 
+                    TextButton(onClick = {
                         showStoryTypeDialog = false
-                        showTextStoryDialog = true 
+                        showTextStoryDialog = true
                     }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.TextSnippet, null, Modifier.size(18.dp))

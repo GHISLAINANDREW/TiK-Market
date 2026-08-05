@@ -171,19 +171,24 @@ private fun getFileName(context: Context, uri: Uri): String? {
 }
 
 /**
- * Android actual: uses the system Photo Picker (PickVisualMedia) which shows
- * both images and videos in a single gallery. GetContent/OpenDocument only
- * accept one MIME type and many devices hide videos from the picker.
+ * Android actual: opens a picker showing only the requested media type.
+ *
+ * IMPORTANT: we deliberately use GetContent with a SINGLE MIME type
+ * (image MIME or video MIME) instead of PickVisualMedia.ImageAndVideo,
+ * because on Android < 13 and many OEM ROMs (Tecno, Infinix, common in
+ * Cameroon) the combined picker only shows photos and hides videos.
+ * Launching separate pickers per type guarantees videos are selectable.
  */
 @Composable
 actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
+    videoOnly: Boolean,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             scope.launch {
                 try {
@@ -216,10 +221,15 @@ actual fun rememberMediaPickerLauncher(
             onResult(null)
         }
     }
-    val visualMediaType =
-        if (allowVideo) ActivityResultContracts.PickVisualMedia.ImageAndVideo
-        else ActivityResultContracts.PickVisualMedia.ImageOnly
-    return remember { { launcher.launch(androidx.activity.result.PickVisualMediaRequest(visualMediaType)) } }
+    return remember {
+        {
+            if (videoOnly) {
+                launcher.launch("video/*")
+            } else {
+                launcher.launch("image/*")
+            }
+        }
+    }
 }
 
 @Composable
@@ -247,13 +257,13 @@ actual suspend fun fetchImageAsDataUrl(url: String): String? {
             val connection = URL(safeUrl).openConnection() as HttpURLConnection
             connection.connectTimeout = 10000
             connection.readTimeout = 10000
-            
+
             if (connection.responseCode != 200) return@withContext null
 
             val contentType = connection.contentType ?: "image/jpeg"
             val bytes = connection.inputStream.use { it.readBytes() }
             val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-            
+
             "data:$contentType;base64,$base64"
         } catch (e: Exception) {
             android.util.Log.e("ImageLoader", "Error fetching $url", e)
@@ -324,8 +334,8 @@ actual fun decodeDataUrlToImageBitmap(dataUrl: String): ImageBitmap? {
     return try {
         if (!dataUrl.startsWith("data:image")) return null
         val base64 = dataUrl.substringAfter(",")
-        val bytes = Base64.decode(base64, Base64.DEFAULT)
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         bitmap?.asImageBitmap()
     } catch (_: Exception) {
         null

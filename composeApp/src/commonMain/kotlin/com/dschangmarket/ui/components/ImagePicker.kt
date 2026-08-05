@@ -67,6 +67,7 @@ expect fun rememberPickFileLauncher(
 expect fun rememberMediaPickerLauncher(
     allowVideo: Boolean = false,
     maxDurationSeconds: Int = 0,
+    videoOnly: Boolean = false,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit
 
@@ -106,10 +107,7 @@ fun MediaPicker(
         }
     }
 
-    val launchPicker = rememberMediaPickerLauncher(
-        allowVideo = allowVideo,
-        maxDurationSeconds = maxDurationSeconds
-    ) { result ->
+    fun handleResult(result: MediaPickResult?) {
         isLoading = false
         if (result != null) {
             if (maxDurationSeconds > 0 && result.durationSeconds > maxDurationSeconds) {
@@ -122,50 +120,101 @@ fun MediaPicker(
         }
     }
 
-    Surface(
-        onClick = {
-            isLoading = true
-            errorMessage = null
-            launchPicker()
-        },
-        modifier = modifier.fillMaxWidth().height(200.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = GreenSurface
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(color = Green, modifier = Modifier.size(32.dp))
+    // Photo and video pickers launched separately with a single MIME each:
+    // on many Android devices (Android < 13 / Tecno / Infinix) a combined
+    // "images and videos" picker only shows photos, so we force one type
+    // per tile to guarantee videos are selectable.
+    val launchPhoto = rememberMediaPickerLauncher(
+        allowVideo = false,
+        maxDurationSeconds = maxDurationSeconds
+    ) { result -> handleResult(result) }
+
+    val launchVideo = rememberMediaPickerLauncher(
+        allowVideo = true,
+        maxDurationSeconds = maxDurationSeconds,
+        videoOnly = true
+    ) { result -> handleResult(result) }
+
+    val pickerContent: @Composable () -> Unit = {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(color = Green, modifier = Modifier.size(32.dp))
+            }
+            isVideoPreview -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(48.dp), tint = Green)
+                    Text("Vidéo sélectionnée", color = Green, fontWeight = FontWeight.Bold)
+                    Text("Touchez pour changer", fontSize = 11.sp, color = Color.Gray)
                 }
-                isVideoPreview -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(48.dp), tint = Green)
-                        Text("Vidéo sélectionnée", color = Green, fontWeight = FontWeight.Bold)
-                        Text("Touchez pour changer", fontSize = 11.sp, color = Color.Gray)
-                    }
+            }
+            previewBitmap != null -> {
+                Image(
+                    bitmap = previewBitmap!!,
+                    contentDescription = "Aperçu",
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            errorMessage != null -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚠️", fontSize = 32.sp)
+                    Text(errorMessage!!, fontSize = 12.sp, color = MaterialTheme.colorScheme.error, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 8.dp))
                 }
-                previewBitmap != null -> {
-                    Image(
-                        bitmap = previewBitmap!!,
-                        contentDescription = "Aperçu",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+            }
+            else -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(40.dp), tint = Green.copy(alpha = 0.5f))
+                    Spacer(Modifier.height(8.dp))
+                    Text(label, fontSize = 14.sp, color = Green, fontWeight = FontWeight.Medium)
+                    Text("Touchez pour sélectionner ${if(allowVideo) "photo ou vidéo" else "une photo"}", fontSize = 11.sp, color = Color.Gray)
                 }
-                errorMessage != null -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("⚠️", fontSize = 32.sp)
-                        Text(errorMessage!!, fontSize = 12.sp, color = MaterialTheme.colorScheme.error, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 8.dp))
-                    }
+            }
+        }
+    }
+
+    if (allowVideo && !isVideoPreview && previewBitmap == null && errorMessage == null) {
+        // Two tiles: Photo and Vidéo, each with its own dedicated picker.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(
+                onClick = { isLoading = true; errorMessage = null; launchPhoto() },
+                modifier = modifier.weight(1f).height(140.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = GreenSurface
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(36.dp), tint = Green.copy(alpha = 0.6f))
+                    Spacer(Modifier.height(6.dp))
+                    Text("Photo", fontSize = 14.sp, color = Green, fontWeight = FontWeight.Medium)
+                    Text("Touchez pour choisir", fontSize = 10.sp, color = Color.Gray)
                 }
-                else -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(40.dp), tint = Green.copy(alpha = 0.5f))
-                        Spacer(Modifier.height(8.dp))
-                        Text(label, fontSize = 14.sp, color = Green, fontWeight = FontWeight.Medium)
-                        Text("Touchez pour sélectionner ${if(allowVideo) "photo ou vidéo" else "une photo"}", fontSize = 11.sp, color = Color.Gray)
-                    }
+            }
+            Surface(
+                onClick = { isLoading = true; errorMessage = null; launchVideo() },
+                modifier = modifier.weight(1f).height(140.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = GreenSurface
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(36.dp), tint = Green.copy(alpha = 0.6f))
+                    Spacer(Modifier.height(6.dp))
+                    Text("Vidéo", fontSize = 14.sp, color = Green, fontWeight = FontWeight.Medium)
+                    Text("Touchez pour choisir", fontSize = 10.sp, color = Color.Gray)
                 }
+            }
+        }
+    } else {
+        Surface(
+            onClick = {
+                isLoading = true
+                errorMessage = null
+                if (allowVideo && !isVideoPreview) launchPhoto() else if (allowVideo) launchVideo() else launchPhoto()
+            },
+            modifier = modifier.fillMaxWidth().height(200.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = GreenSurface
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                pickerContent()
             }
         }
     }
