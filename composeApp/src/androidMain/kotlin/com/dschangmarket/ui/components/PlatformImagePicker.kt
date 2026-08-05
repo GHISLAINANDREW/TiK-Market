@@ -13,27 +13,24 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.dschangmarket.utils.VideoCompressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
 /**
  * Converts a content:// URI to a base64 data URL string.
- * If getType returns null, detects MIME from file extension.
+ * Images are automatically downscaled and compressed (JPEG) to keep the
+ * base64 payload small enough for the upload endpoint. Videos are passed
+ * through as-is (they are compressed separately by VideoCompressor).
  */
 private suspend fun contentUriToDataUrl(context: Context, uri: Uri): String? {
     return withContext(Dispatchers.IO) {
         try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            val baos = ByteArrayOutputStream()
-            inputStream.copyTo(baos)
-            inputStream.close()
-            val bytes = baos.toByteArray()
-            val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-            // Try to get MIME from ContentResolver, fall back to extension-based detection
             var mimeType = context.contentResolver.getType(uri)
             if (mimeType == null) {
                 val fileName = getFileName(context, uri)
@@ -61,7 +58,97 @@ private suspend fun contentUriToDataUrl(context: Context, uri: Uri): String? {
                     "mp3" to "audio/mpeg",
                 )[ext] ?: "application/octet-stream"
             }
+
+            // Compress images (photos from phones are 3-8MB; base64 adds +33%).
+            if (mimeType.startsWith("image/")) {
+                val compressed = compressImage(context, uri)
+                if (compressed != null) return@withContext "data:image/jpeg;base64,$compressed"
+            }
+
+            // Non-image: read raw bytes.
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
+            val baos = ByteArrayOutputStream()
+            inputStream.copyTo(baos)
+            inputStream.close()
+            val bytes = baos.toByteArray()
+            val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
             "data:$mimeType;base64,$base64"
+        } catch (_: Exception) {
+            null
+        }
+    }
+}
+
+/**
+ * Downscales and compresses an image to a small JPEG data payload.
+ * Max dimension 1600px, JPEG quality 80 -> typically 100-400 KB.
+ */
+private fun compressImage(context: Context, uri: Uri): String? {
+    return try {
+        val resolver = context.contentResolver
+        // Read bounds first to avoid loading a huge bitmap into memory.
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        val srcW = bounds.outWidth
+        val srcH = bounds.outHeight
+        if (srcW <= 0 || srcH <= 0) return null
+
+        val maxDim = 1600
+        var sampleSize = 1
+        while (srcW / sampleSize > maxDim * 2 || srcH / sampleSize > maxDim * 2) {
+            sampleSize *= 2
+        }
+
+        val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) } ?: return null
+
+        // Scale down to max dimension.
+        var outW = bitmap.width
+        var outH = bitmap.height
+        if (outW > maxDim || outH > maxDim) {
+            val scale = maxDim.toFloat() / maxOf(outW, outH)
+            outW = (outW * scale).toInt()
+            outH = (outH * scale).toInt()
+        }
+        val scaled = if (outW != bitmap.width || outH != bitmap.height) {
+            android.graphics.Bitmap.createScaledBitmap(bitmap, outW, outH, true)
+        } else {
+            bitmap
+        }
+
+        val baos = ByteArrayOutputStream()
+        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos)
+        if (scaled != bitmap) scaled.recycle()
+        bitmap.recycle()
+        Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * Compresses a video to a smaller H.264 file and returns it as a base64 data URL.
+ * Falls back to reading the raw bytes if compression fails, so uploads still work.
+ */
+private suspend fun compressVideoToDataUrl(context: Context, uri: Uri): String? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val cacheDir = context.cacheDir
+            val outputFile = File.createTempFile("compressed_", ".mp4", cacheDir)
+            val ok = VideoCompressor.compress(context, uri, outputFile)
+            if (ok && outputFile.exists() && outputFile.length() > 0) {
+                val bytes = outputFile.readBytes()
+                outputFile.delete()
+                val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                "data:video/mp4;base64,$base64"
+            } else {
+                outputFile.delete()
+                // Fallback: read raw bytes.
+                val raw = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@withContext null
+                val mime = context.contentResolver.getType(uri) ?: "video/mp4"
+                val base64 = Base64.encodeToString(raw, Base64.NO_WRAP)
+                "data:$mime;base64,$base64"
+            }
         } catch (_: Exception) {
             null
         }
@@ -100,18 +187,23 @@ actual fun rememberMediaPickerLauncher(
         if (uri != null) {
             scope.launch {
                 try {
-                    val dataUrl = contentUriToDataUrl(context, uri)
+                    val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+                    val fileName = getFileName(context, uri) ?: "file"
+                    var duration = 0.0
+
+                    // Compress videos before base64 encoding so the upload succeeds.
+                    val dataUrl = if (mimeType.startsWith("video/")) {
+                        val retriever = android.media.MediaMetadataRetriever()
+                        retriever.setDataSource(context, uri)
+                        val time = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        duration = (time?.toLong() ?: 0L) / 1000.0
+                        retriever.release()
+                        compressVideoToDataUrl(context, uri)
+                    } else {
+                        contentUriToDataUrl(context, uri)
+                    }
+
                     if (dataUrl != null) {
-                        val fileName = getFileName(context, uri) ?: "file"
-                        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-                        var duration = 0.0
-                        if (mimeType.startsWith("video/")) {
-                            val retriever = android.media.MediaMetadataRetriever()
-                            retriever.setDataSource(context, uri)
-                            val time = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
-                            duration = (time?.toLong() ?: 0L) / 1000.0
-                            retriever.release()
-                        }
                         onResult(MediaPickResult(dataUrl, fileName, mimeType, duration))
                     } else {
                         onResult(null)
