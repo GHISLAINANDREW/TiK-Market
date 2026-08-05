@@ -82,6 +82,7 @@ private external fun getJsonPropertyDouble(json: String, key: String): Double
 actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
+    videoOnly: Boolean,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     // IMPORTANT: input.click() doit être appelé de manière SYNCHRONE dans le
@@ -90,7 +91,7 @@ actual fun rememberMediaPickerLauncher(
     // directement, sans passer par une coroutine.
     return {
         nativePickMedia(
-            allowVideo = allowVideo,
+            allowVideo = allowVideo || videoOnly,
             onResult = { json ->
                 val dataUrl = getJsonProperty(json, "dataUrl")
                 if (dataUrl == null) {

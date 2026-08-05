@@ -19,6 +19,7 @@ composeApp/build/processedResources/
 composeApp/build/intermediates/
 composeApp/build/compileSync/
 composeApp/build/compose/
+composeApp/build/*.compiler.options
 composeApp/build/web/*/
 composeApp/build/web/*.*
 composeApp/build/kotlin-webpack/

@@ -20,10 +20,10 @@ actual object HttpEngine {
     ): String = withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = method.uppercase()
-        connection.connectTimeout = 20000
-        // 60s read timeout: media uploads (base64 images/videos) can be large
-        // and slow on mobile networks (Orange etc.), 15s caused silent failures.
+        connection.connectTimeout = 8000 
         connection.readTimeout = 60000
+        connection.instanceFollowRedirects = true
+        connection.useCaches = false
         connection.doInput = true
 
         // Set headers
