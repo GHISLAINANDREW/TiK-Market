@@ -274,7 +274,8 @@ object ApiClient {
      * automatiquement les URLs de secours (domaine personnalisé / proxy Cloudflare).
      */
     private var _baseUrls: List<String> = listOf(
-        "https://dschang-market.onrender.com"
+        "https://dschang-market.onrender.com",
+        "https://dschang-marke.vercel.app/api"
     )
     private var _activeBaseUrlIndex = 0
 
