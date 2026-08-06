@@ -275,7 +275,8 @@ object ApiClient {
      */
     private var _baseUrls: List<String> = listOf(
         "https://dschang-market.onrender.com",
-        "https://dschang-marke.vercel.app/api"
+        "https://dschang-marke.vercel.app/api",
+        "https://dschang-market-proxy.ghislainandrew.workers.dev"
     )
     private var _activeBaseUrlIndex = 0
 
