@@ -20,7 +20,9 @@ actual object HttpEngine {
     ): String = withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = method.uppercase()
-        connection.connectTimeout = 8000 
+        // Render free tier "Cold Start" can take up to 30 seconds.
+        // We must wait enough on the first attempt before falling back.
+        connection.connectTimeout = 30000
         connection.readTimeout = 60000
         connection.instanceFollowRedirects = true
         connection.useCaches = false
@@ -29,13 +31,9 @@ actual object HttpEngine {
         // Set headers
         headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
         
-        // Add a standard User-Agent to avoid being blocked by Vercel/Cloudflare security
+        // Add a standard User-Agent
         if (!headers.containsKey("User-Agent")) {
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-        }
-        // Vercel sometimes requires a Referer for its firewall
-        if (!headers.containsKey("Referer")) {
-            connection.setRequestProperty("Referer", "https://dschang-marke.vercel.app/")
+            connection.setRequestProperty("User-Agent", "DschangMarket/1.0 Android")
         }
 
         // Write body for POST/PUT
