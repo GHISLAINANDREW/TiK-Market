@@ -31,9 +31,11 @@ actual object HttpEngine {
         // Set headers
         headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
         
-        // Add a standard User-Agent
+        connection.setRequestProperty("Accept", "application/json")
+        connection.setRequestProperty("X-Requested-With", "XMLHttpRequest")
+        
         if (!headers.containsKey("User-Agent")) {
-            connection.setRequestProperty("User-Agent", "DschangMarket/1.0 Android")
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
         }
 
         // Write body for POST/PUT
