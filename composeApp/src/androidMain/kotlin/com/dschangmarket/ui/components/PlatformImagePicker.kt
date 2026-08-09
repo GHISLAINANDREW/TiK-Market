@@ -247,18 +247,34 @@ actual fun rememberImagePickerLauncher(
 actual suspend fun fetchImageAsDataUrl(url: String): String? {
     return withContext(Dispatchers.IO) {
         try {
-            // Force HTTPS for tunnel domains
-            val safeUrl = if (url.startsWith("http://") && (url.contains("loca.lt") || url.contains("ngrok") || url.contains("cloudflare"))) {
+            // Force HTTPS and use proxy if URL points to the blocked Render domain
+            val renderBase = "https://dschang-market.onrender.com"
+            val proxyBase = "https://dschang-market-proxy.gtankou.workers.dev"
+            
+            var safeUrl = if (url.startsWith("http://") && (url.contains("loca.lt") || url.contains("ngrok") || url.contains("cloudflare"))) {
                 url.replace("http://", "https://")
             } else {
                 url
             }
 
-            val connection = URL(safeUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
+            // Redirect Render and Cloudinary images through the Cloudflare proxy to bypass Orange Cameroon block
+            if (safeUrl.contains("onrender.com")) {
+                safeUrl = safeUrl.replace(renderBase, proxyBase)
+            } else if (safeUrl.contains("res.cloudinary.com")) {
+                // Proxy Cloudinary images too if Orange blocks res.cloudinary.com
+                safeUrl = "$proxyBase/proxy?url=" + java.net.URLEncoder.encode(safeUrl, "UTF-8")
+            }
 
-            if (connection.responseCode != 200) return@withContext null
+            val connection = URL(safeUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+            connection.setRequestProperty("Accept", "image/*,*/*")
+
+            if (connection.responseCode != 200) {
+                android.util.Log.e("ImageLoader", "HTTP ${connection.responseCode} for $safeUrl")
+                return@withContext null
+            }
 
             val contentType = connection.contentType ?: "image/jpeg"
             val bytes = connection.inputStream.use { it.readBytes() }
