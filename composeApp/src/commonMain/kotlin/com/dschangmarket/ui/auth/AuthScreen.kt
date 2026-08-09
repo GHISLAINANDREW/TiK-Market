@@ -40,6 +40,7 @@ data class AuthFormState(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
+    val location: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val role: String = "buyer",
@@ -230,12 +231,16 @@ fun AuthScreen(
                                     textColor = TextPrimary,
                                     borderColor = DividerGray,
                                     onClick = {
+                                        if (form.location.isBlank()) {
+                                            form = form.copy(error = "Veuillez choisir votre ville avant de continuer")
+                                            return@SocialButton
+                                        }
                                         scope.launch {
                                             form = form.copy(isLoading = true, error = null)
                                             val data = googleAuthManager.signIn()
                                             if (data?.idToken != null) {
                                                 try {
-                                                    val result = ApiClient.googleLogin(data.idToken)
+                                                    val result = ApiClient.googleLogin(data.idToken, form.location)
                                                     onLoginSuccess(result.token, result.user.name, result.user.role)
                                                 } catch (e: Exception) {
                                                     form = form.copy(error = e.message ?: "Échec de la connexion au serveur")
@@ -297,6 +302,7 @@ private fun EmailAuthStep(
     fun validate(): Boolean {
         var valid = true
         if (!isLogin) {
+            if (form.location.isBlank()) { emailError = "Ville requise"; valid = false }
             if (form.name.isBlank()) { nameError = "Nom requis"; valid = false } else nameError = null
             if (form.phone.isBlank()) { phoneError = "Téléphone requis"; valid = false }
             else if (form.phone.replace(Regex("[^0-9]"), "").length < 8) { phoneError = "Numéro invalide (8+ chiffres)"; valid = false }
@@ -326,6 +332,57 @@ private fun EmailAuthStep(
         )
 
         Spacer(Modifier.height(4.dp))
+
+        // City Selector (Visible for both Login and Register to ensure location is set)
+        var showCityPicker by remember { mutableStateOf(false) }
+        val cities = listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Autre")
+        
+        OutlinedCard(
+            onClick = { showCityPicker = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(CardShapeSmall),
+            border = BorderStroke(1.dp, if (form.location.isBlank()) RedAccent.copy(alpha = 0.5f) else DividerGray)
+        ) {
+            Row(
+                Modifier.padding(12.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, null, tint = if (form.location.isBlank()) RedAccent else Green, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (form.location.isBlank()) "Choisir votre ville *" else "Ville : ${form.location}",
+                        color = if (form.location.isBlank()) RedAccent else TextPrimary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary)
+            }
+        }
+
+        if (showCityPicker) {
+            AlertDialog(
+                onDismissRequest = { showCityPicker = false },
+                title = { Text("Sélectionnez votre ville") },
+                text = {
+                    Column {
+                        cities.forEach { city ->
+                            TextButton(
+                                onClick = { 
+                                    onFormChange(form.copy(location = city, error = null))
+                                    showCityPicker = false 
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(city, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth(), color = TextPrimary)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {}
+            )
+        }
 
         if (!isLogin) {
             LightTextField(

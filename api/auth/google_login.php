@@ -5,6 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') json(405, ['error' => 'Méthode non a
 
 $input = json_decode(file_get_contents('php://input'), true);
 $idToken = $input['id_token'] ?? '';
+$location = trim($input['location'] ?? '');
 
 if (!$idToken) json(400, ['error' => 'id_token requis']);
 
@@ -40,12 +41,12 @@ try {
     if (!$user) {
         // 3. Créer l'utilisateur s'il n'existe pas
         $referralCode = strtoupper(substr(md5($email . time()), 0, 8));
-        $stmt = $db->prepare('INSERT INTO users (name, email, role, avatar, referral_code, password, phone) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$name, $email, 'buyer', $avatar, $referralCode, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT), '']);
+        $stmt = $db->prepare('INSERT INTO users (name, email, role, avatar, referral_code, password, phone, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$name, $email, 'buyer', $avatar, $referralCode, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT), '', $location]);
         $userId = (int)$db->lastInsertId();
 
         // Re-fetch
-        $stmt = $db->prepare('SELECT id, name, email, phone, role, avatar, status FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT id, name, email, phone, role, avatar, status, location FROM users WHERE id = ?');
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
     }
@@ -63,9 +64,10 @@ try {
             'id' => (int)$user['id'],
             'name' => $user['name'],
             'email' => $user['email'],
-            'phone' => $user['phone'] ?? '',
+            'phone' => $user['phone'] ?: '',
             'role' => $user['role'],
-            'avatar' => $user['avatar'] ?? '',
+            'avatar' => $user['avatar'] ?: '',
+            'location' => $user['location'] ?: '',
         ]
     ]);
 

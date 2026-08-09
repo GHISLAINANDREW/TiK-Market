@@ -400,8 +400,11 @@ object ApiClient {
         return result
     }
 
-    suspend fun googleLogin(idToken: String): ApiAuthResponse {
-        val body = buildJsonObject { put("id_token", idToken) }.toString()
+    suspend fun googleLogin(idToken: String, location: String = ""): ApiAuthResponse {
+        val body = buildJsonObject { 
+            put("id_token", idToken) 
+            if (location.isNotBlank()) put("location", location)
+        }.toString()
         val result = safeRequest<ApiAuthResponse>("POST", Endpoints.GOOGLE_LOGIN, body)
         sessionToken = result.token
         sessionUser = result.user
