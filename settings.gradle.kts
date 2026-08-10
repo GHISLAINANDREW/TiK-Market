@@ -1,4 +1,4 @@
-rootProject.name = "DschangMarket"
+rootProject.name = "TiK-Market"
 
 pluginManagement {
     repositories {

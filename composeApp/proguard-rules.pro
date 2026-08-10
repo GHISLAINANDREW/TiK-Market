@@ -1,1 +1,1 @@
--keep class com.dschangmarket.** { *; }
+-keep class com.tik_market.** { *; }

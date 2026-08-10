@@ -79,18 +79,27 @@ try {
             json(200, ['shop' => $shop]);
         }
 
-        // Pas d'ID ni vendor_id → retourner les boutiques actives (non bannies)
-        $stmt = $db->query("
+        $location = $_GET['location'] ?? '';
+        $where = ["s.status = 'active'", "u.status = 'active'"];
+        $params = [];
+        if ($location !== '') {
+            $where[] = 's.location LIKE ?';
+            $params[] = "%$location%";
+        }
+        $whereClause = implode(' AND ', $where);
+
+        $stmt = $db->prepare("
             SELECT s.*,
                 COUNT(p.id) AS product_count,
                 COALESCE(SUM(p.total_sales), 0) AS total_sales
             FROM shops s
             JOIN users u ON s.vendor_id = u.id
             LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
-            WHERE s.status = 'active' AND u.status = 'active'
+            WHERE $whereClause
             GROUP BY s.id
             ORDER BY s.created_at DESC
         ");
+        $stmt->execute($params);
         $shops = $stmt->fetchAll();
 
         foreach ($shops as &$s) {

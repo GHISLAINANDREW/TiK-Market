@@ -108,6 +108,7 @@ try {
 
         $category = $_GET['category'] ?? '';
         $search = $_GET['search'] ?? '';
+        $location = $_GET['location'] ?? '';
         $shop_id = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
         $min_price = isset($_GET['min_price']) ? (float)$_GET['min_price'] : 0;
         $max_price = isset($_GET['max_price']) ? (float)$_GET['max_price'] : 0;
@@ -135,6 +136,10 @@ try {
             $where[] = '(p.title LIKE ? OR p.description LIKE ?)';
             $params[] = "%$search%";
             $params[] = "%$search%";
+        }
+        if ($location !== '') {
+            $where[] = 's.location LIKE ?';
+            $params[] = "%$location%";
         }
         if ($shop_id > 0) {
             $where[] = 'p.shop_id = ?';

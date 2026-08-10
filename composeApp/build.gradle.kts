@@ -45,7 +45,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.dschangmarket"
+    namespace = "com.tik_market"
     compileSdk = 34
 
     val versionProps = Properties()
@@ -59,7 +59,7 @@ android {
     val verName = versionProps.getProperty("VERSION_NAME") ?: "1.0.0"
 
     defaultConfig {
-        applicationId = "com.dschangmarket.app"
+        applicationId = "com.tik_market.app"
         minSdk = 24
         targetSdk = 34
         versionCode = verCode
@@ -112,4 +112,3 @@ android {
         }
     }
 }
-

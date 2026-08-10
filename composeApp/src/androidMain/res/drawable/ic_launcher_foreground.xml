@@ -3,7 +3,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Stylized Shopping Basket for Dschang Market -->
+    <!-- TiK-Market Official Logo -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M30,40 L78,40 L74,75 C73.5,80 70,82 65,82 L43,82 C38,82 34.5,80 34,75 L30,40 Z" />
@@ -13,8 +13,8 @@
     <path
         android:fillColor="#FF9800"
         android:pathData="M30,40 L78,40 L78,45 L30,45 Z" />
-    <!-- Letter D accent -->
+    <!-- Center Icon Accent -->
     <path
         android:fillColor="#2E7D32"
-        android:pathData="M48,55 L48,70 C48,70 58,70 58,62.5 C58,55 48,55 48,55 Z M51,58 L51,67 C53,67 55,65 55,62.5 C55,60 53,58 51,58 Z" />
+        android:pathData="M45,55 L63,55 L63,58 L56,58 L56,75 L52,75 L52,58 L45,58 Z" />
 </vector>

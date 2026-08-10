@@ -1,7 +1,7 @@
 {
-  "name": "Dschang Market",
-  "short_name": "DschangMarket",
-  "description": "Achetez et vendez des produits locaux au Cameroun",
+  "name": "TiK-Market",
+  "short_name": "TiK-Market",
+  "description": "Achetez et vendez sur TiK-Market, partout au Cameroun",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1B5E20",

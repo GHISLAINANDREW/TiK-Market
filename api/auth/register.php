@@ -91,7 +91,7 @@ try {
                                      SELECT id, 'bonus', 0, ?, ?, 'user', ? FROM wallets WHERE user_id = ?");
             $stmtLog->execute([$rewardPoints, "Parrainage de $name", $userId, $referrerId]);
 
-            sendNotification($referrerId, "Bonus Parrainage !", "Vous avez gagné $rewardPoints points car $name a rejoint DschangMarket via votre lien !", "promo", $userId);
+            sendNotification($referrerId, "Bonus Parrainage !", "Vous avez gagné $rewardPoints points car $name a rejoint TiK-Market via votre lien !", "promo", $userId);
         } catch (Exception $e) {}
     }
 
