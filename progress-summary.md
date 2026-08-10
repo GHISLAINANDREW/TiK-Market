@@ -48,7 +48,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - `cahier-de-charge.docx` – Cahier de charge (88,6 Ko)
 
 ## Blocked
-- **Secret `VERCEL_TOKEN` non ajouté** – Token `vcp_PLACEHOLDER` doit être ajouté comme secret GitHub
+- **Secret `VERCEL_TOKEN` non ajouté** – Token `vcp_***` doit être ajouté comme secret GitHub
 
 ## Key Decisions
 - Render remplace InfinityFree

@@ -9,9 +9,9 @@ $location = trim($input['location'] ?? '');
 
 if (!$idToken) json(400, ['error' => 'id_token requis']);
 
-// Config Google
-$google_client_id = "GOOGLE_CLIENT_ID_PLACEHOLDER";
-$google_client_secret = "GOOGLE_CLIENT_SECRET_PLACEHOLDER";
+// Config Google (via variables d'environnement — jamais en dur dans le code)
+$google_client_id = getenv('GOOGLE_CLIENT_ID') ?: '';
+$google_client_secret = getenv('GOOGLE_CLIENT_SECRET') ?: '';
 
 // 1. Vérifier le token avec Google
 $verifyUrl = "https://oauth2.googleapis.com/tokeninfo?id_token=" . $idToken;
