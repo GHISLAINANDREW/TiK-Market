@@ -63,8 +63,8 @@ try {
         $stmt = $db->prepare(
             'INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)'
         );
-        // Email unique bidon : phone@dschangmarket.local
-        $generatedEmail = $phone . '@dschangmarket.local';
+        // Email unique bidon : phone@tikmarket.local
+        $generatedEmail = $phone . '@tikmarket.local';
         $stmt->execute([$displayName, $generatedEmail, $phone, password_hash($phone, PASSWORD_BCRYPT), 'buyer']);
         $userId = (int)$db->lastInsertId();
         $isNew = true;

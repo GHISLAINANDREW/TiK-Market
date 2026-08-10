@@ -21,7 +21,7 @@ function getDB(): PDO {
     // Do NOT use "localhost" for remote databases — PHP interprets it as a Unix socket.
     $host = getenv('DB_HOST') ?: '127.0.0.1';
     $port = getenv('DB_PORT') ?: '3306';
-    $name = getenv('DB_NAME') ?: 'dschang_market';
+    $name = getenv('DB_NAME') ?: 'tik_market';
     $user = getenv('DB_USER') ?: 'root';
     $pass = getenv('DB_PASS') ?: '';
     $sslMode = getenv('DB_SSL') ?: '';
@@ -99,7 +99,7 @@ function json(int $code, $data): void {
     exit;
 }
 
-define('JWT_SECRET', getenv('JWT_SECRET') ?: 'dschang_market_jwt_secret_2026_change_in_production');
+define('JWT_SECRET', getenv('JWT_SECRET') ?: 'tik_market_jwt_secret_2026_change_in_production');
 define('JWT_EXPIRY', 86400 * 30); // 30 days
 
 function base64url_encode(string $data): string {

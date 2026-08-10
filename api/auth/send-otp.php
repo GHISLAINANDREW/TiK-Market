@@ -51,7 +51,7 @@ try {
     $expiresAt = date('Y-m-d H:i:s', time() + 300); // 5 minutes
 
     // Envoyer le SMS via Africa's Talking
-    sendSmsAfricaTalking($internationalPhone, "Votre code DschangMarket : $otpCode. Valable 5 minutes.");
+    sendSmsAfricaTalking($internationalPhone, "Votre code TiK-Market : $otpCode. Valable 5 minutes.");
 
     // Stocker le code en base (uniquement si le SMS a été envoyé avec succès)
     $stmt = $db->prepare(

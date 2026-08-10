@@ -2,9 +2,9 @@
 
 // ── Cache names ──
 const CACHES = {
-  STATIC: 'dschangmarket-static-v2',
-  MEDIA: 'dschangmarket-media-v2',
-  API: 'dschangmarket-api-v2'
+  STATIC: 'tik-market-static-v2',
+  MEDIA: 'tik-market-media-v2',
+  API: 'tik-market-api-v2'
 };
 
 const STATIC_URLS = [

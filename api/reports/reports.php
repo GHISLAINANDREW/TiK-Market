@@ -38,7 +38,7 @@ try {
         $stmt = $db->prepare('INSERT INTO reports (reporter_id, type, target_id, reason, comment) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$userId, $type, $target_id, $reason, $comment]);
 
-        json(201, ['message' => 'Signalement envoyé. Merci de contribuer à la qualité de DschangMarket.']);
+        json(201, ['message' => 'Signalement envoyé. Merci de contribuer à la qualité de TiK-Market.']);
     }
 
     json(405, ['error' => 'Méthode non autorisée']);
