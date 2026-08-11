@@ -13,7 +13,13 @@ try {
             $stmt = $db->prepare('
                 SELECT s.*,
                     COUNT(p.id) AS product_count,
-                    COALESCE(SUM(p.total_sales), 0) AS total_sales
+                    COALESCE(SUM(p.total_sales), 0) AS total_sales,
+                    COALESCE((
+                        SELECT AVG(r.rating)
+                        FROM reviews r
+                        JOIN products p2 ON r.product_id = p2.id
+                        WHERE p2.shop_id = s.id
+                    ), 0) AS rating
                 FROM shops s
                 LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
                 WHERE s.id = ?
@@ -25,7 +31,10 @@ try {
             if (!$shop) json(404, ['error' => 'Boutique non trouvée']);
 
             $stmt = $db->prepare('
-                SELECT id, title, price, compare_price, category, image_url, stock, unit, rating, total_reviews, total_sales, created_at
+                SELECT id, title, price, compare_price, category, image_url, stock, unit,
+                    COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = products.id), 0) as rating,
+                    (SELECT COUNT(*) FROM reviews WHERE product_id = products.id) as total_reviews,
+                    total_sales, created_at
                 FROM products
                 WHERE shop_id = ? AND is_active = 1
                 ORDER BY created_at DESC
@@ -49,7 +58,9 @@ try {
             $shop['vendor_id'] = (int)$shop['vendor_id'];
             $shop['product_count'] = (int)$shop['product_count'];
             $shop['total_sales'] = (int)$shop['total_sales'];
+            $shop['rating'] = (float)$shop['rating'];
             $shop['is_verified'] = (bool)$shop['is_verified'];
+            $shop['is_featured'] = (bool)($shop['is_featured'] ?? false);
             $shop['products'] = $products;
 
             json(200, ['shop' => $shop]);
@@ -59,7 +70,13 @@ try {
             $stmt = $db->prepare('
                 SELECT s.*,
                     COUNT(p.id) AS product_count,
-                    COALESCE(SUM(p.total_sales), 0) AS total_sales
+                    COALESCE(SUM(p.total_sales), 0) AS total_sales,
+                    COALESCE((
+                        SELECT AVG(r.rating)
+                        FROM reviews r
+                        JOIN products p2 ON r.product_id = p2.id
+                        WHERE p2.shop_id = s.id
+                    ), 0) AS rating
                 FROM shops s
                 LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
                 WHERE s.vendor_id = ?
@@ -74,7 +91,9 @@ try {
             $shop['vendor_id'] = (int)$shop['vendor_id'];
             $shop['product_count'] = (int)$shop['product_count'];
             $shop['total_sales'] = (int)$shop['total_sales'];
+            $shop['rating'] = (float)$shop['rating'];
             $shop['is_verified'] = (bool)$shop['is_verified'];
+            $shop['is_featured'] = (bool)($shop['is_featured'] ?? false);
 
             json(200, ['shop' => $shop]);
         }
@@ -91,13 +110,19 @@ try {
         $stmt = $db->prepare("
             SELECT s.*,
                 COUNT(p.id) AS product_count,
-                COALESCE(SUM(p.total_sales), 0) AS total_sales
+                COALESCE(SUM(p.total_sales), 0) AS total_sales,
+                COALESCE((
+                    SELECT AVG(r.rating)
+                    FROM reviews r
+                    JOIN products p2 ON r.product_id = p2.id
+                    WHERE p2.shop_id = s.id
+                ), 0) AS rating
             FROM shops s
             JOIN users u ON s.vendor_id = u.id
             LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
             WHERE $whereClause
             GROUP BY s.id
-            ORDER BY s.created_at DESC
+            ORDER BY s.is_featured DESC, s.created_at DESC
         ");
         $stmt->execute($params);
         $shops = $stmt->fetchAll();
@@ -107,7 +132,9 @@ try {
             $s['vendor_id'] = (int)$s['vendor_id'];
             $s['product_count'] = (int)$s['product_count'];
             $s['total_sales'] = (int)$s['total_sales'];
+            $s['rating'] = (float)$s['rating'];
             $s['is_verified'] = (bool)$s['is_verified'];
+            $s['is_featured'] = (bool)($s['is_featured'] ?? false);
         }
         unset($s);
 
@@ -121,6 +148,7 @@ try {
 
         $name = trim($input['name'] ?? '');
         $description = trim($input['description'] ?? '');
+        $logo = trim($input['logo'] ?? '');
         $phone = trim($input['phone'] ?? '');
         $location = trim($input['location'] ?? '');
         $category = trim($input['category'] ?? '');
@@ -129,12 +157,15 @@ try {
             json(400, ['error' => 'Champs obligatoires manquants (name, phone, location)']);
         }
 
-        $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, phone, location, category) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$userId, $name, $description, $phone, $location, $category]);
+        $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category]);
         $shopId = (int)$db->lastInsertId();
 
         // Return the full shop object
-        $stmt = $db->prepare('SELECT s.*, COUNT(p.id) AS product_count, COALESCE(SUM(p.total_sales), 0) AS total_sales
+        $stmt = $db->prepare('SELECT s.*,
+            COUNT(p.id) AS product_count,
+            COALESCE(SUM(p.total_sales), 0) AS total_sales,
+            0.0 AS rating
             FROM shops s LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
             WHERE s.id = ? GROUP BY s.id');
         $stmt->execute([$shopId]);
@@ -143,7 +174,9 @@ try {
         $shop['vendor_id'] = (int)$shop['vendor_id'];
         $shop['product_count'] = (int)($shop['product_count'] ?? 0);
         $shop['total_sales'] = (int)($shop['total_sales'] ?? 0);
+        $shop['rating'] = 0.0;
         $shop['is_verified'] = (bool)$shop['is_verified'];
+        $shop['is_featured'] = (bool)($shop['is_featured'] ?? false);
 
         json(201, ['shop' => $shop]);
     }
@@ -161,7 +194,7 @@ try {
 
         $fields = [];
         $params = [];
-        foreach (['name', 'description', 'phone', 'location', 'category'] as $f) {
+        foreach (['name', 'description', 'logo', 'phone', 'location', 'category'] as $f) {
             if (array_key_exists($f, $input)) {
                 $fields[] = "$f = ?";
                 $params[] = $input[$f];
@@ -174,6 +207,31 @@ try {
         $stmt->execute($params);
 
         json(200, ['message' => 'Boutique mise à jour']);
+    }
+
+    if ($method === 'DELETE') {
+        if (!$id) json(400, ['error' => 'ID requis']);
+        $userId = getAuthUserId();
+
+        $stmt = $db->prepare('SELECT vendor_id FROM shops WHERE id = ?');
+        $stmt->execute([$id]);
+        $shop = $stmt->fetch();
+        if (!$shop) json(404, ['error' => 'Boutique non trouvée']);
+
+        if ($shop['vendor_id'] != $userId) {
+            // Check if user is admin
+            $stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
+            $stmt->execute([$userId]);
+            $userRole = $stmt->fetchColumn();
+            if (!in_array($userRole, ['admin', 'super_admin'])) {
+                json(403, ['error' => 'Non autorisé']);
+            }
+        }
+
+        $stmt = $db->prepare('DELETE FROM shops WHERE id = ?');
+        $stmt->execute([$id]);
+
+        json(200, ['message' => 'Boutique supprimée avec succès']);
     }
 
     json(405, ['error' => 'Méthode non autorisée']);

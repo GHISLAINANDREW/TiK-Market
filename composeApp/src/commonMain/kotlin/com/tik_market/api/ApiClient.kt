@@ -205,6 +205,58 @@ data class ApiCreateHeroBody(
     val priority: Int = 0
 )
 
+@Serializable
+data class ApiSuperAdminResponse(
+    val stats: ApiSuperStats,
+    val reports: List<ApiReport>,
+    val config: ApiSystemConfig
+)
+
+@Serializable
+data class ApiSuperStats(
+    val users: List<ApiStatItem>,
+    val shops: List<ApiStatItem>,
+    val products: List<ApiStatItem>,
+    val orders: List<ApiStatItem>,
+    val revenue: List<ApiRevenueItem>
+)
+
+@Serializable
+data class ApiStatItem(
+    val role: String? = null,
+    val status: String? = null,
+    @SerialName("is_verified") val isVerified: Int? = null,
+    @SerialName("is_active") val isActive: Int? = null,
+    val count: Int
+)
+
+@Serializable
+data class ApiRevenueItem(
+    val month: String,
+    val total: Double
+)
+
+@Serializable
+data class ApiReport(
+    val id: Int,
+    @SerialName("reporter_id") val reporterId: Int,
+    @SerialName("reporter_name") val reporterName: String,
+    val type: String,
+    @SerialName("target_id") val targetId: Int,
+    val reason: String,
+    val comment: String? = null,
+    val status: String,
+    @SerialName("created_at") val createdAt: String
+)
+
+@Serializable
+data class ApiSystemConfig(
+    @SerialName("maintenance_mode") val maintenanceMode: Boolean,
+    @SerialName("app_version") val appVersion: String,
+    @SerialName("min_version") val minVersion: String,
+    @SerialName("commission_rate") val commissionRate: Double
+)
+
 // ── Result Wrapper ─────────────────────────────────────────────
 
 sealed class ApiResult<out T> {
@@ -254,6 +306,7 @@ object ApiClient {
         const val HERO = "/admin/hero.php"
         const val ADMIN_USERS = "/admin/users.php"
         const val ADMIN_SHOPS = "/admin/shops.php"
+        const val SUPER_ADMIN = "/admin/super.php"
     }
 
     private var sessionToken: String? = null
@@ -998,6 +1051,32 @@ object ApiClient {
     suspend fun fetchAdminDashboard(city: String? = null): ApiAdminDashboardResponse {
         val path = buildUrl("/admin/dashboard.php", mapOf("city" to city))
         return safeRequest<ApiAdminDashboardResponse>("GET", path)
+    }
+
+    // ── Super Admin ──
+
+    suspend fun fetchSuperAdminData(): ApiSuperAdminResponse {
+        return safeRequest("GET", Endpoints.SUPER_ADMIN)
+    }
+
+    suspend fun updateReportStatus(reportId: Int, status: String): Boolean {
+        val body = buildJsonObject {
+            put("action", "update_report_status")
+            put("report_id", reportId)
+            put("status", status)
+        }.toString()
+        val resp = post(Endpoints.SUPER_ADMIN, body)
+        return json.parseToJsonElement(resp).jsonObject["success"]?.jsonPrimitive?.booleanOrNull ?: false
+    }
+
+    suspend fun broadcastSystemMessage(title: String, message: String): Boolean {
+        val body = buildJsonObject {
+            put("action", "broadcast_system")
+            put("title", title)
+            put("message", message)
+        }.toString()
+        val resp = post(Endpoints.SUPER_ADMIN, body)
+        return json.parseToJsonElement(resp).jsonObject["success"]?.jsonPrimitive?.booleanOrNull ?: false
     }
 
     // ── Group Buying ──
