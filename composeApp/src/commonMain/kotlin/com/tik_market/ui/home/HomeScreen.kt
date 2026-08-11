@@ -44,6 +44,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.focus.onFocusChanged
+import com.tik_market.ui.home.*
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -85,7 +86,13 @@ fun HomeScreen(
     var userLocationName by remember { mutableStateOf<String?>(null) }
     var marketName by remember { mutableStateOf("TiK-Market") }
     
-    LaunchedEffect(overrideCity) {
+    LaunchedEffect(overrideCity, isLoggedIn) {
+        // Non connecté : pas de branding par ville, produits aléatoires (TiK-Market).
+        if (!isLoggedIn) {
+            userLocationName = null
+            marketName = "TiK-Market"
+            return@LaunchedEffect
+        }
         // Ville redirigée via l'alerte système : on l'utilise directement.
         if (!overrideCity.isNullOrBlank()) {
             userLocationName = overrideCity
@@ -728,15 +735,59 @@ fun HomeScreen(
                 }
 
                 if (filteredProducts.isNotEmpty()) {
-                    item {
-                        ProductGridSection(
-                            products = filteredProducts,
-                            columns = columns,
-                            wishlistIds = localWishlist,
-                            onProductClick = onProductClick,
-                            onAddToCart = onAddToCart,
-                            onToggleFavorite = { toggleFavorite(it) }
-                        )
+                    when {
+                        userLocationName?.contains("Bafoussam", ignoreCase = true) == true -> {
+                            FuSapLayout(
+                                products = filteredProducts,
+                                columns = columns,
+                                wishlistIds = localWishlist,
+                                onProductClick = onProductClick,
+                                onAddToCart = onAddToCart,
+                                onToggleFavorite = { toggleFavorite(it) }
+                            )
+                        }
+                        userLocationName?.contains("Douala", ignoreCase = true) == true -> {
+                            DoualaLayout(
+                                products = filteredProducts,
+                                columns = columns,
+                                wishlistIds = localWishlist,
+                                onProductClick = onProductClick,
+                                onAddToCart = onAddToCart,
+                                onToggleFavorite = { toggleFavorite(it) }
+                            )
+                        }
+                        userLocationName?.contains("Yaoundé", ignoreCase = true) == true || userLocationName?.contains("Yaounde", ignoreCase = true) == true -> {
+                            YaoundeLayout(
+                                products = filteredProducts,
+                                columns = columns,
+                                wishlistIds = localWishlist,
+                                onProductClick = onProductClick,
+                                onAddToCart = onAddToCart,
+                                onToggleFavorite = { toggleFavorite(it) }
+                            )
+                        }
+                        userLocationName?.contains("Dschang", ignoreCase = true) == true -> {
+                            DschangLayout(
+                                products = filteredProducts,
+                                columns = columns,
+                                wishlistIds = localWishlist,
+                                onProductClick = onProductClick,
+                                onAddToCart = onAddToCart,
+                                onToggleFavorite = { toggleFavorite(it) }
+                            )
+                        }
+                        else -> {
+                            item {
+                                ProductGridSection(
+                                    products = filteredProducts,
+                                    columns = columns,
+                                    wishlistIds = localWishlist,
+                                    onProductClick = onProductClick,
+                                    onAddToCart = onAddToCart,
+                                    onToggleFavorite = { toggleFavorite(it) }
+                                )
+                            }
+                        }
                     }
                 }
 

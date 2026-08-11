@@ -100,9 +100,14 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
     var manualCity by remember { mutableStateOf<String?>(null) }
     // Ville de l'app proposée à l'utilisateur quand il est proche (≤ 20 km) d'une ville couverte
     var suggestedCity by remember { mutableStateOf<com.tik_market.utils.AppCity?>(null) }
+    // Villes que l'utilisateur a refusées (pour ne pas re-proposer en boucle)
+    var declinedCities by remember { mutableStateOf<Set<String>>(emptySet()) }
     // N'empêche pas l'utilisateur de consulter les produits de sa ville détectée
     var detectedLocationName by remember { mutableStateOf<String?>(null) }
-    
+
+    // Détermine la ville active :
+    // - Non connecté : pas de filtre ville, branding par défaut (TiK-Market).
+    // - Connecté : ville du profil si elle correspond à une ville connue, sinon détection GPS.
     LaunchedEffect(appState.isLoggedIn, appState.currentUser) {
         if (manualCity != null) {
             userCity = manualCity
@@ -110,26 +115,45 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
         }
 
         if (appState.isLoggedIn && appState.currentUser != null) {
-            userCity = appState.currentUser?.location
-        } else {
-            com.tik_market.utils.getCurrentLocationName { city ->
-                detectedLocationName = city
-                userCity = city
+            val loc = appState.currentUser?.location
+            val knownCity = com.tik_market.utils.appCities.firstOrNull {
+                loc?.contains(it.name, ignoreCase = true) == true
             }
+            if (knownCity != null) {
+                userCity = knownCity.name
+            } else {
+                com.tik_market.utils.getCurrentLocationLatLng { lat, lng ->
+                    if (lat != null && lng != null) {
+                        val nearby = com.tik_market.utils.findNearbyAppCity(lat, lng)
+                        userCity = nearby?.name ?: loc
+                    } else {
+                        userCity = loc
+                    }
+                }
+            }
+        } else {
+            userCity = null
         }
     }
 
-    LaunchedEffect(userCity, detectedLocationName) {
-        // Géolocalisation : si l'utilisateur est proche d'une ville de l'app (≤ 20 km)
-        // et qu'il n'y est pas déjà, on le lui propose via une alerte système.
-        com.tik_market.utils.getCurrentLocationLatLng { lat, lng ->
-            if (lat != null && lng != null) {
-                val nearby = com.tik_market.utils.findNearbyAppCity(lat, lng)
-                val currentCity = userCity ?: detectedLocationName ?: ""
-                if (nearby != null && !currentCity.contains(nearby.name, ignoreCase = true)) {
-                    suggestedCity = nearby
+    // Détection périodique de la ville (connecté uniquement) :
+    // si l'utilisateur se déplace vers une autre ville de l'app, on lui propose de basculer.
+    LaunchedEffect(appState.isLoggedIn) {
+        if (!appState.isLoggedIn) return@LaunchedEffect
+        while (true) {
+            com.tik_market.utils.getCurrentLocationLatLng { lat, lng ->
+                if (lat != null && lng != null) {
+                    val nearby = com.tik_market.utils.findNearbyAppCity(lat, lng)
+                    val currentCity = userCity ?: ""
+                    if (nearby != null &&
+                        !currentCity.contains(nearby.name, ignoreCase = true) &&
+                        nearby.name !in declinedCities
+                    ) {
+                        suggestedCity = nearby
+                    }
                 }
             }
+            delay(30000) // re-vérifie toutes les 30 s
         }
     }
 
@@ -234,7 +258,10 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
             // ── Alerte système : proposition de redirection vers une ville de l'app ──
             suggestedCity?.let { city ->
                 AlertDialog(
-                    onDismissRequest = { suggestedCity = null },
+                    onDismissRequest = {
+                        declinedCities = declinedCities + city.name
+                        suggestedCity = null
+                    },
                     title = { Text("Vous êtes proche de ${city.name}") },
                     text = {
                         Text("Souhaitez-vous voir les produits de ${city.name} ? " +
@@ -244,11 +271,15 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                         TextButton(onClick = {
                             manualCity = city.name
                             userCity = city.name
+                            declinedCities = declinedCities - city.name
                             suggestedCity = null
                         }) { Text("Voir les produits") }
                     },
                     dismissButton = {
-                        TextButton(onClick = { suggestedCity = null }) { Text("Rester ici") }
+                        TextButton(onClick = {
+                            declinedCities = declinedCities + city.name
+                            suggestedCity = null
+                        }) { Text("Rester ici") }
                     }
                 )
             }
@@ -985,7 +1016,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 },
                 onError = showError
             )
-            NavScreen.ShopsList -> ShopsListScreen(onBack = { appState.goBack() }) { shop ->
+            NavScreen.ShopsList -> ShopsListScreen(onBack = { appState.goBack() }, city = userCity) { shop ->
                 appState.selectedShopName = shop.name
                 appState.goHome()
             }

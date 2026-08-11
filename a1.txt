@@ -1,0 +1,4 @@
+Vercel CLI 54.20.1 (Node.js 20.16.0)
+> Assigning alias tik-market-app.vercel.app to https://tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app
+Creating alias
+> Success! https://tik-market-app.vercel.app now points to https://tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app [3s]

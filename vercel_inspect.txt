@@ -1,0 +1,19 @@
+Vercel CLI 54.20.1 (Node.js 20.16.0)
+> Found Project autentiic-soft-entreprise/tik-market [2s]
+
+  General
+
+    ID				prj_3SDlkDvzMD7I8d3FlF0X8ZQA9CQv
+    Name			tik-market
+    Owner			autentiic soft entreprise
+    Created At			14 July 2026 05:38:11 [28d ago]
+    Root Directory		.
+    Node.js Version		24.x
+
+  Framework Settings
+
+    Framework Preset		Other
+    Build Command		`npm run vercel-build` or `npm run build`
+    Output Directory		.
+    Install Command		`yarn install`, `pnpm install`, `npm install`, or `bun install`
+
