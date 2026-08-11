@@ -16,6 +16,7 @@ data class ApiUser(
     @SerialName("cover_photo") val coverPhoto: String = "",
     @SerialName("last_seen") val lastSeen: String = "",
     @SerialName("created_at") val createdAt: String = "",
+    @SerialName("managed_city") val managedCity: String? = null,
     @SerialName("referral_code") val referralCode: String? = null
 ) {
     val isOnline: Boolean get() {
@@ -277,7 +278,8 @@ data class ApiAdminUser(
     val role: String = "buyer",
     val status: String = "active",
     @SerialName("last_seen") val lastSeen: String = "",
-    @SerialName("created_at") val createdAt: String = ""
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("managed_city") val managedCity: String? = null
 )
 
 @Serializable

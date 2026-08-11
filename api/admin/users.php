@@ -6,16 +6,30 @@ $userId = getAuthUserId();
 
 // Verify the user is admin
 $db = getDB();
-$stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
+$stmt = $db->prepare('SELECT role, managed_city FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $currentUser = $stmt->fetch();
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
     json(403, ['error' => 'Accès refusé. Seuls les administrateurs peuvent accéder à cette ressource.']);
 }
 
+$isSuperAdmin = ($currentUser['role'] === 'super_admin');
+$managedCity = $currentUser['managed_city'];
+
 if ($method === 'GET') {
-    // ── List all users ──
-    $stmt = $db->query('SELECT id, name, email, phone, role, status, last_seen, created_at FROM users ORDER BY created_at DESC');
+    // ── List users ──
+    $where = [];
+    $params = [];
+
+    // Un admin de ville ne voit que les utilisateurs de sa ville
+    if (!$isSuperAdmin && $managedCity) {
+        $where[] = 'location LIKE ?';
+        $params[] = "%$managedCity%";
+    }
+
+    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+    $stmt = $db->prepare("SELECT id, name, email, phone, role, location, managed_city, status, last_seen, created_at FROM users $whereClause ORDER BY created_at DESC");
+    $stmt->execute($params);
     $users = $stmt->fetchAll();
     foreach ($users as &$u) {
         $u['status'] = $u['status'] ?? 'active';
@@ -33,8 +47,15 @@ if ($method === 'GET') {
     $phone = trim($input['phone'] ?? '');
     $password = $input['password'] ?? '';
     $role = trim($input['role'] ?? 'buyer');
-    $roleMap = ['buyer' => 'buyer', 'vendor' => 'vendor', 'admin' => 'admin'];
+    $managed_city = trim($input['managed_city'] ?? '');
+
+    $roleMap = ['buyer' => 'buyer', 'vendor' => 'vendor', 'admin' => 'admin', 'super_admin' => 'super_admin'];
     $role = $roleMap[$role] ?? 'buyer';
+
+    // Only super_admin can create admins or other super_admins
+    if (!$isSuperAdmin && in_array($role, ['admin', 'super_admin'])) {
+        json(403, ['error' => 'Seul le super admin peut créer des administrateurs']);
+    }
 
     if ($name === '' || $email === '' || $phone === '' || $password === '') {
         json(400, ['error' => 'Tous les champs sont obligatoires']);
@@ -51,12 +72,12 @@ if ($method === 'GET') {
     }
 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-    $stmt = $db->prepare('INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)');
-    $stmt->execute([$name, $email, $phone, $hashedPassword, $role]);
+    $stmt = $db->prepare('INSERT INTO users (name, email, phone, password, role, managed_city) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt->execute([$name, $email, $phone, $hashedPassword, $role, $managed_city ?: null]);
     $newId = (int)$db->lastInsertId();
 
     json(200, ['success' => true, 'message' => 'Utilisateur créé', 'user' => [
-        'id' => $newId, 'name' => $name, 'email' => $email, 'phone' => $phone, 'role' => $role
+        'id' => $newId, 'name' => $name, 'email' => $email, 'phone' => $phone, 'role' => $role, 'managed_city' => $managed_city
     ]]);
 
 } elseif ($method === 'PUT') {
@@ -75,16 +96,28 @@ if ($method === 'GET') {
         json(200, ['success' => true, 'message' => $newStatus === 'banned' ? 'Utilisateur banni' : ($newStatus === 'suspended' ? 'Utilisateur suspendu' : 'Utilisateur réactivé')]);
     }
 
-    // ── Update user role ──
+    // ── Update user role & city ──
     $role = $_GET['role'] ?? '';
-    if (!in_array($role, ['buyer', 'vendor', 'admin'])) json(400, ['error' => 'Rôle invalide']);
+    $city = $_GET['managed_city'] ?? null;
     
-    // Don't allow changing own role
-    if ($targetId === $userId) json(403, ['error' => 'Vous ne pouvez pas modifier votre propre rôle']);
-    
-    $stmt = $db->prepare('UPDATE users SET role = ? WHERE id = ?');
-    $stmt->execute([$role, $targetId]);
-    json(200, ['success' => true, 'message' => 'Rôle mis à jour']);
+    if ($role) {
+        if (!in_array($role, ['buyer', 'vendor', 'admin', 'super_admin'])) json(400, ['error' => 'Rôle invalide']);
+        if (!$isSuperAdmin && in_array($role, ['admin', 'super_admin'])) json(403, ['error' => 'Seul le super admin peut gérer les rôles administratifs']);
+
+        // Don't allow changing own role
+        if ($targetId === $userId) json(403, ['error' => 'Vous ne pouvez pas modifier votre propre rôle']);
+
+        $stmt = $db->prepare('UPDATE users SET role = ? WHERE id = ?');
+        $stmt->execute([$role, $targetId]);
+    }
+
+    if ($city !== null) {
+        if (!$isSuperAdmin) json(403, ['error' => 'Seul le super admin peut assigner des villes aux administrateurs']);
+        $stmt = $db->prepare('UPDATE users SET managed_city = ? WHERE id = ?');
+        $stmt->execute([$city === '' ? null : $city, $targetId]);
+    }
+
+    json(200, ['success' => true, 'message' => 'Utilisateur mis à jour']);
 
 } elseif ($method === 'DELETE') {
     // ── Supprimer un utilisateur ──

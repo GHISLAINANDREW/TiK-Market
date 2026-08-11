@@ -777,6 +777,13 @@ fun HomeScreen(
                             )
                         }
                         else -> {
+                            FlashSalesSection(
+                                products = filteredProducts,
+                                wishlistIds = localWishlist,
+                                onProductClick = onProductClick,
+                                onAddToCart = onAddToCart,
+                                onToggleFavorite = { toggleFavorite(it) }
+                            )
                             item {
                                 ProductGridSection(
                                     products = filteredProducts,
