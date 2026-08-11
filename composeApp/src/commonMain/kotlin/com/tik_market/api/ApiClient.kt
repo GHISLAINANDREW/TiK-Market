@@ -684,13 +684,28 @@ object ApiClient {
     // ── User Management ──
 
     suspend fun updateUserAvatar(imageUrl: String) {
-        val body = "{\"avatar\":\"$imageUrl\"}"
-        put(Endpoints.ME, body)
+        updateUserProfile(avatar = imageUrl)
     }
 
-    suspend fun updateUserProfile(name: String, email: String, phone: String) {
-        val body = "{\"name\":\"$name\",\"email\":\"$email\",\"phone\":\"$phone\"}"
-        put(Endpoints.ME, body)
+    suspend fun updateUserProfile(
+        name: String? = null,
+        phone: String? = null,
+        location: String? = null,
+        avatar: String? = null,
+        coverPhoto: String? = null,
+        password: String? = null
+    ): ApiUser {
+        val body = buildJsonObject {
+            name?.let { put("name", it) }
+            phone?.let { put("phone", it) }
+            location?.let { put("location", it) }
+            avatar?.let { put("avatar", it) }
+            coverPhoto?.let { put("cover_photo", it) }
+            password?.let { put("password", it) }
+        }.toString()
+        val result = safeRequest<ApiUserResponse>("PUT", Endpoints.ME, body).user
+        sessionUser = result
+        return result
     }
 
     // ── Messages ──

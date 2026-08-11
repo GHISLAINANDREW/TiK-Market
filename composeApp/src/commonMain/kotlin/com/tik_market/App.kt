@@ -41,6 +41,7 @@ import com.tik_market.ui.notifications.NotificationScreen
 import com.tik_market.ui.product.ProductDetailScreen
 import com.tik_market.ui.orders.OrdersScreen
 import com.tik_market.ui.profile.ProfileScreen
+import com.tik_market.ui.profile.EditProfileScreen
 import com.tik_market.ui.settings.SettingsScreen
 import com.tik_market.ui.wishlist.WishlistScreen
 import com.tik_market.ui.shop.ShopPageScreen
@@ -689,6 +690,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 userRole = appState.userRole,
                 onBack = { appState.goBack() },
                 onLoginClick = { appState.navigateTo(NavScreen.Auth) },
+                onEditProfileClick = { appState.navigateTo(NavScreen.EditProfile) },
                 onOrdersClick = { appState.navigateTo(NavScreen.Orders) },
                 onMessagesClick = { appState.navigateTo(NavScreen.Conversations) },
                 onWishlistClick = { appState.navigateTo(NavScreen.Wishlist) },
@@ -1131,6 +1133,13 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onShopClick = { id ->
                     appState.selectedShopId = id
                     appState.navigateTo(NavScreen.ShopPage)
+                }
+            )
+            NavScreen.EditProfile -> EditProfileScreen(
+                onBack = { appState.goBack() },
+                onProfileUpdated = { updatedUser ->
+                    appState.currentUser = updatedUser
+                    appState.userName = updatedUser.name
                 }
             )
             else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Écran non implémenté") }

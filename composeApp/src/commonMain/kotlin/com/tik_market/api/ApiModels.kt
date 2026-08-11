@@ -13,6 +13,7 @@ data class ApiUser(
     val role: String = "buyer",
     val location: String = "",
     val avatar: String = "",
+    @SerialName("cover_photo") val coverPhoto: String = "",
     @SerialName("last_seen") val lastSeen: String = "",
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("referral_code") val referralCode: String? = null

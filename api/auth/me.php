@@ -7,8 +7,18 @@ $userId = getAuthUserId();
 try {
     $db = getDB();
 
+    // Auto-migration: ensure cover_photo column exists on users
+    try {
+        $check = $db->query("SHOW COLUMNS FROM users LIKE 'cover_photo'")->fetch();
+        if (!$check) {
+            $db->exec("ALTER TABLE users ADD COLUMN cover_photo VARCHAR(500) DEFAULT '' AFTER avatar");
+        }
+    } catch (Exception $e) {
+        error_log("Migration cover_photo error: " . $e->getMessage());
+    }
+
     if ($method === 'GET') {
-        $stmt = $db->prepare('SELECT id, name, email, phone, role, location, avatar, last_seen FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT id, name, email, phone, role, location, avatar, cover_photo, last_seen FROM users WHERE id = ?');
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
 
@@ -28,11 +38,16 @@ try {
         $fields = [];
         $params = [];
 
-        foreach (['name', 'phone', 'location', 'avatar'] as $f) {
+        foreach (['name', 'phone', 'location', 'avatar', 'cover_photo'] as $f) {
             if (isset($input[$f])) {
                 $fields[] = "$f = ?";
                 $params[] = $input[$f];
             }
+        }
+
+        if (isset($input['password']) && !empty($input['password'])) {
+            $fields[] = "password = ?";
+            $params[] = password_hash($input['password'], PASSWORD_DEFAULT);
         }
 
         if (empty($fields)) json(400, ['error' => 'Aucun champ à mettre à jour']);
@@ -48,7 +63,7 @@ try {
         }
 
         // Return updated user
-        $stmt = $db->prepare('SELECT id, name, email, phone, role, location, avatar, last_seen FROM users WHERE id = ?');
+        $stmt = $db->prepare('SELECT id, name, email, phone, role, location, avatar, cover_photo, last_seen FROM users WHERE id = ?');
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
         $user['id'] = (int)$user['id'];
