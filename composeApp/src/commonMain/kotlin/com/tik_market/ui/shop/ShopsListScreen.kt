@@ -32,18 +32,20 @@ import androidx.compose.foundation.Image
 @Composable
 fun ShopsListScreen(
     onBack: () -> Unit,
+    city: String? = null,
     onShopClick: (ApiShop) -> Unit
 ) {
     var shops by remember { mutableStateOf<List<ApiShop>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(city) {
         try {
-            val apiShops = ApiClient.fetchAllShops()
+            // Filtre strict par ville (résident connecté) : uniquement les boutiques de sa ville.
+            val apiShops = ApiClient.fetchAllShops(location = city)
             if (apiShops.isNotEmpty()) {
                 shops = apiShops
-            } else {
-                // Fallback to sample data if API is empty
+            } else if (city == null) {
+                // Fallback to sample data only when no city filter is active
                 shops = com.tik_market.data.models.SampleData.shops.map { s ->
                     ApiShop(
                         id = s.id.toIntOrNull() ?: 0,
@@ -53,17 +55,23 @@ fun ShopsListScreen(
                         isVerified = s.isVerified
                     )
                 }
+            } else {
+                shops = emptyList()
             }
         } catch (e: Exception) {
-            // Fallback on error
-            shops = com.tik_market.data.models.SampleData.shops.map { s ->
-                ApiShop(
-                    id = s.id.toIntOrNull() ?: 0,
-                    name = s.name,
-                    category = s.category,
-                    location = s.location,
-                    isVerified = s.isVerified
-                )
+            if (city == null) {
+                // Fallback on error only when no city filter is active
+                shops = com.tik_market.data.models.SampleData.shops.map { s ->
+                    ApiShop(
+                        id = s.id.toIntOrNull() ?: 0,
+                        name = s.name,
+                        category = s.category,
+                        location = s.location,
+                        isVerified = s.isVerified
+                    )
+                }
+            } else {
+                shops = emptyList()
             }
         }
         isLoading = false
@@ -72,7 +80,7 @@ fun ShopsListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Toutes les boutiques", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text(if (city.isNullOrBlank()) "Toutes les boutiques" else "Boutiques à $city", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -85,6 +93,10 @@ fun ShopsListScreen(
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Green)
+            }
+        } else if (shops.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Aucune boutique trouvée", color = Color.Gray)
             }
         } else {
             LazyColumn(

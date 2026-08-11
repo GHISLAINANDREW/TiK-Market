@@ -1,0 +1,9 @@
+Vercel CLI 54.20.1 (Node.js 20.16.0)
+Fetching aliases under autentiic-soft-entreprise
+> aliases found under autentiic-soft-entreprise [2s]
+  source                                                       url                                                               age    
+  tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app    dschang-market.vercel.app                                          3m    
+  tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app    tik-market-app.vercel.app                                         11h    
+  tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app    tik-market-autentiic-soft-entreprise.vercel.app                   11h    
+  tik-market-831ip5hsn-autentiic-soft-entreprise.vercel.app    tik-market-ghislainandrew-autentiic-soft-entreprise.vercel.app    11h    
+
