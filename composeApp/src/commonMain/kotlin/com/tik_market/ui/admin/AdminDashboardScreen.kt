@@ -76,7 +76,6 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
     var addUserPhone by remember { mutableStateOf("") }
     var addUserPassword by remember { mutableStateOf("") }
     var addUserRole by remember { mutableStateOf("buyer") }
-    var addUserCity by remember { mutableStateOf("") }
     var addUserSending by remember { mutableStateOf(false) }
     var addUserResult by remember { mutableStateOf<String?>(null) }
     var addUserError by remember { mutableStateOf<String?>(null) }
@@ -119,7 +118,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     null
                 }
                 if (rawUsers != null) {
-                    users = rawUsers.map { AdminUser(it.id, it.name, it.email, it.phone, it.role, it.status, it.createdAt, it.managedCity) }
+                    users = rawUsers.map { AdminUser(it.id, it.name, it.email, it.phone, it.role, it.status, it.createdAt) }
                 }
                 if (rawShops != null && rawShops.isNotEmpty()) {
                     shops = rawShops.map {
@@ -167,7 +166,6 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
             addUserPhone = addUserPhone, setAddUserPhone = { addUserPhone = it },
             addUserPassword = addUserPassword, setAddUserPassword = { addUserPassword = it },
             addUserRole = addUserRole, setAddUserRole = { addUserRole = it },
-            addUserCity = addUserCity, setAddUserCity = { addUserCity = it },
             addUserSending = addUserSending, setAddUserSending = { addUserSending = it },
             addUserResult = addUserResult, setAddUserResult = { addUserResult = it },
             addUserError = addUserError, setAddUserError = { addUserError = it },
@@ -279,7 +277,6 @@ private fun AdminSubScreen(
     addUserPhone: String, setAddUserPhone: (String) -> Unit,
     addUserPassword: String, setAddUserPassword: (String) -> Unit,
     addUserRole: String, setAddUserRole: (String) -> Unit,
-    addUserCity: String, setAddUserCity: (String) -> Unit,
     addUserSending: Boolean, setAddUserSending: (Boolean) -> Unit,
     addUserResult: String?, setAddUserResult: (String?) -> Unit,
     addUserError: String?, setAddUserError: (String?) -> Unit,
@@ -421,18 +418,10 @@ private fun AdminSubScreen(
                             Spacer(Modifier.height(8.dp))
                             Text("Rôle", style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(4.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 FilterChip(selected = addUserRole == "buyer", onClick = { setAddUserRole("buyer") }, label = { Text("Client") })
                                 FilterChip(selected = addUserRole == "vendor", onClick = { setAddUserRole("vendor") }, label = { Text("Vendeur") })
                                 FilterChip(selected = addUserRole == "admin", onClick = { setAddUserRole("admin") }, label = { Text("Admin") })
-                                if (ApiClient.isSuperAdmin()) {
-                                    FilterChip(selected = addUserRole == "super_admin", onClick = { setAddUserRole("super_admin") }, label = { Text("Super") })
-                                }
-                            }
-                            if (addUserRole == "admin") {
-                                Spacer(Modifier.height(8.dp))
-                                OutlinedTextField(value = addUserCity, onValueChange = { setAddUserCity(it) }, label = { Text("Ville gérée (optionnel)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                                Text("Laissez vide pour un admin global.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             }
                         }
                     },
@@ -445,9 +434,9 @@ private fun AdminSubScreen(
                                         if (addUserName.isBlank() || addUserEmail.isBlank() || addUserPhone.isBlank() || addUserPassword.isBlank()) {
                                             setAddUserResult("❌ Tous les champs sont obligatoires")
                                         } else {
-                                            ApiClient.addUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole, addUserCity.ifBlank { null })
+                                            ApiClient.addUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole)
                                             setAddUserResult("✅ Utilisateur $addUserName créé avec succès !")
-                                            setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword(""); setAddUserCity("")
+                                            setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword("")
                                             loadData()
                                         }
                                     } catch (e: Exception) { setAddUserResult("❌ Erreur: ${e.message}") }
@@ -816,7 +805,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
 //  DATA CLASSES
 // ═══════════════════════════════════════════════
 
-data class AdminUser(val id: Int, val name: String, val email: String, val phone: String, val role: String, val status: String = "active", val createdAt: String, val managedCity: String? = null)
+data class AdminUser(val id: Int, val name: String, val email: String, val phone: String, val role: String, val status: String = "active", val createdAt: String)
 data class AdminShop(
     val id: Int, val name: String, val logo: String = "", val location: String = "",
     val phone: String = "", val vendorName: String, val vendorEmail: String = "",
@@ -844,11 +833,6 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     RoleBadge(user.role)
-                    if (user.managedCity != null) {
-                        Surface(color = BlueAccent.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
-                            Text(user.managedCity, style = MaterialTheme.typography.labelSmall, color = BlueAccent, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                        }
-                    }
                     if (user.status == "banned") {
                         Surface(color = RedAccent.copy(alpha = 0.12f), shape = RoundedCornerShape(4.dp)) {
                             Text("Banni", style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
@@ -861,11 +845,6 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
                 IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary) }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     DropdownMenuItem(text = { Text("Envoyer notification") }, leadingIcon = { Icon(Icons.Default.Notifications, null, tint = Green) }, onClick = { onNotify(); showMenu = false })
-                    if (ApiClient.isSuperAdmin()) {
-                        HorizontalDivider()
-                        DropdownMenuItem(text = { Text("Rôle Super Admin") }, onClick = { onRoleChange("super_admin"); showMenu = false })
-                        DropdownMenuItem(text = { Text("Rôle Admin") }, onClick = { onRoleChange("admin"); showMenu = false })
-                    }
                     HorizontalDivider()
                     DropdownMenuItem(text = { Text("Rôle Vendeur") }, onClick = { onRoleChange("vendor"); showMenu = false })
                     DropdownMenuItem(text = { Text("Rôle Client") }, onClick = { onRoleChange("buyer"); showMenu = false })
@@ -955,25 +934,9 @@ fun AdminShopCard(
 
 @Composable
 fun RoleBadge(role: String) {
-    val color = when(role) { 
-        "super_admin" -> Color(0xFFD32F2F)
-        "admin" -> BlueAccent
-        "vendor" -> Orange
-        else -> Green 
-    }
+    val color = when(role) { "admin" -> BlueAccent; "vendor" -> Orange; else -> Green }
     Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(4.dp)) {
-        Text(
-            when(role) { 
-                "super_admin" -> "Super Admin"
-                "admin" -> "Admin"
-                "vendor" -> "Vendeur"
-                else -> "Client" 
-            }, 
-            style = MaterialTheme.typography.labelSmall, 
-            color = color, 
-            fontWeight = FontWeight.SemiBold, 
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
+        Text(when(role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
     }
 }
 
@@ -987,24 +950,12 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    var selectedCity by remember { mutableStateOf<String?>(null) }
-
     fun load() {
-        scope.launch { isLoading = true; error = null; try { data = ApiClient.fetchAdminDashboard(selectedCity) } catch (e: Exception) { error = e.message }; isLoading = false }
+        scope.launch { isLoading = true; error = null; try { data = ApiClient.fetchAdminDashboard() } catch (e: Exception) { error = e.message }; isLoading = false }
     }
-    LaunchedEffect(selectedCity) { load() }
+    LaunchedEffect(Unit) { load() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
-        if (ApiClient.isSuperAdmin()) {
-            Text("Filtrer par ville", style = MaterialTheme.typography.titleSmall)
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = selectedCity == null, onClick = { selectedCity = null }, label = { Text("Toutes") })
-                listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Bamenda").forEach { city ->
-                    FilterChip(selected = selectedCity == city, onClick = { selectedCity = city }, label = { Text(city) })
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-        }
         if (isLoading && data == null) { repeat(6) { TiKShimmer(modifier = Modifier.fillMaxWidth().height(80.dp).padding(bottom = 8.dp)) }; return@Column }
         if (error != null && data == null) { TiKErrorState(message = error!!, onRetry = { load() }); return@Column }
         val d = data ?: return@Column
