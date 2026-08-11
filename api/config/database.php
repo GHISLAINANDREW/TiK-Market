@@ -63,7 +63,7 @@ function getDB(): PDO {
  */
 function rewriteUrls($data) {
     $oldBase = 'http://192.168.1.230:8081'; // Your old local IP
-    $newBase = getenv('APP_URL') ?: ('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $newBase = getenv('APP_URL') ?: ('https://tik-market.onrender.com');
     $cloudName = getenv('CLOUDINARY_CLOUD_NAME');
 
     if (is_string($data)) {
