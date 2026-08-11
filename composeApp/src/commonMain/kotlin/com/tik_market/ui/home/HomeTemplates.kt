@@ -58,54 +58,6 @@ fun QuickActionItem(icon: ImageVector, label: String, color: Color, onClick: () 
 }
 
 /**
- * Section commune pour les Ventes Flash
- */
-fun LazyListScope.FlashSalesSection(
-    products: List<Product>,
-    wishlistIds: Set<Int>,
-    onProductClick: (Product) -> Unit,
-    onAddToCart: (Product) -> Unit,
-    onToggleFavorite: (Int) -> Unit
-) {
-    val flashProducts = products.filter { it.comparePrice != null && it.comparePrice!! > it.price }.take(6)
-    if (flashProducts.isEmpty()) return
-
-    item {
-        Column(Modifier.padding(vertical = 8.dp)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ventes Flash ⚡", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD32F2F))
-                    Spacer(Modifier.width(8.dp))
-                    Surface(color = Color(0xFFD32F2F), shape = RoundedCornerShape(4.dp)) {
-                        Text("02:45:12", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                    }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                flashProducts.forEach { product ->
-                    ProductCard(
-                        product = product,
-                        onClick = { onProductClick(product) },
-                        onAddToCart = { onAddToCart(product) },
-                        modifier = Modifier.width(150.dp),
-                        isFavorite = product.id.toIntOrNull() in wishlistIds,
-                        onToggleFavorite = { onToggleFavorite(product.id.toIntOrNull() ?: 0) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
  * Template pour Dschang (DschangMarket) - Étudiants, Logement, Occasions
  */
 fun LazyListScope.DschangLayout(
@@ -127,8 +79,6 @@ fun LazyListScope.DschangLayout(
             QuickActionItem(Icons.Default.Restaurant, "Resto", Color.Red) { }
         }
     }
-
-    FlashSalesSection(products, wishlistIds, onProductClick, onAddToCart, onToggleFavorite)
     
     item {
         SectionHeader("Bons plans étudiants 🎓")
@@ -174,8 +124,6 @@ fun LazyListScope.FuSapLayout(
         }
     }
 
-    FlashSalesSection(products, wishlistIds, onProductClick, onAddToCart, onToggleFavorite)
-
     item {
         SectionHeader("Récoltes du jour 🌽")
     }
@@ -203,7 +151,26 @@ fun LazyListScope.DoualaLayout(
     onAddToCart: (Product) -> Unit,
     onToggleFavorite: (Int) -> Unit
 ) {
-    FlashSalesSection(products, wishlistIds, onProductClick, onAddToCart, onToggleFavorite)
+    item {
+        Column(Modifier.padding(vertical = 8.dp)) {
+            SectionHeader("Ventes Flash ⚡")
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                products.take(5).forEach { product ->
+                    ProductCard(
+                        product = product,
+                        onClick = { onProductClick(product) },
+                        onAddToCart = { onAddToCart(product) },
+                        modifier = Modifier.width(140.dp),
+                        isFavorite = product.id.toIntOrNull() in wishlistIds,
+                        onToggleFavorite = { onToggleFavorite(product.id.toIntOrNull() ?: 0) }
+                    )
+                }
+            }
+        }
+    }
 
     item {
         SectionHeader("Tendance à Douala 🏙️")
@@ -246,8 +213,6 @@ fun LazyListScope.YaoundeLayout(
             QuickActionItem(Icons.Default.HomeRepairService, "Réparations", Color.Blue) { }
         }
     }
-
-    FlashSalesSection(products, wishlistIds, onProductClick, onAddToCart, onToggleFavorite)
 
     item {
         SectionHeader("Le prestige d'Ongola ✨")

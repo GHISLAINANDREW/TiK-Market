@@ -6,30 +6,16 @@ $userId = getAuthUserId();
 
 // Verify the user is admin
 $db = getDB();
-$stmt = $db->prepare('SELECT role, managed_city FROM users WHERE id = ?');
+$stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $currentUser = $stmt->fetch();
-if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
+if (!$currentUser || $currentUser['role'] !== 'admin') {
     json(403, ['error' => 'Accès refusé. Seuls les administrateurs peuvent accéder à cette ressource.']);
 }
 
-$isSuperAdmin = ($currentUser['role'] === 'super_admin');
-$managedCity = $currentUser['managed_city'];
-
 if ($method === 'GET') {
-    // ── List shops with vendor info ──
-    $where = [];
-    $params = [];
-
-    // Un admin de ville ne voit que les boutiques de sa ville
-    if (!$isSuperAdmin && $managedCity) {
-        $where[] = 's.location LIKE ?';
-        $params[] = "%$managedCity%";
-    }
-
-    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-
-    $stmt = $db->prepare("
+    // ── List all shops with vendor info ──
+    $stmt = $db->query('
         SELECT 
             s.id, 
             s.name, 
@@ -50,11 +36,9 @@ if ($method === 'GET') {
         FROM shops s
         JOIN users u ON s.vendor_id = u.id
         LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
-        $whereClause
         GROUP BY s.id
         ORDER BY s.created_at DESC
-    ");
-    $stmt->execute($params);
+    ');
     $shops = $stmt->fetchAll();
     // Cast types
     foreach ($shops as &$s) {
