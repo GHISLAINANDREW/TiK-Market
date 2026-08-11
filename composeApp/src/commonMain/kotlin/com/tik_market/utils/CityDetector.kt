@@ -62,7 +62,7 @@ fun findNearbyAppCity(
 /** Nom du marché affiché pour une ville de l'app (ou "TiK-Market" par défaut). */
 fun marketNameForCity(cityName: String): String = when {
     cityName.contains("Bafoussam", ignoreCase = true) -> "Fu'sapMarket"
-    cityName.contains("Dschang", ignoreCase = true) -> "DschangMarket"
+    cityName.contains("Dschang", ignoreCase = true) -> "TiK-Market"
     cityName.contains("Douala", ignoreCase = true) -> "DoualaMarket"
     cityName.contains("Yaoundé", ignoreCase = true) || cityName.contains("Yaounde", ignoreCase = true) -> "YaoundeMarket"
     cityName.contains("Bamenda", ignoreCase = true) -> "BamendaMarket"
