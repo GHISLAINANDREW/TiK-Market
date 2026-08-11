@@ -98,7 +98,13 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
             AdminMenuItem(4, "En ligne", "Utilisateurs actifs", { Icon(Icons.Default.PersonPin, null, tint = Color.White) }, Color(0xFF00897B)),
             AdminMenuItem(5, "Stories", "Contenu éphémère", { Icon(Icons.Default.PhotoLibrary, null, tint = Color.White) }, Color(0xFFE91E63)),
             AdminMenuItem(6, "Promo Hero", "Bannières accueil", { Icon(Icons.Default.Star, null, tint = Color.White) }, Color(0xFFFF6F00)),
+            AdminMenuItem(7, "Super Admin", "Contrôle total", { Icon(Icons.Default.Security, null, tint = Color.White) }, Color(0xFFD32F2F)),
         )
+    }
+
+    val filteredMenuItems = remember(ApiClient.getCurrentUser()) {
+        if (ApiClient.isSuperAdmin()) menuItems
+        else menuItems.filter { it.id != 7 }
     }
 
     fun loadData() {
@@ -146,6 +152,11 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
 
     // ── If a sub-screen is selected, show it full page ──
     if (selectedOption != null) {
+        if (selectedOption == 7) {
+            SuperAdminScreen(onBack = { selectedOption = null })
+            return
+        }
+
         AdminSubScreen(
             optionId = selectedOption!!,
             title = menuItems.firstOrNull { it.id == selectedOption }?.title ?: "",
@@ -219,8 +230,8 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(menuItems.size) { index ->
-                        val item = menuItems[index]
+                    items(filteredMenuItems.size) { index ->
+                        val item = filteredMenuItems[index]
                         AdminMenuTile(item = item, onClick = { selectedOption = item.id })
                     }
                 }

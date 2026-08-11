@@ -15,7 +15,7 @@ try {
             $stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
             $stmt->execute([$userId]);
             $currentUser = $stmt->fetch();
-            if (!$currentUser || $currentUser['role'] !== 'admin') {
+            if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
                 json(403, ['error' => 'Accès refusé']);
             }
 
@@ -68,7 +68,7 @@ try {
         $stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
         $stmt->execute([$userId]);
         $currentUser = $stmt->fetch();
-        if (!$currentUser || $currentUser['role'] !== 'admin') {
+        if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
             json(403, ['error' => 'Seuls les administrateurs peuvent envoyer des notifications']);
         }
 
@@ -132,7 +132,7 @@ try {
         $stmt->execute([$userId]);
         $role = $stmt->fetchColumn();
 
-        if ($role === 'admin') {
+        if (in_array($role, ['admin', 'super_admin'])) {
             $stmt = $db->prepare('DELETE FROM notifications WHERE id = ?');
             $stmt->execute([$notifId]);
         } else {
