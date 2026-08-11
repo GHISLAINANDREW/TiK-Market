@@ -369,7 +369,7 @@ private fun EmailAuthStep(
         }
 
         val cities = buildList {
-            addAll(listOf("Dschang", "Bafoussam", "Douala", "Yaoundé"))
+            addAll(listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Bamenda"))
             detectedPlace?.takeIf { p ->
                 p.isNotBlank() && none { it.equals(p, ignoreCase = true) } && !p.equals("Autre", ignoreCase = true)
             }?.let { add(it) }

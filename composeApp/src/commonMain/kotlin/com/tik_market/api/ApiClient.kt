@@ -307,7 +307,8 @@ object ApiClient {
     fun getCurrentUserId(): Int = sessionUser?.id ?: 0
     fun isLoggedIn(): Boolean = sessionToken != null
     fun isVendor(): Boolean = sessionUser?.role == "vendor"
-    fun isAdmin(): Boolean = sessionUser?.role == "admin"
+    fun isAdmin(): Boolean = sessionUser?.role == "admin" || sessionUser?.role == "super_admin"
+    fun isSuperAdmin(): Boolean = sessionUser?.role == "super_admin"
 
     fun logout() {
         sessionToken = null
@@ -932,17 +933,19 @@ object ApiClient {
         }
     }
 
-    suspend fun updateUserRole(userId: Int, role: String) {
-        put("${Endpoints.ADMIN_USERS}?id=$userId&role=$role", "")
+    suspend fun updateUserRole(userId: Int, role: String, managedCity: String? = null) {
+        val path = buildUrl(Endpoints.ADMIN_USERS, mapOf("id" to userId, "role" to role, "managed_city" to managedCity))
+        put(path, "")
     }
 
-    suspend fun addUser(name: String, email: String, phone: String, password: String, role: String = "buyer") {
+    suspend fun addUser(name: String, email: String, phone: String, password: String, role: String = "buyer", managedCity: String? = null) {
         val body = buildJsonObject {
             put("name", name)
             put("email", email)
             put("phone", phone)
             put("password", password)
             put("role", role)
+            managedCity?.let { put("managed_city", it) }
         }.toString()
         post(Endpoints.ADMIN_USERS, body)
     }
@@ -992,8 +995,9 @@ object ApiClient {
 
     // ── Admin Dashboard Analytics ──
 
-    suspend fun fetchAdminDashboard(): ApiAdminDashboardResponse {
-        return safeRequest<ApiAdminDashboardResponse>("GET", "/admin/dashboard.php")
+    suspend fun fetchAdminDashboard(city: String? = null): ApiAdminDashboardResponse {
+        val path = buildUrl("/admin/dashboard.php", mapOf("city" to city))
+        return safeRequest<ApiAdminDashboardResponse>("GET", path)
     }
 
     // ── Group Buying ──

@@ -13,75 +13,132 @@ $adminId = getAuthUserId();
 $db = getDB();
 
 // Vérifier admin
-$stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
+$stmt = $db->prepare('SELECT role, managed_city FROM users WHERE id = ?');
 $stmt->execute([$adminId]);
 $currentUser = $stmt->fetch();
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
     json(403, ['error' => 'Accès refusé']);
 }
 
+$isSuperAdmin = ($currentUser['role'] === 'super_admin');
+$requestedCity = $_GET['city'] ?? null;
+
+// Un admin de ville ne peut voir que sa ville
+if (!$isSuperAdmin && $currentUser['managed_city']) {
+    $city = $currentUser['managed_city'];
+} else {
+    $city = $requestedCity;
+}
+
 try {
+    // Helper pour ajouter le filtre de ville aux requêtes
+    $cityFilter = $city ? " AND s.location LIKE :city " : "";
+    $cityFilterUser = $city ? " AND location LIKE :city " : "";
+    $cityParams = $city ? [':city' => "%$city%"] : [];
+
     // ─── 1. KPIs généraux ───
     
     // Total utilisateurs
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM users WHERE role = 'buyer'");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'buyer' $cityFilterUser");
+    $stmt->execute($cityParams);
     $totalBuyers = (int)$stmt->fetch()['cnt'];
 
     // Total vendeurs
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM users WHERE role = 'vendor'");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'vendor' $cityFilterUser");
+    $stmt->execute($cityParams);
     $totalVendorsCount = (int)$stmt->fetch()['cnt'];
 
     // Utilisateurs en ligne (dernières 5 minutes)
     $onlineCount = 0;
     try {
-        $stmt = $db->query("SELECT COUNT(*) as cnt FROM users WHERE last_seen >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+        $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE last_seen >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) $cityFilterUser");
+        $stmt->execute($cityParams);
         if ($stmt) $onlineCount = (int)$stmt->fetch()['cnt'];
     } catch (Exception $e) {}
     
     // Nouveaux utilisateurs (30 derniers jours)
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) $cityFilterUser");
+    $stmt->execute($cityParams);
     $newUsers30d = (int)$stmt->fetch()['cnt'];
     
     // Total boutiques
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM shops");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE 1=1 $cityFilter");
+    $stmt->execute($cityParams);
     $totalShops = (int)$stmt->fetch()['cnt'];
     
     // Boutiques en attente de vérification
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM shops WHERE is_verified = 0 AND status = 'active'");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE is_verified = 0 AND status = 'active' $cityFilter");
+    $stmt->execute($cityParams);
     $pendingShops = (int)$stmt->fetch()['cnt'];
     
     // Boutiques bannies
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM shops WHERE status = 'banned'");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE status = 'banned' $cityFilter");
+    $stmt->execute($cityParams);
     $bannedShops = (int)$stmt->fetch()['cnt'];
     
     // Total produits
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM products WHERE is_active = 1");
+    $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products p JOIN shops s ON p.shop_id = s.id WHERE p.is_active = 1 $cityFilter");
+    $stmt->execute($cityParams);
     $totalProducts = (int)$stmt->fetch()['cnt'];
     
     // Total commandes
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM orders");
+    // Pour les commandes, on filtre par la boutique qui a reçu la commande
+    $stmt = $db->prepare("
+        SELECT COUNT(DISTINCT o.id) as cnt
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE 1=1 $cityFilter
+    ");
+    $stmt->execute($cityParams);
     $totalOrders = (int)$stmt->fetch()['cnt'];
     
     // Commandes aujourd'hui
-    $stmt = $db->query("SELECT COUNT(*) as cnt FROM orders WHERE DATE(created_at) = CURDATE()");
+    $stmt = $db->prepare("
+        SELECT COUNT(DISTINCT o.id) as cnt
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE DATE(o.created_at) = CURDATE() $cityFilter
+    ");
+    $stmt->execute($cityParams);
     $ordersToday = (int)$stmt->fetch()['cnt'];
     
-    // Total revenu (plateforme, commissions potentielles)
-    $stmt = $db->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status != 'cancelled'");
+    // Total revenu
+    $stmt = $db->prepare("
+        SELECT COALESCE(SUM(oi.price * oi.quantity), 0) as total
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE o.status != 'cancelled' $cityFilter
+    ");
+    $stmt->execute($cityParams);
     $totalRevenue = (float)$stmt->fetch()['total'];
     
     // Revenu aujourd'hui
-    $stmt = $db->query("SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE DATE(created_at) = CURDATE() AND status != 'cancelled'");
+    $stmt = $db->prepare("
+        SELECT COALESCE(SUM(oi.price * oi.quantity), 0) as total
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE DATE(o.created_at) = CURDATE() AND o.status != 'cancelled' $cityFilter
+    ");
+    $stmt->execute($cityParams);
     $revenueToday = (float)$stmt->fetch()['total'];
     
     // ─── 2. Inscriptions par jour (30 derniers jours) ───
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT DATE(created_at) as day, COUNT(*) as count
         FROM users
-        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) $cityFilterUser
         GROUP BY DATE(created_at)
         ORDER BY day ASC
     ");
+    $stmt->execute($cityParams);
     $rawRegistrations = $stmt->fetchAll();
     $registrations = [];
     for ($i = 29; $i >= 0; $i--) {
@@ -97,13 +154,17 @@ try {
     }
     
     // ─── 3. Revenu par mois (12 derniers mois) ───
-    $stmt = $db->query("
-        SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COALESCE(SUM(total_amount), 0) as revenue
-        FROM orders
-        WHERE status != 'cancelled' AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+    $stmt = $db->prepare("
+        SELECT DATE_FORMAT(o.created_at, '%Y-%m') as month, COALESCE(SUM(oi.price * oi.quantity), 0) as revenue
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE o.status != 'cancelled' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH) $cityFilter
+        GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
         ORDER BY month ASC
     ");
+    $stmt->execute($cityParams);
     $rawMonthly = $stmt->fetchAll();
     $monthlyRevenue = [];
     for ($i = 11; $i >= 0; $i--) {
@@ -119,7 +180,7 @@ try {
     }
     
     // ─── 4. Top 10 vendeurs (par CA) ───
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT u.id, u.name, u.email, s.id as shop_id, s.name as shop_name,
                COUNT(DISTINCT o.id) as order_count,
                COALESCE(SUM(oi.price * oi.quantity), 0) as revenue
@@ -128,11 +189,12 @@ try {
         LEFT JOIN products p ON s.id = p.shop_id
         LEFT JOIN order_items oi ON p.id = oi.product_id
         LEFT JOIN orders o ON oi.order_id = o.id AND o.status != 'cancelled'
-        WHERE u.role = 'vendor'
+        WHERE u.role = 'vendor' $cityFilter
         GROUP BY u.id, s.id
         ORDER BY revenue DESC
         LIMIT 10
     ");
+    $stmt->execute($cityParams);
     $topVendors = $stmt->fetchAll();
     $topVendors = array_map(function($v) {
         return [
@@ -147,18 +209,19 @@ try {
     }, $topVendors);
     
     // ─── 5. Top 10 produits les plus vendus ───
-    $stmt = $db->query("
+    $stmt = $db->prepare("
         SELECT p.id, p.title, p.price, s.name as shop_name,
                COALESCE(SUM(oi.quantity), 0) as total_sold,
                COALESCE(SUM(oi.price * oi.quantity), 0) as total_generated
         FROM products p
         JOIN shops s ON p.shop_id = s.id
         LEFT JOIN order_items oi ON p.id = oi.product_id
-        WHERE p.is_active = 1
+        WHERE p.is_active = 1 $cityFilter
         GROUP BY p.id
         ORDER BY total_sold DESC
         LIMIT 10
     ");
+    $stmt->execute($cityParams);
     $topProducts = $stmt->fetchAll();
     $topProducts = array_map(function($p) {
         return [
@@ -172,14 +235,24 @@ try {
     }, $topProducts);
     
     // ─── 6. Commandes par statut ───
-    $stmt = $db->query("SELECT status, COUNT(*) as count FROM orders GROUP BY status");
+    $stmt = $db->prepare("
+        SELECT o.status, COUNT(DISTINCT o.id) as count
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        JOIN shops s ON p.shop_id = s.id
+        WHERE 1=1 $cityFilter
+        GROUP BY o.status
+    ");
+    $stmt->execute($cityParams);
     $ordersByStatus = [];
     foreach ($stmt->fetchAll() as $s) {
         $ordersByStatus[$s['status']] = (int)$s['count'];
     }
     
     // ─── 7. Répartition utilisateurs par rôle ───
-    $stmt = $db->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
+    $stmt = $db->prepare("SELECT role, COUNT(*) as count FROM users WHERE 1=1 $cityFilterUser GROUP BY role");
+    $stmt->execute($cityParams);
     $usersByRole = [];
     foreach ($stmt->fetchAll() as $r) {
         $usersByRole[$r['role']] = (int)$r['count'];
@@ -187,6 +260,8 @@ try {
     
     json(200, [
         'success' => true,
+        'city' => $city,
+        'role' => $currentUser['role'],
         'kpis' => [
             'total_users' => $totalBuyers,
             'total_vendors' => $totalVendorsCount,
