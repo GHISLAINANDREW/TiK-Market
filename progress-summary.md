@@ -12,8 +12,8 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - Git 2.45.2 (safe.directory nécessaire)
 - Vercel CLI 54.20.1, Node.js v20.16.0
 - Aiven MySQL 8.0 en ANSI_QUOTES mode
-- BaseUrl API : `https://dschang-market.onrender.com`
-- URL Web : `https://dschang-marke.vercel.app`
+- BaseUrl API : `https://tik-market.onrender.com`
+- URL Web : `https://tik-market-app.vercel.app`
 
 ## Done
 ### Infrastructure
