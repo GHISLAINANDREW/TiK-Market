@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Cahier de Charge - Dschang Market</title>
+<title>Cahier de Charge - TiK-Market</title>
 <style>
   @page { 
     size: 21cm 29.7cm; 
@@ -133,7 +133,7 @@
 
 <!-- ===== PAGE DE GARDE ===== -->
 <div class="cover-page">
-  <h1>🛍️ DSCHANG MARKET</h1>
+  <h1>🛍️ TIK-MARKET</h1>
   <p class="subtitle">Cahier de Charge Technique &amp; Fonctionnel</p>
   <div class="line"></div>
   <p class="info">
@@ -172,7 +172,7 @@
 <h1 id="s1">1. Présentation du projet</h1>
 
 <h2>1.1 Contexte</h2>
-<p>Dschang Market est une plateforme de commerce en ligne destinée aux habitants et commerçants de Dschang (Ouest-Cameroun) et ses environs. L'objectif est de faciliter les échanges commerciaux locaux en proposant une solution moderne, accessible depuis le web et les appareils Android.</p>
+<p>TiK-Market est une plateforme de commerce en ligne destinée aux habitants et commerçants (Cameroun) et ses environs. L'objectif est de faciliter les échanges commerciaux locaux en proposant une solution moderne, accessible depuis le web et les appareils Android.</p>
 
 <h2>1.2 Objectifs</h2>
 <ul>
@@ -214,7 +214,7 @@
   <tr><th>Contrainte</th><th>Solution</th></tr>
   <tr><td>Budget nul (0 FCFA)</td><td>Hébergement gratuit : Render + Vercel + Cloudinary (gratuit)</td></tr>
   <tr><td>Base de données distante</td><td>Aiven MySQL 8.0 (plan gratuit)</td></tr>
-  <tr><td>Domaine</td><td>URL Vercel gratuite (dschang-market.vercel.app)</td></tr>
+  <tr><td>Domaine</td><td>URL Vercel gratuite (tik-market-app.vercel.app)</td></tr>
   <tr><td>Multi-plateforme</td><td>Kotlin Multiplatform (KMP) + Compose</td></tr>
   <tr><td>Build local (Windows)</td><td>JAVA_HOME configuré, Gradle Wrapper</td></tr>
   <tr><td>Stockage images</td><td>Cloudinary (cloud_name: ***REMOVED***)</td></tr>
@@ -316,7 +316,7 @@ api/
 
 <h2>3.4 Flux des données</h2>
 <ol>
-  <li><strong>Client</strong> (Web/Android) émet une requête HTTP(S) vers <code>https://dschang-market.onrender.com</code></li>
+  <li><strong>Client</strong> (Web/Android) émet une requête HTTP(S) vers <code>https://tik-market.onrender.com</code></li>
   <li><strong>API PHP</strong> (Render) reçoit la requête, valide l'authentification (JWT Bearer)</li>
   <li><strong>Base Aiven</strong> (MySQL 8.0) exécute la requête SQL</li>
   <li><strong>Réponse JSON</strong> renvoyée au client</li>
@@ -395,7 +395,7 @@ api/
     <td>🎯 Versionning</td>
     <td>Git + GitHub</td>
     <td>2.45.2</td>
-    <td>Code source GHISLAINANDREW/dschang-market</td>
+    <td>Code source GHISLAINANDREW/TiK-Market</td>
   </tr>
 </table>
 
@@ -583,7 +583,7 @@ api/
 <h2>8.1 Application Web</h2>
 <p><em>(Les captures d'écran de l'application sont disponibles dans le dossier du projet)</em></p>
 
-<p>L'application web est accessible à : <strong>https://dschang-market.vercel.app</strong></p>
+<p>L'application web est accessible à : <strong>https://tik-market-app.vercel.app</strong></p>
 
 <p>Elle affiche :</p>
 <ul>
@@ -781,7 +781,7 @@ function getDB() {
 
 <table>
   <tr><th>Fonctionnalité</th><th>Priorité</th><th>Description</th></tr>
-  <tr><td>🌐 Domaine personnalisé</td><td>Haute</td><td>Achat d'un domaine .com (dschangmarket.com) et configuration DNS</td></tr>
+  <tr><td>🌐 Domaine personnalisé</td><td>Haute</td><td>Achat d'un domaine .com (tikmarket.com) et configuration DNS</td></tr>
   <tr><td>📱 Play Store</td><td>Haute</td><td>Signature APK, création compte développeur, publication sur Google Play</td></tr>
   <tr><td>💳 Paiement Orange Money API</td><td>Haute</td><td>Intégration API officielle Orange Money pour les paiements automatiques</td></tr>
   <tr><td>🚚 Livraison</td><td>Haute</td><td>Suivi de livraison en temps réel, intégration coursiers locaux</td></tr>
@@ -797,7 +797,7 @@ function getDB() {
 <div class="page-break"></div>
 <h1 id="s12">12. Conclusion</h1>
 
-<p>Le projet <strong>Dschang Market</strong> est une plateforme de commerce en ligne complète, bâtie avec des technologies modernes et entièrement gratuites.</p>
+<p>Le projet <strong>TiK-Market</strong> est une plateforme de commerce en ligne complète, bâtie avec des technologies modernes et entièrement gratuites.</p>
 
 <h2>12.1 Chiffres clés</h2>
 <table>
@@ -813,9 +813,9 @@ function getDB() {
 
 <h2>12.2 Accès</h2>
 <ul>
-  <li><strong>Site web :</strong> <a href="https://dschang-market.vercel.app">https://dschang-market.vercel.app</a></li>
-  <li><strong>API :</strong> <a href="https://dschang-market.onrender.com">https://dschang-market.onrender.com</a></li>
-  <li><strong>Code source :</strong> <a href="https://github.com/GHISLAINANDREW/dschang-market">github.com/GHISLAINANDREW/dschang-market</a></li>
+  <li><strong>Site web :</strong> <a href="https://tik-market-app.vercel.app">https://tik-market-app.vercel.app</a></li>
+<li><strong>API :</strong> <a href="https://tik-market.onrender.com">https://tik-market.onrender.com</a></li>
+<li><strong>Code source :</strong> <a href="https://github.com/GHISLAINANDREW/TiK-Market">github.com/GHISLAINANDREW/TiK-Market</a></li>
   <li><strong>APK :</strong> composeApp/build/outputs/apk/debug/composeApp-debug.apk</li>
 </ul>
 
@@ -831,7 +831,7 @@ function getDB() {
 </ul>
 
 <div class="footer">
-  <p><strong>Dschang Market</strong> — Cahier de Charge v1.0 — Juillet 2026</p>
+  <p><strong>TiK-Market</strong> — Cahier de Charge v1.0 — Juillet 2026</p>
   <p><em>Document rédigé dans le cadre du développement de la plateforme de commerce en ligne de Dschang</em></p>
 </div>
 

@@ -1,9 +1,9 @@
 -- ============================================================
--- Dschang Market Place — Schéma MySQL
+-- TiK-Market Place — Schéma MySQL
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS dschang_market CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE dschang_market;
+CREATE DATABASE IF NOT EXISTS tik_market CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE tik_market;
 
 -- ============================================================
 -- UTILISATEURS

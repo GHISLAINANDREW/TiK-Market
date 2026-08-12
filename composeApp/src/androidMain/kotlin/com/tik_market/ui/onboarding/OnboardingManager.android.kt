@@ -3,7 +3,7 @@ package com.tik_market.ui.onboarding
 import android.content.Context
 
 actual object OnboardingManager {
-    private const val PREFS_NAME = "dschangmarket_onboarding"
+    private const val PREFS_NAME = "tikmarket_onboarding"
     private const val KEY_DONE = "onboarding_done"
 
     private var prefs: android.content.SharedPreferences? = null

@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 actual object NotificationUtils {
     private var appContext: Context? = null
-    private const val CHANNEL_ID = "dschang_market_notifs"
+    private const val CHANNEL_ID = "tik_market_notifs"
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -28,7 +28,7 @@ actual object NotificationUtils {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Dschang Market Notifications"
+            val name = "TiK-Market Notifications"
             val descriptionText = "Notifications pour les messages et commandes"
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
