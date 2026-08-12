@@ -42,7 +42,9 @@ function getDB(): PDO {
     } catch (PDOException $e) {
         // Last resort: try with explicit SSL options
         try {
-            $caCert = getenv('DB_SSL_CA') ?: '/etc/ssl/certs/ca-certificates.crt';
+            $localCa = __DIR__ . '/ca.pem';
+            $caCert = getenv('DB_SSL_CA') ?: (file_exists($localCa) ? $localCa : '/etc/ssl/certs/ca-certificates.crt');
+
             if (file_exists($caCert)) {
                 $options[PDO::MYSQL_ATTR_SSL_CA] = $caCert;
             }
