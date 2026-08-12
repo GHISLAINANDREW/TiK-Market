@@ -1,4 +1,4 @@
-# Dschang Market - Progression KMP
+# TiK-Market - Progression KMP
 
 ## Goal
 Déployer l'infrastructure complète et développer les fonctionnalités métier : API PHP sur Render, base Aiven, web WasmJS sur Vercel, médias Cloudinary, APK Android, avec flux commandes à deux modes de paiement (livraison ou direct vendeur), chat WhatsApp-like, et messages vocaux persistants.
@@ -22,7 +22,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - **SQL ANSI_QUOTES corrigé** – Tous les identifiants SQL utilisent `'`
 - **Cloudinary configuré** – `cloud_name=bkmghmxf`, `api_key=689399363143551`, `api_secret=A759UpXv9WNkth0ANZGLnwll-Sk`
 - **APK Android buildé** – `TiK-Market_v1.0.6.apk` (URL API : `https://tik-market.onrender.com`)
-- **Web WasmJS buildé et déployé** – `https://dschang-marke.vercel.app`
+- **Web WasmJS buildé et déployé** – `https://tik-market-app.vercel.app`
 - **GitHub Actions workflow créé** – `.github/workflows/deploy-web.yml`
 
 ### Chat / Messages

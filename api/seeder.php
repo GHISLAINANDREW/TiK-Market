@@ -48,9 +48,9 @@ if ($vendorCount == 0) {
 
 // Insert shops
 $shopsData = [
-    ['Ferme Avicole de Dschang', 'Produits avicoles de qualité depuis 2015. Élevage en plein air.', '690000001', 'Quartier Foto', 'Alimentation'],
-    ['Tissus & Mode Dschang', 'Vente de tissus traditionnels et confection sur mesure.', '690000002', 'Marché A', 'Mode'],
-    ['Electro-Dschang', 'Appareils électroniques neufs sous garantie. Livraison à Dschang.', '690000003', 'Centre-ville', 'Électronique'],
+    ['Ferme Avicole TiK', 'Produits avicoles de qualité depuis 2015. Élevage en plein air.', '690000001', 'Quartier Foto', 'Alimentation'],
+    ['Tissus & Mode TiK', 'Vente de tissus traditionnels et confection sur mesure.', '690000002', 'Marché A', 'Mode'],
+    ['Electro-TiK', 'Appareils électroniques neufs sous garantie. Livraison rapide.', '690000003', 'Centre-ville', 'Électronique'],
 ];
 
 // Get vendor IDs

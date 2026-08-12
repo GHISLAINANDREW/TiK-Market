@@ -8,7 +8,7 @@ import android.content.SharedPreferences
  * Requires init(context) to be called from MainActivity.
  */
 actual object TokenStorage {
-    private const val PREFS_NAME = "dschang_market_prefs"
+    private const val PREFS_NAME = "tik_market_prefs"
     private const val KEY_TOKEN = "auth_token"
 
     private var prefs: SharedPreferences? = null
