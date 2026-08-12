@@ -328,8 +328,7 @@ object ApiClient {
      */
     private var _baseUrls: List<String> = listOf(
         "https://tik-market.onrender.com",
-        "https://dschang-market.onrender.com",
-        "https://dschang-market-proxy.gtankou.workers.dev"
+        "https://tik-market-proxy.gtankou.workers.dev"
     )
     private var _activeBaseUrlIndex = 0
 
