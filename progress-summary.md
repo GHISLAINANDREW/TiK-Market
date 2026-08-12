@@ -18,7 +18,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 ## Done
 ### Infrastructure
 - **API Render opérationnelle** – Login, produits, boutiques, commandes fonctionnent
-- **Aiven connecté sans SSL** – Host `mysql-dschang-market-dschang-market.l.aivencloud.com:10180`
+- **Aiven connecté avec SSL** – Host `mysql-32d32cc7-tik-market.k.aivencloud.com:10180`
 - **SQL ANSI_QUOTES corrigé** – Tous les identifiants SQL utilisent `'`
 - **Cloudinary configuré** – `cloud_name=bkmghmxf`, `api_key=689399363143551`, `api_secret=A759UpXv9WNkth0ANZGLnwll-Sk`
 - **APK Android buildé** – `composeApp/build/outputs/apk/debug/composeApp-debug.apk`
