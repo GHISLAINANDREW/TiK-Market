@@ -41,48 +41,55 @@ try {
     // Total utilisateurs
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'buyer' $cityFilterUser");
     $stmt->execute($cityParams);
-    $totalBuyers = (int)$stmt->fetch()['cnt'];
+    $row = $stmt->fetch();
+    $totalBuyers = $row ? (int)$row['cnt'] : 0;
 
     // Total vendeurs
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'vendor' $cityFilterUser");
     $stmt->execute($cityParams);
-    $totalVendorsCount = (int)$stmt->fetch()['cnt'];
+    $row = $stmt->fetch();
+    $totalVendorsCount = $row ? (int)$row['cnt'] : 0;
 
     // Utilisateurs en ligne (dernières 5 minutes)
     $onlineCount = 0;
     try {
         $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE last_seen >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) $cityFilterUser");
         $stmt->execute($cityParams);
-        if ($stmt) $onlineCount = (int)$stmt->fetch()['cnt'];
+        $row = $stmt->fetch();
+        if ($row) $onlineCount = (int)$row['cnt'];
     } catch (Exception $e) {}
-    
+
     // Nouveaux utilisateurs (30 derniers jours)
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) $cityFilterUser");
     $stmt->execute($cityParams);
-    $newUsers30d = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $newUsers30d = $row ? (int)$row['cnt'] : 0;
+
     // Total boutiques
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE 1=1 $cityFilter");
     $stmt->execute($cityParams);
-    $totalShops = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $totalShops = $row ? (int)$row['cnt'] : 0;
+
     // Boutiques en attente de vérification
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE is_verified = 0 AND status = 'active' $cityFilter");
     $stmt->execute($cityParams);
-    $pendingShops = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $pendingShops = $row ? (int)$row['cnt'] : 0;
+
     // Boutiques bannies
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM shops s WHERE status = 'banned' $cityFilter");
     $stmt->execute($cityParams);
-    $bannedShops = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $bannedShops = $row ? (int)$row['cnt'] : 0;
+
     // Total produits
     $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM products p JOIN shops s ON p.shop_id = s.id WHERE p.is_active = 1 $cityFilter");
     $stmt->execute($cityParams);
-    $totalProducts = (int)$stmt->fetch()['cnt'];
+    $row = $stmt->fetch();
+    $totalProducts = $row ? (int)$row['cnt'] : 0;
     
     // Total commandes
-    // Pour les commandes, on filtre par la boutique qui a reçu la commande
     $stmt = $db->prepare("
         SELECT COUNT(DISTINCT o.id) as cnt
         FROM orders o
@@ -92,8 +99,9 @@ try {
         WHERE 1=1 $cityFilter
     ");
     $stmt->execute($cityParams);
-    $totalOrders = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $totalOrders = $row ? (int)$row['cnt'] : 0;
+
     // Commandes aujourd'hui
     $stmt = $db->prepare("
         SELECT COUNT(DISTINCT o.id) as cnt
@@ -104,8 +112,9 @@ try {
         WHERE DATE(o.created_at) = CURDATE() $cityFilter
     ");
     $stmt->execute($cityParams);
-    $ordersToday = (int)$stmt->fetch()['cnt'];
-    
+    $row = $stmt->fetch();
+    $ordersToday = $row ? (int)$row['cnt'] : 0;
+
     // Total revenu
     $stmt = $db->prepare("
         SELECT COALESCE(SUM(oi.price * oi.quantity), 0) as total
@@ -116,8 +125,9 @@ try {
         WHERE o.status != 'cancelled' $cityFilter
     ");
     $stmt->execute($cityParams);
-    $totalRevenue = (float)$stmt->fetch()['total'];
-    
+    $row = $stmt->fetch();
+    $totalRevenue = $row ? (float)$row['total'] : 0.0;
+
     // Revenu aujourd'hui
     $stmt = $db->prepare("
         SELECT COALESCE(SUM(oi.price * oi.quantity), 0) as total
@@ -128,7 +138,8 @@ try {
         WHERE DATE(o.created_at) = CURDATE() AND o.status != 'cancelled' $cityFilter
     ");
     $stmt->execute($cityParams);
-    $revenueToday = (float)$stmt->fetch()['total'];
+    $row = $stmt->fetch();
+    $revenueToday = $row ? (float)$row['total'] : 0.0;
     
     // ─── 2. Inscriptions par jour (30 derniers jours) ───
     $stmt = $db->prepare("
