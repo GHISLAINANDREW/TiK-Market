@@ -242,7 +242,7 @@ fun ProfileScreen(
                     }
 
                     // Section Spéciale Vendeur/Admin
-                    if (userRole == "vendor" || userRole == "admin") {
+                    if (userRole == "vendor" || userRole == "admin" || userRole == "super_admin") {
                         Spacer(Modifier.height(16.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -254,7 +254,7 @@ fun ProfileScreen(
                                 if (userRole == "vendor") {
                                     ProfileMenuItem(Icons.Default.Storefront, "Espace Vendeur", "Gérez vos produits et ventes", Green) { onVendorDashboardClick() }
                                 }
-                                if (userRole == "admin") {
+                                if (userRole == "admin" || userRole == "super_admin") {
                                     if (userRole == "vendor") HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Color(0xFFF5F5F5))
                                     ProfileMenuItem(Icons.Default.AdminPanelSettings, "Administration", "Gérer la plateforme", BlueAccent) { onAdminDashboardClick() }
                                 }

@@ -220,12 +220,12 @@ try {
             json(400, ['error' => 'shop_id et media_url requis']);
         }
 
-        // Verify vendor owns the shop (skip for admin)
+        // Verify vendor owns the shop (skip for admins)
         $isAdmin = false;
         $stmt = $db->prepare("SELECT role FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $userRow = $stmt->fetch();
-        if ($userRow && $userRow['role'] === 'admin') {
+        if ($userRow && in_array($userRow['role'], ['admin', 'super_admin'])) {
             $isAdmin = true;
         } else {
             $stmt = $db->prepare("SELECT id FROM shops WHERE id = ? AND vendor_id = ?");
