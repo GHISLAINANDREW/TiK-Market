@@ -563,7 +563,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onVendorClick = {
                     if (appState.isLoggedIn) {
                         if (appState.userRole == "vendor") appState.navigateTo(NavScreen.VendorDashboard)
-                        else if (appState.userRole == "admin") appState.navigateTo(NavScreen.AdminDashboard)
+                        else if (appState.userRole == "admin" || appState.userRole == "super_admin") appState.navigateTo(NavScreen.AdminDashboard)
                         else appState.navigateTo(NavScreen.Profile)
                     } else {
                         appState.isRegisterMode = true

@@ -460,8 +460,8 @@ fun HomeScreen(
                                     .padding(horizontal = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                // "Add story" button for vendors
-                                if (userRole == "vendor" || userRole == "admin") {
+                                // "Add story" button for vendors and admins
+                                if (userRole == "vendor" || userRole == "admin" || userRole == "super_admin") {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.clickable { showStoryTypeDialog = true }

@@ -352,7 +352,7 @@ private fun AdminSubScreen(
                 2 -> AdminNotificationsContent(scope = scope, users = users)
                 3 -> AdminDashboardContent(scope = scope)
                 4 -> AdminOnlineUsersContent(scope = scope)
-                5 -> AdminStoriesContent(scope = scope)
+                5 -> AdminStoriesContent(scope = scope, shops = shops)
                 6 -> AdminHeroContent(scope = scope, shops = shops)
             }
 
@@ -1236,7 +1236,7 @@ private fun OnlineUserCard(user: ApiOnlineUser) {
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
+fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>) {
     var stories by remember { mutableStateOf<List<ApiStory>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -1314,7 +1314,7 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope) {
                         scope.launch {
                             isSubmitting = true
                             try {
-                                ApiClient.createStory(shopId = 0, mediaUrl = newMediaUrl, mediaType = newMediaType, caption = newCaption, duration = newMediaDuration)
+                                ApiClient.createStory(shopId = shops.firstOrNull()?.id ?: 0, mediaUrl = newMediaUrl, mediaType = newMediaType, caption = newCaption, duration = newMediaDuration)
                                 showAddDialog = false
                                 newMediaUrl = ""; newCaption = ""; newMediaDuration = 0; load()
                             } catch (e: Exception) { error = e.message }
