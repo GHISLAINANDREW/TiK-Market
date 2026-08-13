@@ -16,7 +16,7 @@ $db = getDB();
 $stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
 $stmt->execute([$adminId]);
 $currentUser = $stmt->fetch();
-if (!$currentUser || $currentUser['role'] !== 'admin') {
+if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
     json(403, ['error' => 'Accès refusé']);
 }
 

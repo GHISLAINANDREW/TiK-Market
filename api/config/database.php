@@ -151,6 +151,18 @@ function getAuthUserId(): int {
     return $userId;
 }
 
+function getUserRole(): string {
+    $userId = getAuthUserId();
+    try {
+        $db = getDB();
+        $stmt = $db->prepare('SELECT role FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        return $stmt->fetchColumn() ?: 'buyer';
+    } catch (Exception $e) {
+        return 'buyer';
+    }
+}
+
 function generateToken(int $userId, string $email): string {
     return jwt_encode(['user_id' => $userId, 'email' => $email]);
 }

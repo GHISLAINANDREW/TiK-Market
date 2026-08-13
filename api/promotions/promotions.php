@@ -119,7 +119,7 @@ try {
         $shop = $stmt->fetch();
         if (!$shop) json(404, ['error' => 'Boutique introuvable']);
 
-        $isAdmin = (getUserRole() === 'admin');
+        $isAdmin = in_array(getUserRole(), ['admin', 'super_admin']);
         if (!$isAdmin && (int)$shop['vendor_id'] !== $userId) {
             json(403, ['error' => 'Non autorisé']);
         }
