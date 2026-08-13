@@ -6,42 +6,55 @@ try {
     echo "<h1>🛠️ Réparation Globale TiK-Market</h1>";
 
     // 1. Table USERS
-    echo "Vérification de la table 'users'... ";
+    echo "Mise à jour des rôles utilisateurs... ";
     $db->exec("ALTER TABLE users MODIFY COLUMN role ENUM('buyer', 'vendor', 'admin', 'super_admin') NOT NULL DEFAULT 'buyer'");
 
     $check = $db->query("SHOW COLUMNS FROM users LIKE 'managed_city'")->fetch();
     if (!$check) {
         $db->exec("ALTER TABLE users ADD COLUMN managed_city VARCHAR(100) DEFAULT NULL AFTER location");
         echo "✅ Colonne 'managed_city' ajoutée.<br>";
-    } else {
-        echo "ℹ️ Table users déjà à jour.<br>";
     }
 
-    // 2. Table PROMOTIONS
-    echo "Vérification de la table 'promotions'... ";
+    // 2. Table STORIES (Le point bloquant pour les vendeurs/admins)
+    echo "Vérification de la table 'stories'... ";
+    $db->exec("CREATE TABLE IF NOT EXISTS stories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        shop_id INT NULL,
+        media_url VARCHAR(500) NOT NULL,
+        media_type VARCHAR(10) NOT NULL DEFAULT 'image',
+        caption TEXT,
+        duration INT DEFAULT 0,
+        is_admin TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE SET NULL
+    )");
+    // S'assurer que shop_id peut être NULL (pour les stories admin)
+    $db->exec("ALTER TABLE stories MODIFY COLUMN shop_id INT NULL");
+
+    // Ajouter is_admin si manquant
+    $check = $db->query("SHOW COLUMNS FROM stories LIKE 'is_admin'")->fetch();
+    if (!$check) {
+        $db->exec("ALTER TABLE stories ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER duration");
+    }
+    echo "✅ Table stories réparée.<br>";
+
+    // 3. Table PROMOTIONS
+    echo "Mise à jour des promotions... ";
     $cols = ['discount_fixed' => "INT NOT NULL DEFAULT 0", 'min_amount' => "INT NOT NULL DEFAULT 0"];
     foreach ($cols as $col => $def) {
         $check = $db->query("SHOW COLUMNS FROM promotions LIKE '$col'")->fetch();
-        if (!$check) {
-            $db->exec("ALTER TABLE promotions ADD COLUMN $col $def");
-            echo "✅ Colonne '$col' ajoutée.<br>";
-        }
+        if (!$check) $db->exec("ALTER TABLE promotions ADD COLUMN $col $def");
     }
-    echo "ℹ️ Table promotions à jour.<br>";
+    echo "✅ Table promotions à jour.<br>";
 
-    // 3. Table NOTIFICATIONS (Ajout de related_id si manquant)
-    $check = $db->query("SHOW COLUMNS FROM notifications LIKE 'related_id'")->fetch();
-    if (!$check) {
-        $db->exec("ALTER TABLE notifications ADD COLUMN related_id INT DEFAULT NULL AFTER type");
-        echo "✅ Colonne 'related_id' ajoutée.<br>";
-    }
+    // 4. Droits Super Admin
+    $db->exec("UPDATE users SET role = 'super_admin' WHERE email = 'AdminTikMarket@gmail.com' OR email = 'admin@dschangmarket.com'");
+    echo "✅ Votre compte est maintenant Super Admin.<br>";
 
-    // 4. S'assurer que VOUS êtes super_admin
-    $db->exec("UPDATE users SET role = 'super_admin' WHERE role = 'admin' OR email LIKE 'admin%'");
-    echo "✅ Permissions administrateurs synchronisées.<br>";
-
-    echo "<h2>🚀 Réparation terminée avec succès !</h2>";
-    echo "<p>Vous pouvez maintenant retourner sur l'application.</p>";
+    echo "<h2>🚀 TOUT EST RÉPARÉ !</h2>";
+    echo "<p>Veuillez rafraîchir l'application maintenant.</p>";
 
 } catch (Exception $e) {
     echo "<h2 style='color:red;'>❌ Erreur : " . $e->getMessage() . "</h2>";
