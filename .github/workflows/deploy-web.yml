@@ -10,8 +10,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - 'gradlew'
-      - 'gradlew.bat'
-      - 'api/**'
+      - 'web/**'
 
 jobs:
   build-and-deploy:
@@ -26,36 +25,36 @@ jobs:
           java-version: '23'
           distribution: 'temurin'
 
-      - name: Setup Gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup Vercel CLI
-        run: npm install -g vercel
-
-      - name: Build WasmJS (Web)
+      - name: Build Web (WasmJS)
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:wasmJsProductionExecutableCompileSync
+          ./gradlew :composeApp:wasmJsBrowserDistribution
 
-      - name: Fix import map (js-joda path)
+      - name: Prepare Distribution
         run: |
-          # Copy js-joda.esm.js to root level (outside node_modules)
-          cp composeApp/build/web/dist-prod/node_modules/@js-joda/core/js-joda.esm.js composeApp/build/web/dist-prod/js-joda.esm.js
-          # Fix import map in index.html (path has wrong dist/ directory)
-          sed -i 's|./node_modules/@js-joda/core/dist/js-joda.esm.js|./js-joda.esm.js|g' composeApp/build/web/dist-prod/index.html
+          DIST_DIR="composeApp/build/dist/wasmJs/productionExecutable"
+          # Appliquer les fichiers personnalisés du dossier 'web'
+          if [ -d "web" ]; then
+            cp -r web/* "$DIST_DIR/"
+          fi
+          # S'assurer que vercel.json est présent
+          if [ -f "vercel.json" ]; then
+            cp vercel.json "$DIST_DIR/"
+          fi
 
       - name: Deploy to Vercel
-        run: |
-          vercel deploy composeApp/build/web/dist-prod --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: composeApp/build/dist/wasmJs/productionExecutable
+          vercel-args: '--prod'
