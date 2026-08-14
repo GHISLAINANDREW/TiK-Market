@@ -11,6 +11,7 @@ on:
       - 'gradle.properties'
       - 'gradlew'
       - 'web/**'
+      - 'vercel.json'
 
 jobs:
   build-and-deploy:
@@ -40,14 +41,12 @@ jobs:
 
       - name: Prepare Distribution
         run: |
-          DIST_DIR="composeApp/build/dist/wasmJs/productionExecutable"
-          # Appliquer les fichiers personnalisés du dossier 'web'
+          # Copy web/ folder content into build output
+          # Note: local build path might be slightly different on Ubuntu
+          # Let's find the exact path
+          DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
           if [ -d "web" ]; then
-            cp -r web/* "$DIST_DIR/"
-          fi
-          # S'assurer que vercel.json est présent
-          if [ -f "vercel.json" ]; then
-            cp vercel.json "$DIST_DIR/"
+            cp -rv web/* "$DIST_DIR/"
           fi
 
       - name: Deploy to Vercel
@@ -56,5 +55,4 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: composeApp/build/dist/wasmJs/productionExecutable
           vercel-args: '--prod'
