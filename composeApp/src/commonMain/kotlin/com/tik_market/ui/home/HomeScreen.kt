@@ -448,7 +448,7 @@ fun HomeScreen(
                                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Arrivages du jour", style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+                                Text("✨ Arrivages du jour", style = MaterialTheme.typography.titleSmall, color = TextPrimary)
                                 Spacer(Modifier.width(6.dp))
                                 Text("🔥", fontSize = 14.sp)
                             }

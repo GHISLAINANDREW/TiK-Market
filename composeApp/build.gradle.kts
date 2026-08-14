@@ -60,15 +60,17 @@ android {
 
     defaultConfig {
         applicationId = "com.tik_market.app"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 34
         versionCode = verCode
         versionName = verName
 
-        // Assure que l'APK inclut les bibliothèques pour toutes les architectures de processeur communes
+        // Supporte absolument toutes les architectures mobiles
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
         }
+        
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
