@@ -383,7 +383,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                     bottomBar = {
                         if (!hideBottomBar) {
                             Surface(
-                                modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
+                                modifier = Modifier.fillMaxWidth(),
                                 tonalElevation = 8.dp,
                                 shadowElevation = 16.dp
                             ) {
