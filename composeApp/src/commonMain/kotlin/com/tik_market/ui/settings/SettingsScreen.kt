@@ -33,6 +33,8 @@ fun SettingsScreen(
     language: String = "fr",
     onToggleLanguage: () -> Unit = {},
     onAboutClick: () -> Unit = {},
+    onLegalClick: () -> Unit = {},
+    onTermsClick: () -> Unit = {},
     onDownloadApk: () -> Unit = {}
 ) {
     val s = com.tik_market.utils.getStrings(language)
@@ -92,9 +94,9 @@ fun SettingsScreen(
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
             }
-            // Confidentialité
+            // Mentions Légales
             Surface(
-                onClick = { onAboutClick() },
+                onClick = onLegalClick,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface
@@ -102,7 +104,21 @@ fun SettingsScreen(
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Lock, null, Modifier.size(22.dp), tint = Orange)
                     Spacer(Modifier.width(12.dp))
-                    Text("Conditions & Confidentialité", fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text("Mentions Légales", fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
+                }
+            }
+            // Conditions d'Utilisation
+            Surface(
+                onClick = onTermsClick,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, null, Modifier.size(22.dp), tint = Orange)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Conditions d'Utilisation", fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
             }
