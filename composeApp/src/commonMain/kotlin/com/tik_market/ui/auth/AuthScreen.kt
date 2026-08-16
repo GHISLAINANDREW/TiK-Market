@@ -662,26 +662,26 @@ private fun OtpStep(
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            "Code de vérification",
+            s.authOtpTitle,
             style = MaterialTheme.typography.titleLarge,
             color = TextPrimary
         )
         Spacer(Modifier.height(4.dp))
-        Text("Envoyé au +237 $cleanedPhone", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        Text(s.sentTo.format(cleanedPhone), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
 
         Spacer(Modifier.height(20.dp))
 
         LightTextField(
             value = form.otpCode,
             onValueChange = { if (it.length <= 6) onFormChange(form.copy(otpCode = it, error = null)) },
-            label = "Code à 6 chiffres",
+            label = s.sixDigitCode,
             keyboardType = KeyboardType.Number
         )
 
         if (remainingSeconds > 0) {
             Spacer(Modifier.height(6.dp))
             Text(
-                "Code valable ${remainingSeconds}s",
+                s.codeValidFor.format(remainingSeconds),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (remainingSeconds < 30) RedAccent else TextSecondary
             )
@@ -716,12 +716,12 @@ private fun OtpStep(
         }
 
         PrimaryButton(
-            text = if (form.isLoading) "" else "Vérifier",
+            text = if (form.isLoading) "" else s.verify,
             isLoading = form.isLoading,
             onClick = {
                 scope.launch {
                     if (form.otpCode.length < 4) {
-                        onFormChange(form.copy(error = "Code trop court"))
+                        onFormChange(form.copy(error = s.codeTooShort))
                         return@launch
                     }
                     onFormChange(form.copy(isLoading = true, error = null))
@@ -734,10 +734,10 @@ private fun OtpStep(
                                 resp.user?.role ?: "buyer"
                             )
                         } else {
-                            onFormChange(form.copy(error = "Code incorrect", isLoading = false))
+                            onFormChange(form.copy(error = s.incorrectCode, isLoading = false))
                         }
                     } catch (e: Throwable) {
-                        onFormChange(form.copy(error = "Erreur : ${e.message}", isLoading = false))
+                        onFormChange(form.copy(error = "${s.authErrorPrefix} : ${e.message}", isLoading = false))
                     }
                 }
             }
@@ -762,11 +762,11 @@ private fun OtpStep(
                     }
                 }
             }) {
-                Text("Renvoyer le code", color = Green, style = MaterialTheme.typography.bodySmall)
+                Text(s.resendCode, color = Green, style = MaterialTheme.typography.bodySmall)
             }
         } else {
             TextButton(onClick = { onFormChange(form.copy(isOtpStep = false)) }) {
-                Text("Changer de numéro", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                Text(s.changeNumber, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

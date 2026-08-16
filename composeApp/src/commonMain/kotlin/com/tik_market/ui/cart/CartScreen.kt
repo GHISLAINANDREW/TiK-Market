@@ -26,6 +26,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.EmptyState
 import com.tik_market.ui.components.PriceDisplay
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,23 +37,23 @@ fun CartScreen(
     onRemove: (Int) -> Unit,
     onCheckout: () -> Unit
 ) {
+    val s = LocalAppStrings.current
     var pendingRemoveIndex by remember { mutableStateOf(-1) }
 
-    // Confirm remove dialog
     if (pendingRemoveIndex >= 0 && pendingRemoveIndex < items.size) {
         AlertDialog(
             onDismissRequest = { pendingRemoveIndex = -1 },
             icon = { Icon(Icons.Default.Delete, null, tint = RedAccent) },
-            title = { Text("Retirer du panier") },
-            text = { Text("Supprimer « ${items[pendingRemoveIndex].product.title} » du panier ?") },
+            title = { Text(s.removeFromCart) },
+            text = { Text(s.removeFromCartConfirm.format(items[pendingRemoveIndex].product.title)) },
             confirmButton = {
                 TextButton(onClick = { onRemove(pendingRemoveIndex); pendingRemoveIndex = -1 }) {
-                    Text("Retirer", color = RedAccent)
+                    Text(s.remove, color = RedAccent)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingRemoveIndex = -1 }) {
-                    Text("Annuler")
+                    Text(s.cancel)
                 }
             }
         )
@@ -64,7 +65,7 @@ fun CartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mon Panier (${items.size})", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text("${s.cartTitle} (${items.size})", fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
             )
@@ -74,12 +75,12 @@ fun CartScreen(
                 Surface(shadowElevation = 8.dp) {
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Total", fontSize = if (isCompact) 11.sp else 13.sp, color = Color.Gray)
+                            Text(s.total, fontSize = if (isCompact) 11.sp else 13.sp, color = Color.Gray)
                             Text("${items.sumOf { it.subtotal }.toInt()} FCFA", fontSize = if (isCompact) 18.sp else 22.sp, fontWeight = FontWeight.Bold, color = Green)
                         }
                         Button(onClick = onCheckout, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(48.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Green)) {
-                            Text("Commander", fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
+                            Text(s.buyNow, fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
                         }
                     }
                 }
@@ -87,7 +88,7 @@ fun CartScreen(
         }
     ) { padding ->
         if (items.isEmpty()) {
-            EmptyState(Icons.Default.ShoppingCart, "Votre panier est vide", "Ajoutez des produits depuis l'accueil")
+            EmptyState(Icons.Default.ShoppingCart, s.emptyCartTitle, s.emptyCartHint)
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5))) {
                 itemsIndexed(items) { index, item ->
@@ -123,7 +124,6 @@ private fun CartItemCard(item: CartItem, isCompact: Boolean = false, onIncrease:
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            // Image: loaded bitmap or fallback emoji
             val loadedBitmap = imageBitmap
             if (loadedBitmap != null) {
                 Image(
@@ -145,7 +145,6 @@ private fun CartItemCard(item: CartItem, isCompact: Boolean = false, onIncrease:
                 PriceDisplay(item.product.price, item.product.comparePrice, 16.sp)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Quantité
                     IconButton(onClick = onDecrease, modifier = Modifier.size(28.dp), enabled = item.quantity > 1) {
                         Icon(Icons.Default.Remove, null, Modifier.size(16.dp))
                     }
