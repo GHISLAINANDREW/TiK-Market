@@ -26,6 +26,7 @@ import com.tik_market.ui.components.EmptyState
 import com.tik_market.ui.components.OrderProgressBar
 import com.tik_market.theme.Green
 import com.tik_market.theme.Orange
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +37,7 @@ fun OrdersScreen(
     onContactVendor: (productId: Int) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
     var orders by remember { mutableStateOf<List<ApiOrder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var snackbarHostState by remember { mutableStateOf(SnackbarHostState()) }
@@ -57,7 +59,7 @@ fun OrdersScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Mes commandes", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text(s.myOrders, fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
             )
@@ -68,7 +70,7 @@ fun OrdersScreen(
                 CircularProgressIndicator()
             }
         } else if (orders.isEmpty()) {
-            EmptyState(Icons.Default.Receipt, "Aucune commande", "Vos commandes apparaîtront ici")
+            EmptyState(Icons.Default.Receipt, s.noOrders, s.noOrdersHint)
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5))) {
                 items(orders) { order ->
@@ -80,10 +82,10 @@ fun OrdersScreen(
                             scope.launch {
                                 try {
                                     ApiClient.deleteOrder(order.id)
-                                    snackbarHostState.showSnackbar("Commande annulée")
+                                    snackbarHostState.showSnackbar(s.orderCancelled)
                                     refreshOrders()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: "impossible d'annuler"}")
+                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: s.orderActionError}")
                                 }
                             }
                         },
@@ -91,10 +93,10 @@ fun OrdersScreen(
                             scope.launch {
                                 try {
                                     ApiClient.confirmOrderReceived(order.id)
-                                    snackbarHostState.showSnackbar("✅ Réception confirmée ! La commande sera finalisée après validation du vendeur.")
+                                    snackbarHostState.showSnackbar(s.receptionConfirmed)
                                     refreshOrders()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: "action impossible"}")
+                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: s.orderActionError}")
                                 }
                             }
                         }
@@ -120,21 +122,22 @@ private fun OrderCard(
     val orderStatus = OrderStatus.fromCode(order.status)
     val canCancel = orderStatus == OrderStatus.PENDING
     val canConfirmDelivery = orderStatus == OrderStatus.DELIVERING
+    val s = LocalAppStrings.current
 
     // Cancel confirmation dialog
     if (showCancelDialog) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
-            title = { Text("Annuler la commande ?") },
-            text = { Text("Êtes-vous sûr de vouloir annuler la commande ${order.orderNumber} ?") },
+            title = { Text(s.cancelOrderTitle) },
+            text = { Text(s.cancelOrderConfirmText.format(order.orderNumber)) },
             confirmButton = {
                 Button(
                     onClick = { showCancelDialog = false; onCancel() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
-                ) { Text("Oui, annuler") }
+                ) { Text(s.yes) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showCancelDialog = false }) { Text("Non") }
+                OutlinedButton(onClick = { showCancelDialog = false }) { Text(s.no) }
             }
         )
     }
@@ -143,16 +146,16 @@ private fun OrderCard(
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Confirmer la réception ?") },
-            text = { Text("Confirmez-vous avoir reçu tous les articles de la commande ${order.orderNumber} ?") },
+            title = { Text(s.confirmReceptionTitle) },
+            text = { Text(s.confirmReceptionText.format(order.orderNumber)) },
             confirmButton = {
                 Button(
                     onClick = { showConfirmDialog = false; onConfirmDelivery() },
                     colors = ButtonDefaults.buttonColors(containerColor = Green)
-                ) { Text("Confirmer") }
+                ) { Text(s.confirmReception) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showConfirmDialog = false }) { Text("Annuler") }
+                OutlinedButton(onClick = { showConfirmDialog = false }) { Text(s.cancel) }
             }
         )
     }
@@ -177,7 +180,7 @@ private fun OrderCard(
                         } else {
                             Spacer(Modifier.width(6.dp))
                             Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFE8F5E9)) {
-                                Text("Livraison", fontSize = 9.sp, color = Green, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Text(s.delivery, fontSize = 9.sp, color = Green, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                             }
                         }
                     }
@@ -186,7 +189,7 @@ private fun OrderCard(
                         if (order.status == "delivering") {
                             Spacer(Modifier.width(8.dp))
                             Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFE3F2FD)) {
-                                Text("Livraison estimée : ${addDays(order.createdAt.take(10), 3)}", fontSize = 9.sp, color = Color(0xFF1565C0), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                Text(s.estimatedDelivery.format(addDays(order.createdAt.take(10), 3)), fontSize = 9.sp, color = Color(0xFF1565C0), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                             }
                         }
                     }
@@ -204,7 +207,7 @@ private fun OrderCard(
                 ) {
                     Text(
                         text = when {
-                            orderStatus == OrderStatus.DELIVERING && order.clientConfirmed == 1 -> "En attente vendeur"
+                            orderStatus == OrderStatus.DELIVERING && order.clientConfirmed == 1 -> s.waitingForVendor
                             else -> orderStatus.label
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
@@ -238,9 +241,9 @@ private fun OrderCard(
                         border = BorderStroke(1.dp, Color(0xFFFFE082))
                     ) {
                         Column(Modifier.padding(12.dp)) {
-                            Text("📱 Paiement direct au vendeur", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF57F17))
+                            Text("📱 ${s.directToVendor}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF57F17))
                             Spacer(Modifier.height(8.dp))
-                            Text("Transférez le montant sur le compte Mobile Money du vendeur, puis attendez sa validation.", fontSize = 12.sp, color = Color(0xFF5D4037), lineHeight = 18.sp)
+                            Text(s.transferWait, fontSize = 12.sp, color = Color(0xFF5D4037), lineHeight = 18.sp)
                             Spacer(Modifier.height(8.dp))
                             order.vendorInfo!!.forEach { vendor ->
                                 Surface(shape = RoundedCornerShape(8.dp), color = Color.White, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -253,7 +256,7 @@ private fun OrderCard(
                                             Text(vendor.vendorPhone.ifBlank { vendor.vendorPhoneUser }, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF075E54))
                                         }
                                         Spacer(Modifier.height(2.dp))
-                                        Text("Montant : ${order.totalAmount.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
+                                        Text("${s.amount} : ${order.totalAmount.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
                                     }
                                 }
                             }
@@ -264,15 +267,15 @@ private fun OrderCard(
 
                 // Timeline
                 val timelineSteps = listOf(
-                    Triple(OrderStatus.PENDING, "Commande créée", order.createdAt),
-                    Triple(OrderStatus.CONFIRMED, if (isDirect) "Paiement validé" else "Commande confirmée", order.createdAt),
-                    Triple(OrderStatus.PREPARING, "En préparation", order.createdAt),
-                    Triple(OrderStatus.DELIVERING, "En cours de livraison", order.createdAt),
-                    Triple(OrderStatus.DELIVERED, "Livrée", order.createdAt)
+                    Triple(OrderStatus.PENDING, s.orderCreated, order.createdAt),
+                    Triple(OrderStatus.CONFIRMED, if (isDirect) s.paymentValidated else s.orderConfirmed, order.createdAt),
+                    Triple(OrderStatus.PREPARING, s.orderPreparing, order.createdAt),
+                    Triple(OrderStatus.DELIVERING, s.orderDelivering, order.createdAt),
+                    Triple(OrderStatus.DELIVERED, s.orderDelivered, order.createdAt)
                 )
                 val currentStatusIndex = timelineSteps.indexOfFirst { it.first == orderStatus }
 
-                Text("Suivi de commande", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(s.orderTracking, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
 
                 timelineSteps.forEachIndexed { index, (status, label, _) ->
@@ -317,7 +320,7 @@ private fun OrderCard(
                                 Icon(Icons.Default.HourglassEmpty, null, Modifier.size(16.dp), tint = Green)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    "En attente de confirmation du vendeur",
+                                    s.awaitingSellerConfirmation,
                                     color = Green,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 13.sp
@@ -333,7 +336,7 @@ private fun OrderCard(
                         ) {
                             Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Confirmer la réception", fontWeight = FontWeight.Bold)
+                            Text(s.confirmReception, fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -350,7 +353,7 @@ private fun OrderCard(
                     ) {
                         Icon(Icons.Default.Close, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Annuler la commande", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(s.cancelOrder, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
@@ -365,7 +368,7 @@ private fun OrderCard(
                     ) {
                         Icon(Icons.Default.Chat, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Contacter le vendeur", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(s.contactSeller, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     }
                 }
             }
@@ -388,7 +391,7 @@ private fun OrderCard(
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text("Total", fontSize = 11.sp, color = Color.Gray)
+                    Text(s.total, fontSize = 11.sp, color = Color.Gray)
                     Text("${order.totalAmount.toInt()} FCFA", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Orange)
                 }
 

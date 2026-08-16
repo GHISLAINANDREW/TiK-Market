@@ -63,6 +63,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [SUCCES] Votre application TiK-Market Web est mise a jour !
-echo URL: https://tik-market.vercel.app
+echo URL: https://tikmarket-app.vercel.app
 echo.
 pause
