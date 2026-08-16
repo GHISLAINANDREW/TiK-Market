@@ -709,18 +709,29 @@ fun HomeScreen(
             }
 
                 // Products grid
-                if (filteredProducts.isEmpty()) {
+                if (!isLoading && filteredProducts.isEmpty()) {
                     item {
                         Box(
-                            Modifier.fillMaxWidth().padding(vertical = 40.dp),
+                            Modifier.fillMaxWidth().padding(vertical = 60.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("😕", fontSize = 48.sp)
+                                Text("🛰️", fontSize = 48.sp)
                                 Spacer(Modifier.height(8.dp))
-                                Text("Aucun produit trouvé", style = MaterialTheme.typography.titleMedium, color = TextSecondary)
+                                Text("Aucun produit trouvé", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                                 Spacer(Modifier.height(4.dp))
-                                Text("Essayez de modifier vos filtres", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                Text("Vérifiez votre connexion ou les filtres", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                Spacer(Modifier.height(16.dp))
+                                Button(onClick = { 
+                                    scope.launch { 
+                                        isRefreshing = true
+                                        loadProducts(force = true)
+                                        loadStories()
+                                        isRefreshing = false
+                                    }
+                                }) {
+                                    Text("Réessayer")
+                                }
                             }
                         }
                     }
