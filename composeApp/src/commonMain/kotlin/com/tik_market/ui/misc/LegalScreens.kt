@@ -43,7 +43,7 @@ fun LegalNoticeScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            LegalSection("1. Éditeur de la plateforme", "La plateforme TiK-Market est éditée par votre future société (en cours de constitution), siège social basé au Cameroun. Contact : AdminTikMarket@gmail.com")
+            LegalSection("1. Éditeur de la plateforme", "La plateforme TiK-Market est éditée par la société AUTENTIK SOFT SOLUTIONS SARLU, siège social basé au Cameroun. Contact : AdminAutenTiK@gmail.com")
             LegalSection("2. Objet du service", "TiK-Market est une place de marché numérique mettant en relation des vendeurs locaux et des acheteurs. TiK-Market n'est pas le vendeur des produits proposés, sauf mention contraire.")
             LegalSection("3. Hébergement", "Le service est hébergé sur des infrastructures sécurisées dédiées aux applications mobiles.")
             LegalSection("4. Propriété intellectuelle", "L'ensemble du contenu de l'application (textes, logos, images, icônes) est la propriété exclusive de TiK-Market ou de ses partenaires. Toute reproduction est interdite.")
@@ -172,7 +172,7 @@ fun AboutScreen(onBack: () -> Unit) {
             
             Spacer(Modifier.height(12.dp))
             Text(
-                "TiK-Market SARLU",
+                "AUTENTIK SOFT SOLUTIONS SARLU",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp,
                 color = BrandTopBarColor
@@ -192,7 +192,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     Text("Notre Mission", fontWeight = FontWeight.Bold, color = BrandTopBarColor)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Digitaliser les marchés locaux et faciliter les échanges entre vendeurs et acheteurs au Cameroun grâce à des solutions technologiques modernes et sécurisées.",
+                        "Digitaliser les marchés locaux et faciliter les échanges entre vendeurs et acheteurs grâce à des solutions logicielles innovantes et sécurisées.",
                         fontSize = 14.sp,
                         lineHeight = 20.sp
                     )
@@ -201,11 +201,11 @@ fun AboutScreen(onBack: () -> Unit) {
             
             Spacer(Modifier.height(24.dp))
             Text("Contact Support", fontWeight = FontWeight.Bold)
-            Text("AdminTikMarket@gmail.com", color = BrandTopBarColor)
+            Text("AdminAutenTiK@gmail.com", color = BrandTopBarColor)
             
             Spacer(Modifier.weight(1f))
             Text(
-                "© 2024 TiK-Market SARLU. Tous droits réservés.",
+                "© 2024 AUTENTIK SOFT SOLUTIONS SARLU. Tous droits réservés.",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 32.dp)
