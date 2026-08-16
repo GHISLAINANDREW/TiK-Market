@@ -66,6 +66,7 @@ fun AuthScreen(
     initialModeRegister: Boolean = false
 ) {
     println("[Auth] AuthScreen chargé (initialModeRegister=$initialModeRegister)")
+    val s = com.tik_market.utils.LocalAppStrings.current
     var isLogin by remember { mutableStateOf(!initialModeRegister) }
     var authMode by remember { mutableStateOf<AuthMode>(AuthMode.Email) }
     var form by remember { mutableStateOf(AuthFormState()) }
@@ -97,7 +98,7 @@ fun AuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isLogin) "Connexion" else "Inscription", color = Color.White) },
+                title = { Text(if (isLogin) s.login else s.register, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -137,10 +138,10 @@ fun AuthScreen(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = when {
-                            form.isOtpStep -> "Vérification OTP"
-                            authMode == AuthMode.Phone -> "Connexion Téléphone"
-                            isLogin -> "Connectez-vous pour continuer"
-                            else -> "Créez votre compte"
+                            form.isOtpStep -> s.authOtpTitle
+                            authMode == AuthMode.Phone -> s.phoneLogin
+                            isLogin -> s.loginContinue
+                            else -> s.createYourAccount
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
@@ -209,8 +210,8 @@ fun AuthScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        if (isLogin) "Pas encore de compte ? S'inscrire"
-                                        else "Déjà inscrit ? Se connecter",
+                                        if (isLogin) s.noAccountSignup
+                                        else s.alreadyAccountLogin,
                                         color = Green,
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Medium
@@ -225,20 +226,20 @@ fun AuthScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(Modifier.weight(1f).height(1.dp).background(DividerGray))
-                                    Text("  ou  ", color = TextTertiary, style = MaterialTheme.typography.bodySmall)
+                                    Text("  ${s.or}  ", color = TextTertiary, style = MaterialTheme.typography.bodySmall)
                                     Box(Modifier.weight(1f).height(1.dp).background(DividerGray))
                                 }
                                 Spacer(Modifier.height(12.dp))
 
                                 SocialButton(
-                                    text = "Continuer avec Google",
+                                    text = s.continueWithGoogle,
                                     icon = Icons.Default.Email,
                                     iconTint = BlueAccent,
                                     textColor = TextPrimary,
                                     borderColor = DividerGray,
                                     onClick = {
                                         if (form.location.isBlank()) {
-                                            form = form.copy(error = "Veuillez choisir votre ville avant de continuer")
+                                            form = form.copy(error = s.chooseCityRequired)
                                             return@SocialButton
                                         }
                                         scope.launch {
@@ -249,10 +250,10 @@ fun AuthScreen(
                                                     val result = ApiClient.googleLogin(data.idToken, form.location)
                                                     onLoginSuccess(result.token, result.user.name, result.user.role)
                                                 } catch (e: Exception) {
-                                                    form = form.copy(error = e.message ?: "Échec de la connexion au serveur")
+                                                    form = form.copy(error = e.message ?: s.serverLoginFailed)
                                                 }
                                             } else {
-                                                form = form.copy(error = "Échec ou annulation de la connexion Google")
+                                                form = form.copy(error = s.googleLoginFailed)
                                             }
                                             form = form.copy(isLoading = false)
                                         }
@@ -274,7 +275,7 @@ fun AuthScreen(
                             if (!form.isOtpStep && authMode == AuthMode.Phone) {
                                 Spacer(Modifier.height(8.dp))
                                 TextButton(onClick = { authMode = AuthMode.Email }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Utiliser Email / Mot de passe", color = Green, style = MaterialTheme.typography.bodySmall)
+                                    Text(s.useEmailPassword, color = Green, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -300,6 +301,7 @@ private fun EmailAuthStep(
     onTermsClick: () -> Unit,
     onLegalClick: () -> Unit
 ) {
+    val s = com.tik_market.utils.LocalAppStrings.current
     // Track per-field validation errors
     var nameError by remember { mutableStateOf<String?>(null) }
     var phoneError by remember { mutableStateOf<String?>(null) }
@@ -310,25 +312,25 @@ private fun EmailAuthStep(
     fun validate(): Boolean {
         var valid = true
         if (!isLogin) {
-            if (form.location.isBlank()) { emailError = "Ville requise"; valid = false }
-            if (form.name.isBlank()) { nameError = "Nom requis"; valid = false } else nameError = null
-            if (form.phone.isBlank()) { phoneError = "Téléphone requis"; valid = false }
-            else if (form.phone.replace(Regex("[^0-9]"), "").length < 8) { phoneError = "Numéro invalide (8+ chiffres)"; valid = false }
+            if (form.location.isBlank()) { emailError = s.chooseCityRequired; valid = false }
+            if (form.name.isBlank()) { nameError = s.nameRequired; valid = false } else nameError = null
+            if (form.phone.isBlank()) { phoneError = s.phoneRequired; valid = false }
+            else if (form.phone.replace(Regex("[^0-9]"), "").length < 8) { phoneError = s.invalidPhone; valid = false }
             else phoneError = null
         }
-        if (form.email.isBlank()) { emailError = "Email requis"; valid = false }
-        else if (!form.email.contains("@") || !form.email.contains(".")) { emailError = "Email invalide"; valid = false }
+        if (form.email.isBlank()) { emailError = s.emailRequired; valid = false }
+        else if (!form.email.contains("@") || !form.email.contains(".")) { emailError = s.invalidEmail; valid = false }
         else emailError = null
-        if (form.password.isBlank()) { passwordError = "Mot de passe requis"; valid = false }
-        else if (form.password.length < 4) { passwordError = "4 caractères minimum"; valid = false }
+        if (form.password.isBlank()) { passwordError = s.passwordRequired; valid = false }
+        else if (form.password.length < 4) { passwordError = s.passwordTooShort; valid = false }
         else passwordError = null
         if (!isLogin) {
-            if (form.confirmPassword.isBlank()) { confirmError = "Confirmation requise"; valid = false }
-            else if (form.password != form.confirmPassword) { confirmError = "Les mots de passe ne correspondent pas"; valid = false }
+            if (form.confirmPassword.isBlank()) { confirmError = s.confirmRequired; valid = false }
+            else if (form.password != form.confirmPassword) { confirmError = s.passwordsDontMatch; valid = false }
             else confirmError = null
             
             if (!form.termsAccepted) {
-                onFormChange(form.copy(error = "Veuillez accepter les conditions d'utilisation"))
+                onFormChange(form.copy(error = s.acceptTermsRequired))
                 valid = false
             }
         }
@@ -337,7 +339,7 @@ private fun EmailAuthStep(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = if (isLogin) "S'identifier" else "Créer un compte",
+            text = if (isLogin) s.signIn else s.createAccountTitle,
             style = MaterialTheme.typography.titleLarge,
             color = TextPrimary,
             modifier = Modifier.fillMaxWidth(),
@@ -377,9 +379,9 @@ private fun EmailAuthStep(
         val cities = buildList {
             addAll(listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Bamenda"))
             detectedPlace?.takeIf { p ->
-                p.isNotBlank() && none { it.equals(p, ignoreCase = true) } && !p.equals("Autre", ignoreCase = true)
+                p.isNotBlank() && none { it.equals(p, ignoreCase = true) } && !p.equals(s.other, ignoreCase = true)
             }?.let { add(it) }
-            add("Autre")
+            add(s.other)
         }
         
         OutlinedCard(
@@ -397,7 +399,7 @@ private fun EmailAuthStep(
                     Icon(Icons.Default.LocationOn, null, tint = if (form.location.isBlank()) RedAccent else Green, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = if (form.location.isBlank()) "Choisir votre ville *" else "Ville : ${form.location}",
+                        text = if (form.location.isBlank()) "${s.chooseYourCity} *" else "${s.cityLabel} : ${form.location}",
                         color = if (form.location.isBlank()) RedAccent else TextPrimary,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -409,7 +411,7 @@ private fun EmailAuthStep(
         if (showCityPicker) {
             AlertDialog(
                 onDismissRequest = { showCityPicker = false },
-                title = { Text("Sélectionnez votre ville") },
+                title = { Text(s.selectYourCity) },
                 text = {
                     Column {
                         cities.forEach { city ->
@@ -433,14 +435,14 @@ private fun EmailAuthStep(
             LightTextField(
                 value = form.name,
                 onValueChange = { onFormChange(form.copy(name = it, error = null)); nameError = null },
-                label = "Nom complet",
+                label = s.fullName,
                 isError = nameError != null,
                 errorMessage = nameError
             )
             LightTextField(
                 value = form.phone,
                 onValueChange = { onFormChange(form.copy(phone = it, error = null)); phoneError = null },
-                label = "Téléphone",
+                label = s.phone,
                 keyboardType = KeyboardType.Phone,
                 isError = phoneError != null,
                 errorMessage = phoneError
@@ -449,7 +451,7 @@ private fun EmailAuthStep(
         LightTextField(
             value = form.email,
             onValueChange = { onFormChange(form.copy(email = it, error = null)); emailError = null },
-            label = "Email",
+            label = s.email,
             keyboardType = KeyboardType.Email,
             isError = emailError != null,
             errorMessage = emailError
@@ -457,7 +459,7 @@ private fun EmailAuthStep(
         LightTextField(
             value = form.password,
             onValueChange = { onFormChange(form.copy(password = it, error = null)); passwordError = null },
-            label = "Mot de passe",
+            label = s.passwordLabel,
             isPassword = true,
             showPassword = showPassword,
             onTogglePassword = onTogglePassword,
@@ -468,7 +470,7 @@ private fun EmailAuthStep(
             LightTextField(
                 value = form.confirmPassword,
                 onValueChange = { onFormChange(form.copy(confirmPassword = it, error = null)); confirmError = null },
-                label = "Confirmer le mot de passe",
+                label = s.confirmPasswordLabel,
                 isPassword = true,
                 showPassword = showPassword,
                 onTogglePassword = onTogglePassword,
@@ -493,13 +495,13 @@ private fun EmailAuthStep(
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
-                        text = "J'accepte les Conditions d'Utilisation",
+                        text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "et la Politique de Confidentialité",
+                        text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium
@@ -509,7 +511,7 @@ private fun EmailAuthStep(
         }
 
         PrimaryButton(
-            text = if (isLogin) "Se connecter" else "S'inscrire",
+            text = if (isLogin) s.loginBtn else s.signupBtn,
             isLoading = form.isLoading,
             onClick = {
                 if (!validate()) return@PrimaryButton
@@ -530,7 +532,7 @@ private fun EmailAuthStep(
                             onLoginSuccess(response.token, response.user.name, response.user.role)
                         }
                     } catch (e: Throwable) {
-                        onFormChange(form.copy(error = "Erreur: ${e.message}", isLoading = false))
+                        onFormChange(form.copy(error = "${s.authErrorPrefix}: ${e.message}", isLoading = false))
                     }
                 }
             }
@@ -548,14 +550,15 @@ private fun PhoneStep(
     onTermsClick: () -> Unit,
     onLegalClick: () -> Unit
 ) {
+    val s = com.tik_market.utils.LocalAppStrings.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            "Connexion Téléphone",
+            s.phoneLogin,
             style = MaterialTheme.typography.titleLarge,
             color = TextPrimary
         )
         Spacer(Modifier.height(4.dp))
-        Text("Recevez un code par SMS", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        Text(s.receiveCodeSms, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
         Spacer(Modifier.height(20.dp))
 
         LightTextField(
@@ -579,13 +582,13 @@ private fun PhoneStep(
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
-                        text = "J'accepte les Conditions d'Utilisation",
+                        text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "et la Politique de Confidentialité",
+                        text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium
@@ -595,12 +598,12 @@ private fun PhoneStep(
         }
 
         PrimaryButton(
-            text = if (form.isLoading) "" else "Envoyer le code",
+            text = if (form.isLoading) "" else s.sendCode,
             isLoading = form.isLoading,
             onClick = {
                 val cleaned = form.phone.replace(Regex("[^0-9]"), "")
                 if (cleaned.length < 8) {
-                    onFormChange(form.copy(error = "Numéro invalide (ex: 691234567)"))
+                    onFormChange(form.copy(error = s.invalidNumberExample))
                 } else {
                     scope.launch {
                         onFormChange(form.copy(isLoading = true, error = null))
@@ -615,7 +618,7 @@ private fun PhoneStep(
                         } catch (e: Throwable) {
                             onFormChange(form.copy(
                                 isLoading = false,
-                                error = "Erreur d'envoi : ${e.message}"
+                                error = "${s.sendingError} : ${e.message}"
                             ))
                         }
                     }
@@ -625,7 +628,7 @@ private fun PhoneStep(
 
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onBack) {
-            Text("Annuler", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+            Text(s.cancel, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -642,6 +645,7 @@ private fun OtpStep(
 ) {
     var remainingSeconds by remember { mutableStateOf(0) }
     val cleanedPhone = form.phone.replace(Regex("[^0-9]"), "")
+    val s = com.tik_market.utils.LocalAppStrings.current
 
     LaunchedEffect(form.otpExpiresAt, form.canResend) {
         while (form.otpExpiresAt > 0L) {
@@ -696,13 +700,13 @@ private fun OtpStep(
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
-                        text = "J'accepte les Conditions d'Utilisation",
+                        text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "et la Politique de Confidentialité",
+                        text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
                         color = Green,
                         fontWeight = FontWeight.Medium

@@ -16,12 +16,6 @@ actual class GoogleAuthManager {
                 return@suspendCancellableCoroutine
             }
 
-            if (!isGoogleSignInHelperLoaded()) {
-                println("[GoogleAuth] JS helper not found")
-                continuation.resume(null)
-                return@suspendCancellableCoroutine
-            }
-
             callGoogleSignIn(webClientId) { data ->
                 if (data != null) {
                     continuation.resume(GoogleUserData(
@@ -30,21 +24,22 @@ actual class GoogleAuthManager {
                         idToken = data.idToken
                     ))
                 } else {
+                    println("[GoogleAuth] Data null from JS")
                     continuation.resume(null)
                 }
             }
         } catch (e: Exception) {
-            println("[GoogleAuth] Error: ${e.message}")
+            println("[GoogleAuth] Error during sign-in: ${e.message}")
             continuation.resume(null)
         }
     }
 }
 
-private fun isGoogleLoaded(): Boolean = js("typeof window.google !== 'undefined'")
-private fun isGoogleSignInHelperLoaded(): Boolean = js("typeof window.googleSignIn !== 'undefined'")
+@JsFun("() => typeof window.google !== 'undefined'")
+private external fun isGoogleLoaded(): Boolean
 
-private fun callGoogleSignIn(clientId: String, callback: (JsGoogleUserData?) -> Unit): Unit = 
-    js("window.googleSignIn(clientId, callback)")
+@JsFun("(clientId, callback) => { if(window.googleSignIn) { window.googleSignIn(clientId, callback); } else { callback(null); } }")
+private external fun callGoogleSignIn(clientId: String, callback: (JsGoogleUserData?) -> Unit)
 
 private external interface JsGoogleUserData : JsAny {
     val name: String

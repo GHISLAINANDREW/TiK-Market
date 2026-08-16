@@ -79,9 +79,7 @@ import com.tik_market.ui.misc.TermsOfUseScreen
 import com.tik_market.ui.misc.AboutScreen
 
 @Composable
-private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = rememberSaveable(
-    saver = AppState.Saver // Assurez-vous qu'un Saver est défini dans AppState ou utilisez remember standard si pas encore prêt
-) {
+private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
     AppState(
         currentScreenInitial = initialScreen,
         cartItemsInitial = emptyList(),
@@ -165,7 +163,9 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
     }
 
     TiKMarketTheme(darkTheme = appState.isDarkMode, city = userCity) {
-        // ... (rest of the file)
+        CompositionLocalProvider(
+            com.tik_market.utils.LocalAppStrings provides appState.strings
+        ) {
         if (showOnboarding) {
             OnboardingScreen(
                 onComplete = {
@@ -196,7 +196,8 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
             // Show snackbar on connectivity change
             LaunchedEffect(showOfflineSnackbar) {
                 if (showOfflineSnackbar) {
-                    val msg = if (isOnline) "✅ Connexion rétablie" else "🔴 Connexion perdue"
+                    val ss = com.tik_market.utils.LocalAppStrings.current
+                    val msg = if (isOnline) ss.connectionRestored else ss.connectionLost
                     scope.launch { snackbarHostState.showSnackbar(msg) }
                     showOfflineSnackbar = false
                 }
@@ -219,7 +220,7 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                     } catch (_: Exception) {
                         ApiClient.logout()
                         appState.isLoggedIn = false
-                        scope.launch { snackbarHostState.showSnackbar("Session expirée") }
+                        scope.launch { snackbarHostState.showSnackbar(com.tik_market.utils.LocalAppStrings.current.sessionExpired) }
                     }
                 }
                 
@@ -315,12 +316,14 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                 }
             }
         }
+        } // CompositionLocalProvider
     }
 }
 
 @Composable
 fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutines.CoroutineScope, snackbarHostState: SnackbarHostState, isOnline: Boolean = true, userCity: String? = null) {
     var backPressedOnce by remember { mutableStateOf(false) }
+    val s = com.tik_market.utils.LocalAppStrings.current
 
     LaunchedEffect(backPressedOnce) {
         if (backPressedOnce) {
@@ -334,7 +337,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
             if (backPressedOnce) onExit()
             else {
                 backPressedOnce = true
-                scope.launch { snackbarHostState.showSnackbar("Appuyez encore pour quitter") }
+                scope.launch { snackbarHostState.showSnackbar(s.pressBackToExit) }
             }
         } else {
             appState.goBack()
@@ -345,10 +348,10 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
     PollingManager(appState)
 
     val bottomItems = listOf(
-        BottomNavItem(NavScreen.Home, Icons.Default.Home, Icons.Filled.Home, "Accueil"),
-        BottomNavItem(NavScreen.Conversations, Icons.Default.Chat, Icons.Filled.Chat, "Messages"),
-        BottomNavItem(NavScreen.Cart, Icons.Default.ShoppingCart, Icons.Filled.ShoppingCart, "Panier"),
-        BottomNavItem(NavScreen.Profile, Icons.Default.Person, Icons.Filled.Person, "Compte")
+        BottomNavItem(NavScreen.Home, Icons.Default.Home, Icons.Filled.Home, s.home),
+        BottomNavItem(NavScreen.Conversations, Icons.Default.Chat, Icons.Filled.Chat, s.messages),
+        BottomNavItem(NavScreen.Cart, Icons.Default.ShoppingCart, Icons.Filled.ShoppingCart, s.cart),
+        BottomNavItem(NavScreen.Profile, Icons.Default.Person, Icons.Filled.Person, s.account)
     )
 
     val hideBottomBar = appState.currentScreen in listOf(
@@ -407,7 +410,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    "🔴 Connexion perdue — certaines fonctionnalités peuvent être limitées",
+                                    s.offlineBanner,
                                     color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
@@ -1021,7 +1024,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 isDarkMode = appState.isDarkMode,
                 onToggleDarkMode = { appState.isDarkMode = !appState.isDarkMode },
                 language = appState.language,
-                onToggleLanguage = { appState.updateLanguage(if (appState.language == "fr") "en" else "fr") },
+                onSelectLanguage = { lang -> appState.updateLanguage(lang) },
                 onAboutClick = { appState.navigateTo(NavScreen.About) },
                 onLegalClick = { appState.navigateTo(NavScreen.Legal) },
                 onTermsClick = { appState.navigateTo(NavScreen.Terms) },

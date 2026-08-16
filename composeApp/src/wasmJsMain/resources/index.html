@@ -341,6 +341,7 @@
         try {
           google.accounts.id.initialize({
             client_id: clientId,
+            cancel_on_tap_outside: false,
             callback: (response) => {
               if (response.credential) {
                 const base64Url = response.credential.split('.')[1];
