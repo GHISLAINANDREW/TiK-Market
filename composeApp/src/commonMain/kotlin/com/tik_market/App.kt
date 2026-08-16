@@ -1,4 +1,4 @@
-// TiK-Market App - Version 1.0.1 (Auto-deploy trigger)
+// TiK-Market App - Version 1.0.2 (JDK 17 fix)
 package com.tik_market
 
 import androidx.compose.animation.*
