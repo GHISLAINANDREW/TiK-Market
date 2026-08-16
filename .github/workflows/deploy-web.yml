@@ -1,4 +1,5 @@
 name: Deploy Web (WasmJS) to Vercel
+# v1.0.2 - Forcing refresh
 
 on:
   push:
