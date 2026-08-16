@@ -119,3 +119,97 @@ private fun LegalSection(title: String, content: String) {
 private fun Divider(color: Color) {
     Box(Modifier.fillMaxWidth().height(1.dp).background(color))
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AboutScreen(onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("À Propos", fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BrandTopBarColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color.White)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        ) {
+            Surface(
+                modifier = Modifier.size(100.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = BrandTopBarColor.copy(alpha = 0.1f)
+            ) {
+                Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text("TiK", fontWeight = FontWeight.Bold, fontSize = 32.sp, color = BrandTopBarColor)
+                }
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            Text("TiK-Market", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text("Version 1.0.2", fontSize = 14.sp, color = Color.Gray)
+            
+            Spacer(Modifier.height(32.dp))
+            Text(
+                "TiK-Market est une plateforme innovante de commerce de proximité opérée par la société :",
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                fontSize = 15.sp
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "TiK-Market SARLU",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = BrandTopBarColor
+            )
+            Text(
+                "Société à Responsabilité Limitée Unipersonnelle",
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+            
+            Spacer(Modifier.height(24.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Notre Mission", fontWeight = FontWeight.Bold, color = BrandTopBarColor)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Digitaliser les marchés locaux et faciliter les échanges entre vendeurs et acheteurs au Cameroun grâce à des solutions technologiques modernes et sécurisées.",
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+            
+            Spacer(Modifier.height(24.dp))
+            Text("Contact Support", fontWeight = FontWeight.Bold)
+            Text("AdminTikMarket@gmail.com", color = BrandTopBarColor)
+            
+            Spacer(Modifier.weight(1f))
+            Text(
+                "© 2024 TiK-Market SARLU. Tous droits réservés.",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 32.dp)
+            )
+        }
+    }
+}
