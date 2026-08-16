@@ -194,16 +194,17 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
             }
 
             // Show snackbar on connectivity change
+            val connectivityStrings = com.tik_market.utils.LocalAppStrings.current
             LaunchedEffect(showOfflineSnackbar) {
                 if (showOfflineSnackbar) {
-                    val ss = com.tik_market.utils.LocalAppStrings.current
-                    val msg = if (isOnline) ss.connectionRestored else ss.connectionLost
+                    val msg = if (isOnline) connectivityStrings.connectionRestored else connectivityStrings.connectionLost
                     scope.launch { snackbarHostState.showSnackbar(msg) }
                     showOfflineSnackbar = false
                 }
             }
 
             // Restore session in background — does NOT block UI
+            val sessionStrings = com.tik_market.utils.LocalAppStrings.current
             LaunchedEffect(Unit) {
                 ApiClient.initToken()
                 if (ApiClient.isLoggedIn()) {
@@ -220,7 +221,7 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                     } catch (_: Exception) {
                         ApiClient.logout()
                         appState.isLoggedIn = false
-                        scope.launch { snackbarHostState.showSnackbar(com.tik_market.utils.LocalAppStrings.current.sessionExpired) }
+                        scope.launch { snackbarHostState.showSnackbar(sessionStrings.sessionExpired) }
                     }
                 }
                 
