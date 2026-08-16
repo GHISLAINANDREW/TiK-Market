@@ -79,7 +79,9 @@ import com.tik_market.ui.misc.TermsOfUseScreen
 import com.tik_market.ui.misc.AboutScreen
 
 @Composable
-private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
+private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = rememberSaveable(
+    saver = AppState.Saver // Assurez-vous qu'un Saver est défini dans AppState ou utilisez remember standard si pas encore prêt
+) {
     AppState(
         currentScreenInitial = initialScreen,
         cartItemsInitial = emptyList(),
@@ -385,7 +387,8 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 tonalElevation = 8.dp,
-                                shadowElevation = 16.dp
+                                shadowElevation = 16.dp,
+                                color = MaterialTheme.colorScheme.surface
                             ) {
                                 AppBottomBar(appState, bottomItems)
                             }
@@ -416,7 +419,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                         Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(padding)
+                                .padding(bottom = padding.calculateBottomPadding())
                         ) {
                             AppNavigation(appState, scope, snackbarHostState, userCity)
                         }
