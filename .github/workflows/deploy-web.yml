@@ -43,19 +43,33 @@ jobs:
 
       - name: Prepare Distribution
         run: |
-          # The standard output dir for Kotlin 2.0.21
-          SOURCE_DIR="composeApp/build/dist/wasmJs/productionExecutable"
+          # 1. Créer un dossier propre pour le déploiement
+          mkdir -p final_deploy
           
-          # Move vercel.json to project root for the action to find it easily
-          # No need to copy it into the source dir if we deploy correctly
+          # 2. Identifier le dossier de sortie de Kotlin
+          # On cherche dynamiquement pour éviter les erreurs de chemin
+          SOURCE_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
           
-          if [ -d "web" ]; then
-            echo "Merging custom web files into production executable..."
-            cp -rv web/* "$SOURCE_DIR/"
+          if [ -z "$SOURCE_DIR" ]; then
+            echo "ERREUR : Dossier de compilation introuvable !"
+            exit 1
           fi
           
-          echo "Listing distribution files:"
-          ls -R "$SOURCE_DIR"
+          echo "Copie des fichiers depuis $SOURCE_DIR vers final_deploy"
+          
+          # 3. Copier le code compilé
+          cp -rv "$SOURCE_DIR"/* final_deploy/
+          
+          # 4. Copier les ressources web (manifest, icons, etc.)
+          if [ -d "web" ]; then
+            cp -rv web/* final_deploy/
+          fi
+          
+          # 5. Copier la configuration Vercel DANS le dossier de déploiement
+          cp vercel.json final_deploy/
+          
+          echo "Contenu final du dossier de déploiement :"
+          ls -F final_deploy
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
@@ -63,5 +77,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          path: composeApp/build/dist/wasmJs/productionExecutable
+          vercel-args: '--prod --yes'
+          path: final_deploy
