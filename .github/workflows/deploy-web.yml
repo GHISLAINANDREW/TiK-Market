@@ -37,17 +37,31 @@ jobs:
       - name: Build Web (WasmJS)
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:wasmJsBrowserDistribution
+          ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 
       - name: Prepare Distribution
         run: |
-          # Copy web/ folder content into build output
-          # Note: local build path might be slightly different on Ubuntu
-          # Let's find the exact path
-          DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
+          # Ensure the expected directory exists and copy web/ content
+          DIST_DIR="composeApp/build/dist/wasmJs/productionExecutable"
+          if [ ! -d "$DIST_DIR" ]; then
+            echo "Searching for productionExecutable..."
+            DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
+          fi
+          
+          if [ -z "$DIST_DIR" ]; then
+            echo "Error: Could not find productionExecutable directory"
+            exit 1
+          fi
+          
+          echo "Using distribution directory: $DIST_DIR"
+          
           if [ -d "web" ]; then
+            echo "Copying custom web files..."
             cp -rv web/* "$DIST_DIR/"
           fi
+          
+          # Copy vercel.json to dist dir to be safe (optional if running from root)
+          cp vercel.json "$DIST_DIR/"
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
