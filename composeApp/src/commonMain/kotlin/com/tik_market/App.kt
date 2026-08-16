@@ -378,7 +378,13 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
                         if (!hideBottomBar) {
-                            AppBottomBar(appState, bottomItems)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
+                                tonalElevation = 8.dp,
+                                shadowElevation = 16.dp
+                            ) {
+                                AppBottomBar(appState, bottomItems)
+                            }
                         }
                     }
                 ) { padding ->
