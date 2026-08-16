@@ -73,6 +73,8 @@ import com.tik_market.ui.profile.FollowedShopsScreen
 import com.tik_market.ui.misc.MyGroupBuysScreen
 import com.tik_market.ui.misc.ShopsMapScreen
 import com.tik_market.ui.misc.SplashScreen
+import com.tik_market.ui.misc.LegalNoticeScreen
+import com.tik_market.ui.misc.TermsOfUseScreen
 
 @Composable
 private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
@@ -708,6 +710,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onNotifPrefsClick = { appState.navigateTo(NavScreen.NotifPrefs) },
                 onGroupBuysClick = { appState.navigateTo(NavScreen.MyGroupBuys) },
                 onShopsMapClick = { appState.navigateTo(NavScreen.ShopsMap) },
+                onLegalClick = { appState.navigateTo(NavScreen.Legal) },
+                onTermsClick = { appState.navigateTo(NavScreen.Terms) },
                 walletBalance = appState.walletBalance,
                 walletPoints = appState.currentPoints,
                 walletTier = appState.walletTier,
@@ -1014,6 +1018,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 language = appState.language,
                 onToggleLanguage = { appState.updateLanguage(if (appState.language == "fr") "en" else "fr") },
                 onAboutClick = { /* Show about dialog or navigate */ },
+                onLegalClick = { appState.navigateTo(NavScreen.Legal) },
+                onTermsClick = { appState.navigateTo(NavScreen.Terms) },
                 onDownloadApk = { com.tik_market.utils.downloadFile("https://github.com/GHISLAINANDREW/TiK-Market/releases/download/beta/TiK-Market.apk", "TiK-Market.apk") }
             )
             NavScreen.Wishlist -> WishlistScreen(
@@ -1148,6 +1154,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                     appState.userName = updatedUser.name
                 }
             )
+            NavScreen.Legal -> LegalNoticeScreen(onBack = { appState.goBack() })
+            NavScreen.Terms -> TermsOfUseScreen(onBack = { appState.goBack() })
             else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Écran non implémenté") }
         }
     }
