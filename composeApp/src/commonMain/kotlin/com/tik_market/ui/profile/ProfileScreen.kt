@@ -44,8 +44,6 @@ fun ProfileScreen(
     onNotifPrefsClick: () -> Unit = {},
     onGroupBuysClick: () -> Unit = {},
     onShopsMapClick: () -> Unit = {},
-    onLegalClick: () -> Unit = {},
-    onTermsClick: () -> Unit = {},
     walletBalance: Double = 0.0,
     walletPoints: Int = 0,
     walletTier: String = "bronze",
@@ -261,21 +259,6 @@ fun ProfileScreen(
                                     ProfileMenuItem(Icons.Default.AdminPanelSettings, "Administration", "Gérer la plateforme", BlueAccent) { onAdminDashboardClick() }
                                 }
                             }
-                        }
-                    }
-
-                    // Section Légal
-                    Spacer(Modifier.height(16.dp))
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White,
-                        shadowElevation = 0.5.dp
-                    ) {
-                        Column {
-                            ProfileMenuItem(Icons.Default.Lock, "Mentions Légales", "Informations sur l'éditeur", Color.Gray) { onLegalClick() }
-                            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Color(0xFFF5F5F5))
-                            ProfileMenuItem(Icons.Default.Description, "Conditions d'Utilisation", "Règles d'utilisation de la plateforme", Color.Gray) { onTermsClick() }
                         }
                     }
 

@@ -61,6 +61,8 @@ enum class AuthMode { Email, Google, Phone }
 fun AuthScreen(
     onLoginSuccess: (token: String, userName: String, userRole: String) -> Unit,
     onBack: () -> Unit,
+    onTermsClick: () -> Unit = {},
+    onLegalClick: () -> Unit = {},
     initialModeRegister: Boolean = false
 ) {
     println("[Auth] AuthScreen chargé (initialModeRegister=$initialModeRegister)")
@@ -183,20 +185,22 @@ fun AuthScreen(
                                 }
                             }
 
-                            when {
-                                form.isOtpStep -> OtpStep(isLogin, form, { form = it }, scope, onLoginSuccess)
-                                authMode == AuthMode.Phone -> PhoneStep(isLogin, form, { form = it }, scope, { authMode = AuthMode.Email })
-                                else -> EmailAuthStep(
-                                    isLogin = isLogin,
-                                    form = form,
-                                    onFormChange = { form = it },
-                                    showPassword = showPassword,
-                                    onTogglePassword = { showPassword = !showPassword },
-                                    scope = scope,
-                                    onLoginSuccess = onLoginSuccess,
-                                    onToggleMode = { isLogin = !isLogin }
-                                )
-                            }
+                                when {
+                                    form.isOtpStep -> OtpStep(isLogin, form, { form = it }, scope, onLoginSuccess, onTermsClick, onLegalClick)
+                                    authMode == AuthMode.Phone -> PhoneStep(isLogin, form, { form = it }, scope, { authMode = AuthMode.Email }, onTermsClick, onLegalClick)
+                                    else -> EmailAuthStep(
+                                        isLogin = isLogin,
+                                        form = form,
+                                        onFormChange = { form = it },
+                                        showPassword = showPassword,
+                                        onTogglePassword = { showPassword = !showPassword },
+                                        scope = scope,
+                                        onLoginSuccess = onLoginSuccess,
+                                        onToggleMode = { isLogin = !isLogin },
+                                        onTermsClick = onTermsClick,
+                                        onLegalClick = onLegalClick
+                                    )
+                                }
 
                             if (!form.isOtpStep && authMode == AuthMode.Email) {
                                 Spacer(Modifier.height(12.dp))
@@ -292,7 +296,9 @@ private fun EmailAuthStep(
     onTogglePassword: () -> Unit,
     scope: kotlinx.coroutines.CoroutineScope,
     onLoginSuccess: (String, String, String) -> Unit,
-    onToggleMode: () -> Unit
+    onToggleMode: () -> Unit,
+    onTermsClick: () -> Unit,
+    onLegalClick: () -> Unit
 ) {
     // Track per-field validation errors
     var nameError by remember { mutableStateOf<String?>(null) }
@@ -485,12 +491,20 @@ private fun EmailAuthStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = Green)
                 )
-                Text(
-                    text = "J'accepte les Conditions d'Utilisation et la Politique de Confidentialité",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    modifier = Modifier.clickable { /* Could open a dialog with text */ }
-                )
+                Column(Modifier.clickable { onTermsClick() }) {
+                    Text(
+                        text = "J'accepte les Conditions d'Utilisation",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "et la Politique de Confidentialité",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
 
@@ -530,7 +544,9 @@ private fun PhoneStep(
     form: AuthFormState,
     onFormChange: (AuthFormState) -> Unit,
     scope: kotlinx.coroutines.CoroutineScope,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onTermsClick: () -> Unit,
+    onLegalClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -561,12 +577,20 @@ private fun PhoneStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = Green)
                 )
-                Text(
-                    text = "J'accepte les Conditions d'Utilisation et la Politique de Confidentialité",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    modifier = Modifier.clickable { /* Could open a dialog with text */ }
-                )
+                Column(Modifier.clickable { onTermsClick() }) {
+                    Text(
+                        text = "J'accepte les Conditions d'Utilisation",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "et la Politique de Confidentialité",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
 
@@ -612,7 +636,9 @@ private fun OtpStep(
     form: AuthFormState,
     onFormChange: (AuthFormState) -> Unit,
     scope: kotlinx.coroutines.CoroutineScope,
-    onLoginSuccess: (String, String, String) -> Unit
+    onLoginSuccess: (String, String, String) -> Unit,
+    onTermsClick: () -> Unit,
+    onLegalClick: () -> Unit
 ) {
     var remainingSeconds by remember { mutableStateOf(0) }
     val cleanedPhone = form.phone.replace(Regex("[^0-9]"), "")
@@ -668,12 +694,20 @@ private fun OtpStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = Green)
                 )
-                Text(
-                    text = "J'accepte les Conditions d'Utilisation et la Politique de Confidentialité",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    modifier = Modifier.clickable { /* Could open a dialog with text */ }
-                )
+                Column(Modifier.clickable { onTermsClick() }) {
+                    Text(
+                        text = "J'accepte les Conditions d'Utilisation",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "et la Politique de Confidentialité",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Green,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
 
