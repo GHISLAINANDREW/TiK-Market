@@ -1,3 +1,4 @@
+// TiK-Market App - Version 1.0.1 (Auto-deploy trigger)
 package com.tik_market
 
 import androidx.compose.animation.*
