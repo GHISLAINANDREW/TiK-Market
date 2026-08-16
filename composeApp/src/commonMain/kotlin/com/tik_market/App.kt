@@ -712,8 +712,6 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onNotifPrefsClick = { appState.navigateTo(NavScreen.NotifPrefs) },
                 onGroupBuysClick = { appState.navigateTo(NavScreen.MyGroupBuys) },
                 onShopsMapClick = { appState.navigateTo(NavScreen.ShopsMap) },
-                onLegalClick = { appState.navigateTo(NavScreen.Legal) },
-                onTermsClick = { appState.navigateTo(NavScreen.Terms) },
                 walletBalance = appState.walletBalance,
                 walletPoints = appState.currentPoints,
                 walletTier = appState.walletTier,
@@ -784,6 +782,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             NavScreen.Auth -> AuthScreen(
                 onBack = { appState.goBack(); appState.isRegisterMode = false },
                 initialModeRegister = appState.isRegisterMode,
+                onTermsClick = { appState.navigateTo(NavScreen.Terms) },
+                onLegalClick = { appState.navigateTo(NavScreen.Legal) },
                 onLoginSuccess = { token, name, role ->
                     appState.isRegisterMode = false
                     scope.launch {
