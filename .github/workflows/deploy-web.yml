@@ -43,31 +43,19 @@ jobs:
 
       - name: Prepare Distribution
         run: |
-          # Create a clean dist folder
-          mkdir -p deploy_dist
-          
-          # Find the compiled Wasm files
-          # In Kotlin 2.0.21, it's usually in composeApp/build/dist/wasmJs/productionExecutable
+          # The standard output dir for Kotlin 2.0.21
           SOURCE_DIR="composeApp/build/dist/wasmJs/productionExecutable"
           
-          if [ ! -d "$SOURCE_DIR" ]; then
-            echo "Searching for build output..."
-            SOURCE_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
-          fi
+          # Move vercel.json to project root for the action to find it easily
+          # No need to copy it into the source dir if we deploy correctly
           
-          echo "Source directory: $SOURCE_DIR"
-          ls -R "$SOURCE_DIR"
-          
-          # Copy everything to deploy_dist
-          cp -rv "$SOURCE_DIR"/* deploy_dist/
-          
-          # Copy custom web files (icons, manifest) if they exist
           if [ -d "web" ]; then
-            cp -rv web/* deploy_dist/
+            echo "Merging custom web files into production executable..."
+            cp -rv web/* "$SOURCE_DIR/"
           fi
           
-          # Copy vercel.json to the deployment folder
-          cp vercel.json deploy_dist/
+          echo "Listing distribution files:"
+          ls -R "$SOURCE_DIR"
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
@@ -75,5 +63,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: deploy_dist
           vercel-args: '--prod'
+          path: composeApp/build/dist/wasmJs/productionExecutable

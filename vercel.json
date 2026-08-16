@@ -1,7 +1,6 @@
 {
   "version": 2,
   "public": true,
-  "outputDirectory": "composeApp/build/dist/wasmJs/productionExecutable",
   "cleanUrls": true,
   "rewrites": [
     {
