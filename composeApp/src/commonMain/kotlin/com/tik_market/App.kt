@@ -76,6 +76,7 @@ import com.tik_market.ui.misc.ShopsMapScreen
 import com.tik_market.ui.misc.SplashScreen
 import com.tik_market.ui.misc.LegalNoticeScreen
 import com.tik_market.ui.misc.TermsOfUseScreen
+import com.tik_market.ui.misc.AboutScreen
 
 @Composable
 private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
@@ -1018,7 +1019,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onToggleDarkMode = { appState.isDarkMode = !appState.isDarkMode },
                 language = appState.language,
                 onToggleLanguage = { appState.updateLanguage(if (appState.language == "fr") "en" else "fr") },
-                onAboutClick = { /* Show about dialog or navigate */ },
+                onAboutClick = { appState.navigateTo(NavScreen.About) },
                 onLegalClick = { appState.navigateTo(NavScreen.Legal) },
                 onTermsClick = { appState.navigateTo(NavScreen.Terms) },
                 onDownloadApk = { com.tik_market.utils.downloadFile("https://github.com/GHISLAINANDREW/TiK-Market/releases/download/beta/TiK-Market.apk", "TiK-Market.apk") }
@@ -1157,6 +1158,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             )
             NavScreen.Legal -> LegalNoticeScreen(onBack = { appState.goBack() })
             NavScreen.Terms -> TermsOfUseScreen(onBack = { appState.goBack() })
+            NavScreen.About -> AboutScreen(onBack = { appState.goBack() })
             else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Écran non implémenté") }
         }
     }

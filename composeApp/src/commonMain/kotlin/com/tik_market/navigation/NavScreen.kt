@@ -36,5 +36,6 @@ sealed class NavScreen(val route: String, val title: String) {
     object EditProfile : NavScreen("edit-profile", "Modifier le profil")
     object Legal : NavScreen("legal", "Mentions Légales")
     object Terms : NavScreen("terms", "Conditions d'Utilisation")
+    object About : NavScreen("about", "À Propos")
     object Splash : NavScreen("splash", "TiK-Market")
 }
