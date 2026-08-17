@@ -23,7 +23,9 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - **Cloudinary configuré** – `cloud_name=***REMOVED***`, `api_key=***REMOVED***`, `api_secret=***REMOVED***`
 - **APK Android buildé** – `TiK-Market_v1.0.6.apk` (URL API : `https://tik-market.onrender.com`)
 - **Web WasmJS buildé et déployé** – `https://tik-market-app.vercel.app`
-- **GitHub Actions workflow créé** – `.github/workflows/deploy-web.yml`
+- **GitHub Actions workflow corrigé** – Déploiement automatique fonctionnel.
+- **Design Parity Web/APK** – Splash screen (blanc), logo TiK-Market, favicon et icônes Apple synchronisés.
+- **Support Wasm GC** – Vérification de compatibilité ajoutée au chargement web.
 
 ### Chat / Messages
 - **Messages vocaux** – Upload Cloudinary permanent + ajout optimiste (émetteur voit son message immédiatement)
@@ -61,8 +63,6 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - `payment_type` ajouté via ALTER TABLE automatique
 
 ## Next Steps
-1. Ajouter le secret `VERCEL_TOKEN` GitHub
-2. Pousser tout sur GitHub, tester le flux complet
-3. Tester la validation vendeur (orders.php PUT)
-4. (Optionnel) Domaine personnalisé ~2-3€/an
-5. (Optionnel) Play Store
+1. Vérifier le rendu final sur https://tik-market-app.vercel.app après la fin du build.
+2. Tester le flux complet de virement vendeur (Validation par le vendeur).
+3. (Optionnel) Play Store
