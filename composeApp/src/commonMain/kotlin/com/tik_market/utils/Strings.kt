@@ -6,19 +6,22 @@ import androidx.compose.runtime.staticCompositionLocalOf
 val LocalAppStrings = staticCompositionLocalOf<AppStrings> { getStrings("fr") }
 
 /**
- * Basic Multiplatform replacement for String.format()
+ * Multiplatform replacement for String.format()
  * Supports %s and %d placeholders.
  */
 fun String.format(vararg args: Any?): String {
-    var result = this
-    args.forEach { arg ->
-        if (result.contains("%s")) {
-            result = result.replaceFirst("%s", arg.toString())
-        } else if (result.contains("%d")) {
-            result = result.replaceFirst("%d", arg.toString())
+    if (args.isEmpty()) return this
+    var res = this
+    for (arg in args) {
+        val sIdx = res.indexOf("%s")
+        val dIdx = res.indexOf("%d")
+        val finalIdx = if (sIdx != -1 && (dIdx == -1 || sIdx < dIdx)) sIdx else dIdx
+        
+        if (finalIdx != -1) {
+            res = res.substring(0, finalIdx) + arg.toString() + res.substring(finalIdx + 2)
         }
     }
-    return result
+    return res
 }
 
 // ── SUB-CLASSES TO AVOID HUGE CONSTRUCTOR ──
