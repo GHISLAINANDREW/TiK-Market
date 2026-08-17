@@ -194,6 +194,25 @@
 <body>
   <div id="composeApp"></div>
 
+  <!-- Google Translate visibility helper -->
+  <div id="translate-helper" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+    TiK-Market: Boutique en ligne, achats groupés, fidélité et promotions.
+    Connectez-vous pour voir vos commandes et vos favoris.
+  </div>
+
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;bottom:10px;left:10px;z-index:10000;opacity:0.8;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'fr',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
   <!-- Error screen (shown if wasm loading fails) -->
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
@@ -255,6 +274,24 @@
       var preview = document.getElementById('preview');
       var previewGrid = document.getElementById('preview-grid');
 
+      // Check Wasm GC support
+      function checkWasmGC() {
+        try {
+          if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
+          // Test for a simple Wasm GC feature (structs)
+          return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 95, 1, 120]));
+        } catch (e) { return false; }
+      }
+
+      if (!checkWasmGC()) {
+        console.error("Wasm GC not supported by this browser.");
+        setTimeout(function() {
+            splash.classList.add('hidden');
+            errorScreen.classList.add('visible');
+            errorScreen.querySelector('p').innerHTML = "Votre navigateur est trop ancien pour cette application.<br>Veuillez mettre à jour Chrome (v119+) ou Firefox (v120+).";
+        }, 1000);
+      }
+
       // ── Load preview products ──
       window.loadPreviewProducts = function() {
         var errDiv = document.getElementById('preview-error');
@@ -306,13 +343,13 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Show error if wasm fails to load after 15s
+      // Show error if wasm fails to load after 30s
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 15000);
+      }, 30000);
 
       // Also hide splash on error
       window.addEventListener('error', function() {
