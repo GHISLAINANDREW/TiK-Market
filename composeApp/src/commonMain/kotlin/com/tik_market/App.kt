@@ -366,7 +366,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
         Modifier.fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFFE6E0F0), Color(0xFFDED9E9))
+                    listOf(Color(0xFFF1F8E9), Color(0xFFE8F5E9)) // Light green brand background for Web
                 )
             )
     ) {
