@@ -23,6 +23,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.utils.FormatUtils
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.launch
 
 private val tierColors = mapOf(
