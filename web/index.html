@@ -11,13 +11,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TiK-Market">
   <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23FFFFFF'/%3E%3Ccircle cx='50' cy='28' r='22' stroke='%231B5E20' stroke-width='8' fill='none'/%3E%3Ccircle cx='50' cy='28' r='6' fill='%231B5E20'/%3E%3Cpath d='M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z' fill='%231B5E20'/%3E%3Ctext x='50' y='78' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='24' fill='white'%3ETiK%3C/text%3E%3C/svg%3E">
-  <!-- Social sharing -->
-  <meta property="og:title" content="TiK-Market">
-  <meta property="og:description" content="Achetez et vendez sur TiK-Market, partout au Cameroun">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://tikmarket-app.vercel.app">
-  <meta property="og:image" content="https://tikmarket-app.vercel.app/favicon.svg">
-  <meta name="twitter:card" content="summary">
   <!-- Theme -->
   <meta name="theme-color" content="#FFFFFF">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -32,9 +25,6 @@
     }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
       display: flex;
       flex-direction: column;
     }
@@ -49,23 +39,23 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       background: #FFFFFF;
       z-index: 9999;
-      transition: opacity 0.2s ease-out;
+      transition: opacity 0.5s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
     .splash-logo-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transform: scale(1.2);
+      transform: scale(1.1);
     }
-    .tik-logo-svg { width: 100px; height: 100px; }
+    .tik-logo-svg { width: 120px; height: 120px; }
     .splash-title {
-      font-size: 24px; font-weight: 800;
-      color: #1B5E20; letter-spacing: 1px; margin-top: 10px;
+      font-size: 26px; font-weight: 800;
+      color: #1B5E20; letter-spacing: 1px; margin-top: 15px;
     }
     .splash-footer {
-        position: absolute; bottom: 40px; text-align: center;
+        position: absolute; bottom: 50px; text-align: center;
     }
-    .splash-version { font-size: 12px; color: #9E9E9E; margin-bottom: 5px; }
-    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 2px; }
+    .splash-version { font-size: 12px; color: #9E9E9E; margin-bottom: 6px; }
+    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; }
 
     /* Error screen */
     #error-screen {
@@ -82,35 +72,36 @@
     #error-screen button {
       background: #1B5E20; color: white; border: none;
       padding: 12px 32px; border-radius: 28px; font-size: 15px;
-      cursor: pointer; font-weight: 600; box-shadow: 0 4px 12px rgba(27,94,32,0.2);
-    }
-    #error-screen button:hover { background: #2E7D32; }
-
-    /* Offline banner */
-    #offline-banner {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: #D32F2F; color: white;
-      text-align: center; padding: 6px 16px;
-      font-size: 13px; font-weight: 500;
-      z-index: 10000;
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
-    }
-    #offline-banner.show { transform: translateY(0); }
-
-    /* Google Translate visibility helper */
-    #translate-helper {
-      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+      cursor: pointer; font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div id="composeApp"></div>
 
-  <!-- Google Translate visibility helper -->
-  <div id="translate-helper">
-    TiK-Market: Boutique en ligne, achats groupés, fidélité et promotions.
-    Connectez-vous pour voir vos commandes et vos favoris.
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="splash-logo-container">
+      <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
+        <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
+        <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
+        <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
+      </svg>
+      <div class="splash-title">TIK MARKET</div>
+    </div>
+    <div class="splash-footer">
+        <div class="splash-version">Version 2.2 (Universal JS)</div>
+        <div class="splash-footer-brand">TIK MARKET</div>
+    </div>
+  </div>
+
+  <!-- Error screen -->
+  <div id="error-screen">
+    <div class="err-icon">⚠️</div>
+    <h2>Problème de chargement</h2>
+    <p id="error-message">L'application n'a pas pu s'initialiser.<br>Vérifiez votre connexion internet ou réessayez.</p>
+    <button onclick="location.reload()">Réessayer</button>
   </div>
 
   <!-- Google Translate Widget -->
@@ -126,37 +117,11 @@
   </script>
   <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-  <!-- Offline banner -->
-  <div id="offline-banner">📡 Connexion perdue — certaines fonctionnalités peuvent être limitées</div>
-
-  <!-- Splash -->
-  <div id="splash">
-    <div class="splash-logo-container">
-      <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
-        <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
-        <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
-        <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
-        <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
-      </svg>
-      <div class="splash-title">TIK MARKET</div>
-    </div>
-    <div class="splash-footer">
-        <div class="splash-version">Version 2.0</div>
-        <div class="splash-footer-brand">TIK MARKET</div>
-    </div>
-  </div>
-
-  <!-- Error screen -->
-  <div id="error-screen">
-    <div class="err-icon">⚠️</div>
-    <h2>Problème de chargement</h2>
-    <p id="error-message">L'application n'a pas pu s'initialiser.<br>Vérifiez votre connexion internet ou réessayez.</p>
-    <button onclick="location.reload()">Réessayer</button>
-  </div>
-
+  <script src="skiko.js"></script>
   <script src="composeApp.js"></script>
   <script>
     (function() {
+      console.log("[Index] Page initialization started");
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
@@ -164,6 +129,7 @@
       // ── When compose renders, hide splash ──
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
+          console.log("[Index] Compose rendered, hiding splash");
           splash.classList.add('hidden');
           observer.disconnect();
           clearTimeout(failTimer);
@@ -174,32 +140,21 @@
       // Show error if app fails to load after 60s
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
+          console.error("[Index] Timeout reached, app failed to load");
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
       }, 60000);
 
-      // Also hide splash on runtime error
-      window.addEventListener('error', function() {
-        splash.classList.add('hidden');
-        clearTimeout(failTimer);
+      window.addEventListener('error', function(e) {
+        console.error("[Index] Runtime error:", e.message);
       });
-
-      // ── Offline detection ──
-      var banner = document.getElementById('offline-banner');
-      function updateOnlineStatus() {
-        if (banner) banner.classList.toggle('show', !navigator.onLine);
-      }
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-      updateOnlineStatus();
 
       // ── Google Sign-In Helper ──
       window.googleSignIn = function(clientId, onResult) {
         try {
           google.accounts.id.initialize({
             client_id: clientId,
-            cancel_on_tap_outside: false,
             callback: (response) => {
               if (response.credential) {
                 const base64Url = response.credential.split('.')[1];
@@ -208,7 +163,6 @@
                   return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
                 }).join(''));
                 const payload = JSON.parse(jsonPayload);
-
                 onResult({
                   idToken: response.credential,
                   name: payload.name || payload.email,
