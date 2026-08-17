@@ -12,9 +12,9 @@ import com.tik_market.navigation.NavScreen
 fun main() {
     println("[Main] Wasm entry point started v1.0.8")
     
-    // Safety fallback: hide loading screen after 10s even if Compose fails
+    // Safety fallback: hide splash screen after 10s even if Compose fails
     window.setTimeout({
-        val loadingScreen = document.getElementById("loading-screen")
+        val loadingScreen = document.getElementById("splash")
         if (loadingScreen != null) {
             val element = loadingScreen as HTMLElement
             if (!element.classList.contains("hidden")) {
@@ -27,8 +27,8 @@ fun main() {
 
     ComposeViewport(viewportContainerId = "composeApp") {
         LaunchedEffect(Unit) {
-            println("[Main] Compose ready, hiding loading screen")
-            val loadingScreen = document.getElementById("loading-screen")
+            println("[Main] Compose ready, hiding splash screen")
+            val loadingScreen = document.getElementById("splash")
             if (loadingScreen != null) {
                 (loadingScreen as HTMLElement).classList.add("hidden")
                 println("[Main] Loading screen hidden")
