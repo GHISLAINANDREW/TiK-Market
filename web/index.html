@@ -43,7 +43,7 @@
       height: 100dvh;
       flex: 1;
     }
-    /* Splash screen - Matching Android APK (White background, Green Logo) */
+    /* Splash screen */
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -129,16 +129,13 @@
   <!-- Offline banner -->
   <div id="offline-banner">📡 Connexion perdue — certaines fonctionnalités peuvent être limitées</div>
 
-  <!-- Splash - Matching APK style -->
+  <!-- Splash -->
   <div id="splash">
     <div class="splash-logo-container">
       <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
-        <!-- Bag Handle / Pin -->
         <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
         <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
-        <!-- Bag Body -->
         <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
-        <!-- TiK Text on Bag -->
         <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
       </svg>
       <div class="splash-title">TIK MARKET</div>
@@ -149,11 +146,11 @@
     </div>
   </div>
 
-  <!-- Error screen (shown if wasm loading fails) -->
+  <!-- Error screen -->
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
     <h2>Problème de chargement</h2>
-    <p id="error-message">L'application n'a pas pu s'initialiser.<br>Vérifiez votre connexion internet ou mettez à jour votre navigateur.</p>
+    <p id="error-message">L'application n'a pas pu s'initialiser.<br>Vérifiez votre connexion internet ou réessayez.</p>
     <button onclick="location.reload()">Réessayer</button>
   </div>
 
@@ -163,25 +160,6 @@
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
-      var errorMsg = document.getElementById('error-message');
-
-      // Check Wasm GC support
-      function checkWasmGC() {
-        try {
-          if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
-          return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 95, 1, 120]));
-        } catch (e) { return false; }
-      }
-
-      if (!checkWasmGC()) {
-        console.error("Wasm GC not supported");
-        setTimeout(function() {
-            splash.classList.add('hidden');
-            errorScreen.classList.add('visible');
-            errorMsg.innerHTML = "Votre navigateur est trop ancien pour TiK-Market.<br>Veuillez mettre à jour Chrome (v119+) ou Firefox (v120+).";
-        }, 500);
-        return;
-      }
 
       // ── When compose renders, hide splash ──
       var observer = new MutationObserver(function() {
@@ -193,15 +171,15 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Show error if wasm fails to load after 45s (increased for heavy Wasm)
+      // Show error if app fails to load after 60s
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 45000);
+      }, 60000);
 
-      // Also hide splash on error
+      // Also hide splash on runtime error
       window.addEventListener('error', function() {
         splash.classList.add('hidden');
         clearTimeout(failTimer);
