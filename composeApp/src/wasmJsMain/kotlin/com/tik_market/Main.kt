@@ -10,7 +10,7 @@ import com.tik_market.navigation.NavScreen
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    println("[Main] Wasm entry point started")
+    println("[Main] Wasm entry point started v1.0.8")
     
     // Safety fallback: hide loading screen after 10s even if Compose fails
     window.setTimeout({
