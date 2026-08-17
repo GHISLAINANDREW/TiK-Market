@@ -27,6 +27,7 @@ import com.tik_market.api.ApiClient
 import com.tik_market.api.ApiConversation
 import com.tik_market.theme.*
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

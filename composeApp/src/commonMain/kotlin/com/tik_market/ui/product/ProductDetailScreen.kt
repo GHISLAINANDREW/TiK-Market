@@ -26,6 +26,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.utils.shareText
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch

@@ -25,6 +25,7 @@ import com.tik_market.theme.Orange
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.FormatUtils
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import androidx.compose.runtime.*
 
 @OptIn(ExperimentalMaterial3Api::class)

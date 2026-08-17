@@ -28,6 +28,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

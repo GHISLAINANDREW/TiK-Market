@@ -27,6 +27,7 @@ import com.tik_market.ui.components.EmptyState
 import com.tik_market.ui.components.PriceDisplay
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

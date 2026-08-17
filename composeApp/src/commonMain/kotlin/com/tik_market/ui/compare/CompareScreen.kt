@@ -27,6 +27,7 @@ import com.tik_market.data.models.CartItem
 import com.tik_market.data.models.Product
 import com.tik_market.api.toProduct
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

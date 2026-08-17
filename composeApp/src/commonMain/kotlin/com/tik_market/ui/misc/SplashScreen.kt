@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.tik_market.theme.Green
 import com.tik_market.ui.components.TiKLogo
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.delay
 
 @Composable
