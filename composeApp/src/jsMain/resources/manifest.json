@@ -1,0 +1,29 @@
+{
+  "name": "TiK-Market",
+  "short_name": "TiK-Market",
+  "description": "Achetez et vendez sur TiK-Market, partout au Cameroun",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1B5E20",
+  "theme_color": "#1B5E20",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "marketplace"],
+  "lang": "fr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Accueil",
+      "short_name": "Accueil",
+      "url": "/"
+    }
+  ]
+}
