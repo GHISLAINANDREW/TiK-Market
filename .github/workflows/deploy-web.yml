@@ -1,5 +1,4 @@
-name: Deploy Web (WasmJS) to Vercel
-# v1.0.2 - Forcing refresh
+name: Deploy Web (Compatibility Mode) to Vercel
 
 on:
   push:
@@ -36,18 +35,26 @@ jobs:
         with:
           node-version: '20.15.0'
 
-      - name: Build Web (WasmJS)
+      - name: Build Web (Kotlin/JS IR - Max Compatibility)
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+          ./gradlew :composeApp:jsBrowserDistribution --no-daemon
 
       - name: Prepare Distribution
         run: |
           mkdir -p final_deploy
-          SOURCE_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
-          if [ -z "$SOURCE_DIR" ]; then exit 1; fi
+          # Find the JS distribution directory
+          SOURCE_DIR=$(find composeApp/build/dist/js -name "productionExecutable" -type d | head -n 1)
+          if [ -z "$SOURCE_DIR" ]; then 
+            echo "Error: JS distribution not found"
+            exit 1
+          fi
           cp -rv "$SOURCE_DIR"/* final_deploy/
+          
+          # Apply branding and assets from 'web' folder
           if [ -d "web" ]; then cp -rv web/* final_deploy/; fi
+          
+          # Use vercel.json for rewrites and headers
           cp vercel.json final_deploy/
 
       - name: Deploy to Vercel
