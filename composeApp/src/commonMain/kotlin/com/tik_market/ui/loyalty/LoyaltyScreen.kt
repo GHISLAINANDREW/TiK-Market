@@ -22,6 +22,7 @@ import com.tik_market.api.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 private val tierColors = mapOf(
@@ -58,6 +59,7 @@ fun LoyaltyScreen(
     var tab by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
 
     val nextTierData = remember(totalPoints, walletTier) {
         when (walletTier.lowercase()) {
@@ -84,7 +86,7 @@ fun LoyaltyScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Programme fidélité", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.loyaltyProgram, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 actions = {
                     IconButton(onClick = { 
@@ -92,7 +94,7 @@ fun LoyaltyScreen(
                             isRefreshing = true
                             loadData()
                             isRefreshing = false
-                            snackbar.showSnackbar("Données mises à jour")
+                            snackbar.showSnackbar(ts.dataUpdated)
                         } 
                     }) {
                         if (isRefreshing) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
@@ -128,14 +130,14 @@ fun LoyaltyScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ActionChip(
                             icon = Icons.Default.Sell,
-                            text = "Échanger points",
+                            text = ts.redeemPoints,
                             color = Orange,
                             onClick = { showRedeemDialog = true },
                             modifier = Modifier.weight(1f)
                         )
                         ActionChip(
                             icon = Icons.Default.AccountBalance,
-                            text = "Recharger",
+text = ts.recharge,
                             color = Green,
                             onClick = { showRechargeDialog = true },
                             modifier = Modifier.weight(1f)
@@ -148,14 +150,14 @@ fun LoyaltyScreen(
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Column(Modifier.padding(16.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TabButton("Historique", tab == 0, onClick = { tab = 0 }, Modifier.weight(1f))
-                                TabButton("Mes coupons (${coupons.size})", tab == 1, onClick = { tab = 1 }, Modifier.weight(1f))
+                                TabButton(ts.history, tab == 0, onClick = { tab = 0 }, Modifier.weight(1f))
+                                TabButton(ts.myCoupons.format(coupons.size), tab == 1, onClick = { tab = 1 }, Modifier.weight(1f))
                             }
                             Spacer(Modifier.height(12.dp))
 
                             if (tab == 0) {
                                 if (transactions.isEmpty()) {
-                                    EmptyStateIcon(Icons.Default.Receipt, "Aucune transaction")
+                                    EmptyStateIcon(Icons.Default.Receipt, ts.noTransactions)
                                 } else {
                                     transactions.forEachIndexed { i, tx ->
                                         if (i > 0) HorizontalDivider(color = Color(0xFFF0F0F0))
@@ -164,7 +166,7 @@ fun LoyaltyScreen(
                                 }
                             } else {
                                 if (coupons.isEmpty()) {
-                                    EmptyStateIcon(Icons.Default.Sell, "Aucun coupon")
+                                    EmptyStateIcon(Icons.Default.Sell, ts.noCoupons)
                                 } else {
                                     coupons.forEach { c -> CouponCard(c, onClick = { onCouponClick(c.code) }) }
                                 }
@@ -177,7 +179,7 @@ fun LoyaltyScreen(
                 item {
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("Avantages par niveau", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(ts.advantagesPerTier, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(12.dp))
                             TierAdvantageRow("Bronze", "0 pts", "1% cashback", Color(0xFF8D6E63), isActive = walletTier == "bronze")
                             TierAdvantageRow("Argent", "100 pts", "2% cashback + 5% bonus", Color(0xFF9E9E9E), isActive = walletTier == "argent")
@@ -201,14 +203,14 @@ fun LoyaltyScreen(
                     try {
                         val resp = ApiClient.redeemPoints(points)
                         if (resp.success && resp.coupon != null) {
-                            snackbar.showSnackbar("Coupon ${resp.coupon.code} généré !")
+                            snackbar.showSnackbar(ts.couponGenerated.format(resp.coupon.code))
                             showRedeemDialog = false
                             coupons = ApiClient.fetchCoupons()
                         } else {
-                            snackbar.showSnackbar("Erreur lors de l'échange")
+                            snackbar.showSnackbar(ts.errorRedeem)
                         }
                     } catch (e: Exception) {
-                        snackbar.showSnackbar(e.message ?: "Erreur")
+                        snackbar.showSnackbar(e.message ?: ts.errorRedeem)
                     }
                 }
             }
@@ -224,14 +226,14 @@ fun LoyaltyScreen(
                     try {
                         val resp = ApiClient.rechargeWallet(amount, method)
                         if (resp.success) {
-                            snackbar.showSnackbar("Recharge de ${amount.toInt()} FCFA effectuée")
+                            snackbar.showSnackbar(ts.rechargeDone.format(amount.toInt()))
                             showRechargeDialog = false
                             transactions = ApiClient.fetchWalletTransactions()
                         } else {
-                            snackbar.showSnackbar("Erreur de recharge")
+                            snackbar.showSnackbar(ts.errorRecharge)
                         }
                     } catch (e: Exception) {
-                        snackbar.showSnackbar(e.message ?: "Erreur")
+                        snackbar.showSnackbar(e.message ?: ts.errorRecharge)
                     }
                 }
             }
@@ -242,6 +244,7 @@ fun LoyaltyScreen(
 // ── Carte de fidélité principale ──
 @Composable
 private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, tier: String) {
+    val ts = LocalAppStrings.current
     val tierColor = tierColors[tier] ?: Color(0xFF8D6E63)
     val gradient = tierGradients[tier] ?: listOf(Color(0xFF8D6E63), Color(0xFFA1887F))
 
@@ -254,20 +257,20 @@ private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, t
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.MilitaryTech, null, Modifier.size(28.dp), tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("Carte ${tierNames[tier] ?: tier}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                    Text(ts.cardLabel.format(tierNames[tier] ?: tier), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
                 Text("${balance.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
-                Text("Solde cashback disponible", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                Text(ts.cashbackBalanceLabel, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("$currentPoints pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                        Text("Points utilisables", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text(ts.pointsUsable, fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("$totalPoints pts", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                        Text("Points cumulés", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text(ts.pointsAccumulated, fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                 }
             }
@@ -278,6 +281,7 @@ private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, t
 // ── Carte progression niveau suivant ──
 @Composable
 private fun NextTierCard(currentTier: String, nextTierName: String, pointsNeeded: Int, totalPoints: Int) {
+    val ts = LocalAppStrings.current
     val currentTierPoints = when (currentTier) {
         "bronze" -> 0
         "argent" -> 100
@@ -297,7 +301,7 @@ private fun NextTierCard(currentTier: String, nextTierName: String, pointsNeeded
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.TrendingUp, null, Modifier.size(20.dp), tint = nextColor)
                 Spacer(Modifier.width(8.dp))
-                Text("Prochain niveau : ${tierNames[nextTierName] ?: nextTierName}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = nextColor)
+                Text(ts.nextLevel.format(tierNames[nextTierName] ?: nextTierName), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = nextColor)
             }
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(
@@ -308,7 +312,7 @@ private fun NextTierCard(currentTier: String, nextTierName: String, pointsNeeded
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             Spacer(Modifier.height(6.dp))
-            Text("Plus que $pointsNeeded points pour atteindre ${tierNames[nextTierName] ?: nextTierName}", fontSize = 12.sp, color = Color.Gray)
+            Text(ts.pointsToReach.format(pointsNeeded, tierNames[nextTierName] ?: nextTierName), fontSize = 12.sp, color = Color.Gray)
         }
     }
 }
@@ -316,6 +320,7 @@ private fun NextTierCard(currentTier: String, nextTierName: String, pointsNeeded
 // ── Transaction row ──
 @Composable
 private fun TransactionRow(tx: ApiWalletTransaction) {
+    val ts = LocalAppStrings.current
     val icon = when (tx.type) {
         "earn" -> Icons.Default.AddCircle
         "spend" -> Icons.Default.RemoveCircle
@@ -332,12 +337,12 @@ private fun TransactionRow(tx: ApiWalletTransaction) {
         else -> Color.Gray
     }
     val label = when (tx.type) {
-        "earn" -> "Gagné"
-        "spend" -> "Dépensé"
-        "recharge" -> "Recharge"
-        "cashback" -> "Cashback"
-        "bonus" -> "Bonus"
-        "refund" -> "Remboursement"
+        "earn" -> ts.earned
+        "spend" -> ts.spent
+        "recharge" -> ts.rechargeLabel
+        "cashback" -> ts.cashbackLabel
+        "bonus" -> ts.bonusLabel
+        "refund" -> ts.refund
         else -> tx.type
     }
 
@@ -364,6 +369,7 @@ private fun TransactionRow(tx: ApiWalletTransaction) {
 // ── Coupon card ──
 @Composable
 private fun CouponCard(coupon: ApiCoupon, onClick: () -> Unit) {
+    val ts = LocalAppStrings.current
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
@@ -378,13 +384,13 @@ private fun CouponCard(coupon: ApiCoupon, onClick: () -> Unit) {
                 Text(coupon.code, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 1.sp)
                 Row {
                     if (coupon.discountFcfa != null && coupon.discountFcfa > 0) {
-                        Text("${coupon.discountFcfa.toInt()} FCFA de réduction", fontSize = 12.sp, color = Orange, fontWeight = FontWeight.Medium)
+                        Text(ts.fcfaDiscount.format(coupon.discountFcfa.toInt()), fontSize = 12.sp, color = Orange, fontWeight = FontWeight.Medium)
                     } else if (coupon.discountPct != null && coupon.discountPct > 0) {
-                        Text("${coupon.discountPct.toInt()}% de réduction", fontSize = 12.sp, color = Orange, fontWeight = FontWeight.Medium)
+                        Text(ts.pctDiscount.format(coupon.discountPct.toInt()), fontSize = 12.sp, color = Orange, fontWeight = FontWeight.Medium)
                     }
                 }
                 coupon.expiresAt?.let {
-                    Text("Expire le ${it.take(10)}", fontSize = 10.sp, color = Color.Gray)
+                    Text(ts.expiresOn.format(it.take(10)), fontSize = 10.sp, color = Color.Gray)
                 }
             }
             Icon(Icons.Default.ContentCopy, null, Modifier.size(18.dp), tint = Orange)
@@ -395,22 +401,23 @@ private fun CouponCard(coupon: ApiCoupon, onClick: () -> Unit) {
 // ── Échange points dialog ──
 @Composable
 private fun RedeemPointsDialog(currentPoints: Int, onDismiss: () -> Unit, onRedeem: (Int) -> Unit) {
+    val ts = LocalAppStrings.current
     var points by remember { mutableStateOf("100") }
     val pts = points.toIntOrNull() ?: 0
     val couponValue = (pts / 100) * 500
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Échanger mes points") },
+        title = { Text(ts.redeemMyPoints) },
         text = {
             Column(modifier = Modifier.width(300.dp)) {
-                Text("Vous avez $currentPoints points", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text(ts.youHavePoints.format(currentPoints), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = points,
                     onValueChange = { points = it.filter { c -> c.isDigit() }.take(5) },
-                    label = { Text("Points à échanger") },
-                    supportingText = { Text("100 points = 500 FCFA. Valeur: $couponValue FCFA") },
+                    label = { Text(ts.pointsToExchange) },
+                    supportingText = { Text(ts.pointsValue.format(couponValue)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
@@ -419,7 +426,7 @@ private fun RedeemPointsDialog(currentPoints: Int, onDismiss: () -> Unit, onRede
         },
         confirmButton = {
             TiKButton(
-                text = "Échanger",
+                text = ts.exchange,
                 onClick = {
                     val p = (pts / 100) * 100
                     if (p in 100..currentPoints) onRedeem(p)
@@ -430,7 +437,7 @@ private fun RedeemPointsDialog(currentPoints: Int, onDismiss: () -> Unit, onRede
             )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(ts.cancel) }
         }
     )
 }
@@ -438,25 +445,26 @@ private fun RedeemPointsDialog(currentPoints: Int, onDismiss: () -> Unit, onRede
 // ── Recharge dialog ──
 @Composable
 private fun RechargeWalletDialog(onDismiss: () -> Unit, onRecharge: (Double, String) -> Unit) {
+    val ts = LocalAppStrings.current
     var amount by remember { mutableStateOf("1000") }
     var method by remember { mutableStateOf("orange") }
-    val methods = listOf("orange" to "Orange Money", "mtn" to "MTN Mobile Money", "other" to "Autre")
+    val methods = listOf("orange" to "Orange Money", "mtn" to "MTN Mobile Money", "other" to ts.other)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Recharger mon portefeuille") },
+        title = { Text(ts.rechargeWallet) },
         text = {
             Column(modifier = Modifier.width(320.dp)) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it.filter { c -> c.isDigit() }.take(7) },
-                    label = { Text("Montant (FCFA)") },
+                    label = { Text(ts.amountFcfa) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Moyen de paiement", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                Text(ts.paymentMethod, fontWeight = FontWeight.Medium, fontSize = 13.sp)
                 Spacer(Modifier.height(6.dp))
                 methods.forEach { (key, label) ->
                     Row(Modifier.fillMaxWidth().clickable { method = key }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -469,7 +477,7 @@ private fun RechargeWalletDialog(onDismiss: () -> Unit, onRecharge: (Double, Str
         },
         confirmButton = {
             TiKButton(
-                text = "Recharger",
+                text = ts.recharge,
                 onClick = { onRecharge(amount.toDoubleOrNull() ?: 1000.0, method) },
                 variant = TiKButtonVariant.Primary,
                 fullWidth = false,
@@ -477,7 +485,7 @@ private fun RechargeWalletDialog(onDismiss: () -> Unit, onRecharge: (Double, Str
             )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(ts.cancel) }
         }
     )
 }
@@ -514,6 +522,7 @@ private fun EmptyStateIcon(icon: androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 private fun TierAdvantageRow(name: String, points: String, advantage: String, color: Color, isActive: Boolean) {
+    val ts = LocalAppStrings.current
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(32.dp).background(if (isActive) color else Color(0xFFE0E0E0), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
             if (isActive) Icon(Icons.Default.Check, null, Modifier.size(18.dp), tint = Color.White)
@@ -526,7 +535,7 @@ private fun TierAdvantageRow(name: String, points: String, advantage: String, co
         }
         if (isActive) {
             Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.15f)) {
-                Text("ACTIF", Modifier.padding(horizontal = 8.dp, vertical = 2.dp), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = color)
+                Text(ts.active, Modifier.padding(horizontal = 8.dp, vertical = 2.dp), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = color)
             }
         }
     }

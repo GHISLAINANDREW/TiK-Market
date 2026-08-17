@@ -25,6 +25,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.ui.components.rememberImagePickerLauncher
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.ApiUser) -> Unit) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
     val currentUser = ApiClient.getCurrentUser()
 
     var name by remember { mutableStateOf(currentUser?.name ?: "") }
@@ -68,7 +70,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                     avatarUrl = uploadedUrl
                     avatarBitmap = decodeDataUrlToImageBitmap(result.dataUrl)
                 } catch (e: Exception) {
-                    snackbarHostState.showSnackbar("Erreur avatar: ${e.message}")
+                    snackbarHostState.showSnackbar(ts.avatarError.format(e.message ?: ""))
                 }
             }
         }
@@ -82,7 +84,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                     coverUrl = uploadedUrl
                     coverBitmap = decodeDataUrlToImageBitmap(result.dataUrl)
                 } catch (e: Exception) {
-                    snackbarHostState.showSnackbar("Erreur couverture: ${e.message}")
+                    snackbarHostState.showSnackbar(ts.coverError.format(e.message ?: ""))
                 }
             }
         }
@@ -92,7 +94,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Modifier le profil", fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { Text(ts.editProfile, fontWeight = FontWeight.Bold, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) }
                 },
@@ -113,16 +115,16 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                                         password = password.ifBlank { null }
                                     )
                                     onProfileUpdated(updated)
-                                    snackbarHostState.showSnackbar("✅ Profil mis à jour")
+                                    snackbarHostState.showSnackbar(ts.profileUpdated)
                                     onBack()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("❌ Erreur: ${e.message}")
+                                    snackbarHostState.showSnackbar(ts.saveError.format(e.message ?: ""))
                                 } finally {
                                     isSaving = false
                                 }
                             }
                         }) {
-                            Text("Enregistrer", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(ts.save, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -192,13 +194,13 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
 
             // Form Fields
             Column(Modifier.padding(horizontal = 20.dp)) {
-                Text("Informations personnelles", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
+                Text(ts.personalInfo, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nom complet") },
+                    label = { Text(ts.fullName) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = { Icon(Icons.Default.Person, null) }
@@ -208,7 +210,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Téléphone") },
+                    label = { Text(ts.phone) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = { Icon(Icons.Default.Phone, null) }
@@ -218,21 +220,21 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Localisation (Ville)") },
+                    label = { Text(ts.locationLabel) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = { Icon(Icons.Default.LocationOn, null) },
-                    placeholder = { Text("ex: Bafoussam") }
+                    placeholder = { Text(ts.locationPlaceholder) }
                 )
 
                 Spacer(Modifier.height(24.dp))
-                Text("Sécurité", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
+                Text(ts.security, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Nouveau mot de passe") },
+                    label = { Text(ts.newPassword) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = { Icon(Icons.Default.Lock, null) },
@@ -242,7 +244,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                             Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
                         }
                     },
-                    placeholder = { Text("Laisser vide pour ne pas changer") }
+                    placeholder = { Text(ts.passwordPlaceholder) }
                 )
 
                 Spacer(Modifier.height(40.dp))
@@ -261,10 +263,10 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                                     password = password.ifBlank { null }
                                 )
                                 onProfileUpdated(updated)
-                                snackbarHostState.showSnackbar("✅ Profil mis à jour")
+                                snackbarHostState.showSnackbar(ts.profileUpdated)
                                 onBack()
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("❌ Erreur: ${e.message}")
+                                snackbarHostState.showSnackbar(ts.saveError.format(e.message ?: ""))
                             } finally {
                                 isSaving = false
                             }
@@ -276,7 +278,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                     enabled = !isSaving
                 ) {
                     if (isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    else Text("Mettre à jour le profil", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    else Text(ts.updateProfile, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             

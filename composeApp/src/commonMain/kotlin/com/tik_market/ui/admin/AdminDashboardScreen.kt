@@ -36,6 +36,7 @@ import com.tik_market.data.models.OrderStatus
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 // ── Admin menu items ──
@@ -51,6 +52,7 @@ private data class AdminMenuItem(
 @Composable
 fun AdminDashboardScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
     var selectedOption by remember { mutableStateOf<Int?>(null) }
 
     // Shared data
@@ -91,14 +93,14 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
 
     val menuItems = remember {
         listOf(
-            AdminMenuItem(0, "Utilisateurs", "Gérer les comptes", { Icon(Icons.Default.People, null, tint = Color.White) }, BlueAccent),
-            AdminMenuItem(1, "Boutiques", "Vérifier et gérer", { Icon(Icons.Default.Store, null, tint = Color.White) }, Orange),
-            AdminMenuItem(2, "Notifications", "Diffuser des messages", { Icon(Icons.Default.Notifications, null, tint = Color.White) }, Violet),
-            AdminMenuItem(3, "Dashboard", "Statistiques et KPIs", { Icon(Icons.Default.Dashboard, null, tint = Color.White) }, Green),
-            AdminMenuItem(4, "En ligne", "Utilisateurs actifs", { Icon(Icons.Default.PersonPin, null, tint = Color.White) }, Color(0xFF00897B)),
-            AdminMenuItem(5, "Stories", "Contenu éphémère", { Icon(Icons.Default.PhotoLibrary, null, tint = Color.White) }, Color(0xFFE91E63)),
-            AdminMenuItem(6, "Promo Hero", "Bannières accueil", { Icon(Icons.Default.Star, null, tint = Color.White) }, Color(0xFFFF6F00)),
-            AdminMenuItem(7, "Super Admin", "Contrôle total", { Icon(Icons.Default.Security, null, tint = Color.White) }, Color(0xFFD32F2F)),
+            AdminMenuItem(0, ts.usersLabel, ts.manageAccounts, { Icon(Icons.Default.People, null, tint = Color.White) }, BlueAccent),
+            AdminMenuItem(1, ts.shop, ts.verifyManage, { Icon(Icons.Default.Store, null, tint = Color.White) }, Orange),
+            AdminMenuItem(2, ts.notifications, ts.broadcastMessages, { Icon(Icons.Default.Notifications, null, tint = Color.White) }, Violet),
+            AdminMenuItem(3, ts.dashboardTitle, ts.statsKPIs, { Icon(Icons.Default.Dashboard, null, tint = Color.White) }, Green),
+            AdminMenuItem(4, ts.onlineLabel, ts.activeUsers, { Icon(Icons.Default.PersonPin, null, tint = Color.White) }, Color(0xFF00897B)),
+            AdminMenuItem(5, ts.storiesLabel, ts.ephemeralContent, { Icon(Icons.Default.PhotoLibrary, null, tint = Color.White) }, Color(0xFFE91E63)),
+            AdminMenuItem(6, ts.promoHeroLabel, ts.homeBanners, { Icon(Icons.Default.Star, null, tint = Color.White) }, Color(0xFFFF6F00)),
+            AdminMenuItem(7, ts.superAdminLabel, ts.totalControl, { Icon(Icons.Default.Security, null, tint = Color.White) }, Color(0xFFD32F2F)),
         )
     }
 
@@ -139,7 +141,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                     }
                 }
                 if (rawUsers == null && rawShops == null) {
-                    errorMessage = "Erreur de connexion au serveur d'administration."
+                    errorMessage = ts.adminConnError
                 }
             } catch (e: Exception) {
                 errorMessage = e.message
@@ -161,6 +163,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
             optionId = selectedOption!!,
             title = menuItems.firstOrNull { it.id == selectedOption }?.title ?: "",
             onBack = { selectedOption = null },
+            ts = ts,
             scope = scope, users = users, shops = shops, loadData = { loadData() },
             // Promo dialog
             showPromoDialog = showPromoDialog, setShowPromoDialog = { showPromoDialog = it },
@@ -197,7 +200,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Administration", style = MaterialTheme.typography.titleLarge, color = Color.White) },
+                title = { Text(ts.admin, style = MaterialTheme.typography.titleLarge, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 actions = {
                     IconButton(onClick = { loadData() }) { Icon(Icons.Default.Refresh, null, tint = Color.White) }
@@ -221,7 +224,7 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("⚠️", fontSize = 48.sp)
                     Text(errorMessage!!, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
-                    Button(onClick = { loadData() }) { Text("Réessayer") }
+                    Button(onClick = { loadData() }) { Text(ts.retry) }
                 }
             } else {
                 LazyVerticalGrid(
@@ -272,6 +275,7 @@ private fun AdminMenuTile(item: AdminMenuItem, onClick: () -> Unit) {
 @Composable
 private fun AdminSubScreen(
     optionId: Int, title: String, onBack: () -> Unit,
+    ts: com.tik_market.utils.AppStrings,
     scope: kotlinx.coroutines.CoroutineScope,
     users: List<AdminUser>, shops: List<AdminShop>, loadData: () -> Unit,
     // Promo dialog
@@ -314,7 +318,7 @@ private fun AdminSubScreen(
                             setAddUserRole("buyer"); setAddUserResult(null); setAddUserError(null)
                             setShowAddUserDialog(true)
                         }) {
-                            Icon(Icons.Default.PersonAdd, "Ajouter utilisateur", tint = Color.White)
+                            Icon(Icons.Default.PersonAdd, ts.addUserTitle, tint = Color.White)
                         }
                     }
                 },
@@ -331,7 +335,7 @@ private fun AdminSubScreen(
             when (optionId) {
                 0 -> AdminUsersList(
                     users = users, isLoading = false, errorMessage = null,
-                    scope = scope, loadData = loadData,
+                    scope = scope, loadData = loadData, ts = ts,
                     setAddUserError = setAddUserError,
                     setTargetNotifUser = setTargetNotifUser,
                     setUserNotifTitle = setUserNotifTitle,
@@ -340,7 +344,7 @@ private fun AdminSubScreen(
                     setShowUserNotifDialog = setShowUserNotifDialog
                 )
                 1 -> AdminShopsList(
-                    shops = shops, scope = scope,
+                    shops = shops, scope = scope, ts = ts,
                     setPromoShop = setPromoShop,
                     setPromoCode = setPromoCode,
                     setPromoDiscountPct = setPromoDiscountPct,
@@ -349,33 +353,33 @@ private fun AdminSubScreen(
                     setPromoMessage = setPromoMessage,
                     setShowPromoDialog = setShowPromoDialog
                 )
-                2 -> AdminNotificationsContent(scope = scope, users = users)
-                3 -> AdminDashboardContent(scope = scope)
-                4 -> AdminOnlineUsersContent(scope = scope)
-                5 -> AdminStoriesContent(scope = scope, shops = shops)
-                6 -> AdminHeroContent(scope = scope, shops = shops)
+                2 -> AdminNotificationsContent(scope = scope, users = users, ts = ts)
+                3 -> AdminDashboardContent(scope = scope, ts = ts)
+                4 -> AdminOnlineUsersContent(scope = scope, ts = ts)
+                5 -> AdminStoriesContent(scope = scope, shops = shops, ts = ts)
+                6 -> AdminHeroContent(scope = scope, shops = shops, ts = ts)
             }
 
             // ─── Promotion Dialog ───
             if (showPromoDialog && promoShop != null) {
                 AlertDialog(
                     onDismissRequest = { if (!promoSending) setShowPromoDialog(false) },
-                    title = { Text("Promouvoir : ${promoShop!!.name}") },
+                    title = { Text(ts.promoAtShop.replace("%s", promoShop!!.name)) },
                     text = {
                         Column(Modifier.width(300.dp).verticalScroll(rememberScrollState())) {
                             if (promoMessage != null) {
                                 Text(promoMessage!!, color = if (promoMessage!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(8.dp))
                             }
-                            OutlinedTextField(value = promoCode, onValueChange = { setPromoCode(it.uppercase().take(20)) }, label = { Text("Code promo") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = promoCode, onValueChange = { setPromoCode(it.uppercase().take(20)) }, label = { Text(ts.promoCode) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = promoDiscountPct, onValueChange = { setPromoDiscountPct(it.filter { c -> c.isDigit() || c == '.' }.take(5)) }, label = { Text("Réduction % (ex: 10)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = promoDiscountPct, onValueChange = { setPromoDiscountPct(it.filter { c -> c.isDigit() || c == '.' }.take(5)) }, label = { Text(ts.promoReductPct) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(4.dp))
-                            Text("Ou", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Text(ts.or, style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
                             Spacer(Modifier.height(4.dp))
-                            OutlinedTextField(value = promoDiscountFixed, onValueChange = { setPromoDiscountFixed(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text("Réduction fixe FCFA") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = promoDiscountFixed, onValueChange = { setPromoDiscountFixed(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text(ts.promoFixedFcfa) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = promoMinAmount, onValueChange = { setPromoMinAmount(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text("Montant minimum (FCFA)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = promoMinAmount, onValueChange = { setPromoMinAmount(it.filter { c -> c.isDigit() }.take(7)) }, label = { Text(ts.promoMinAmountFcfa) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                         }
                     },
                     confirmButton = {
@@ -387,23 +391,23 @@ private fun AdminSubScreen(
                                         val pct = promoDiscountPct.toDoubleOrNull() ?: 0.0
                                         val fixed = promoDiscountFixed.toIntOrNull() ?: 0
                                         if (promoCode.isBlank() || (pct <= 0 && fixed <= 0)) {
-                                            setPromoMessage("❌ Code et réduction requis")
+                                            setPromoMessage(ts.promoCodeRequired)
                                         } else {
                                             ApiClient.createPromotion(ApiPromoCreateBody(shopId = promoShop!!.id, code = promoCode, discountPct = pct, discountFixed = fixed, minAmount = promoMinAmount.toIntOrNull() ?: 0, maxUses = 100))
-                                            ApiClient.sendSystemNotification("🎉 Promotion chez ${promoShop!!.name}", "Utilisez le code \"$promoCode\" pour obtenir ${if (pct > 0) "$pct% de réduction" else "$fixed FCFA de réduction"} sur les produits ${promoShop!!.name} !")
-                                            setPromoMessage("✅ Promotion créée et notifiée à tous !")
+                                            ApiClient.sendSystemNotification(ts.promoAtShop.replace("%s", promoShop!!.name), Regex("%s").replaceFirst(Regex("%s").replaceFirst(Regex("%s").replaceFirst(ts.promoNotifBody, promoCode), if (pct > 0) "$pct% de réduction" else "$fixed FCFA de réduction"), promoShop!!.name))
+                                            setPromoMessage(ts.promoCreatedNotified)
                                         }
-                                    } catch (e: Exception) { setPromoMessage("❌ Erreur: ${e.message}") }
+                                    } catch (e: Exception) { setPromoMessage(ts.adminErrPrefix.replace("%s", e.message ?: "")) }
                                     setPromoSending(false)
                                 }
                             },
                             enabled = !promoSending && promoCode.isNotBlank()
                         ) {
                             if (promoSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
-                            else Text("Créer & Notifier")
+                            else Text(ts.createNotify)
                         }
                     },
-                    dismissButton = { TextButton(onClick = { setShowPromoDialog(false) }, enabled = !promoSending) { Text("Fermer") } }
+                    dismissButton = { TextButton(onClick = { setShowPromoDialog(false) }, enabled = !promoSending) { Text(ts.close) } }
                 )
             }
 
@@ -411,7 +415,7 @@ private fun AdminSubScreen(
             if (showAddUserDialog) {
                 AlertDialog(
                     onDismissRequest = { if (!addUserSending) setShowAddUserDialog(false) },
-                    title = { Text("Ajouter un utilisateur") },
+                    title = { Text(ts.addUserTitle) },
                     text = {
                         Column(Modifier.width(320.dp).verticalScroll(rememberScrollState())) {
                             if (addUserResult != null) {
@@ -422,28 +426,28 @@ private fun AdminSubScreen(
                                 Text(addUserError!!, color = RedAccent, style = MaterialTheme.typography.bodySmall)
                                 Spacer(Modifier.height(8.dp))
                             }
-                            OutlinedTextField(value = addUserName, onValueChange = { setAddUserName(it) }, label = { Text("Nom") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserName, onValueChange = { setAddUserName(it) }, label = { Text(ts.fullName) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserEmail, onValueChange = { setAddUserEmail(it) }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserEmail, onValueChange = { setAddUserEmail(it) }, label = { Text(ts.email) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserPhone, onValueChange = { setAddUserPhone(it) }, label = { Text("Téléphone") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserPhone, onValueChange = { setAddUserPhone(it) }, label = { Text(ts.phone) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = addUserPassword, onValueChange = { setAddUserPassword(it) }, label = { Text("Mot de passe") }, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = addUserPassword, onValueChange = { setAddUserPassword(it) }, label = { Text(ts.passwordLabel) }, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            Text("Rôle", style = MaterialTheme.typography.titleSmall)
+                            Text(ts.role, style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                                FilterChip(selected = addUserRole == "buyer", onClick = { setAddUserRole("buyer") }, label = { Text("Client") })
-                                FilterChip(selected = addUserRole == "vendor", onClick = { setAddUserRole("vendor") }, label = { Text("Vendeur") })
-                                FilterChip(selected = addUserRole == "admin", onClick = { setAddUserRole("admin") }, label = { Text("Admin") })
+                                FilterChip(selected = addUserRole == "buyer", onClick = { setAddUserRole("buyer") }, label = { Text(ts.clientLabel) })
+                                FilterChip(selected = addUserRole == "vendor", onClick = { setAddUserRole("vendor") }, label = { Text(ts.vendor) })
+                                FilterChip(selected = addUserRole == "admin", onClick = { setAddUserRole("admin") }, label = { Text(ts.adminLabel) })
                                 if (ApiClient.isSuperAdmin()) {
-                                    FilterChip(selected = addUserRole == "super_admin", onClick = { setAddUserRole("super_admin") }, label = { Text("Super") })
+                                    FilterChip(selected = addUserRole == "super_admin", onClick = { setAddUserRole("super_admin") }, label = { Text(ts.superLabel) })
                                 }
                             }
                             if (addUserRole == "admin") {
                                 Spacer(Modifier.height(8.dp))
-                                OutlinedTextField(value = addUserCity, onValueChange = { setAddUserCity(it) }, label = { Text("Ville gérée (optionnel)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
-                                Text("Laissez vide pour un admin global.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                OutlinedTextField(value = addUserCity, onValueChange = { setAddUserCity(it) }, label = { Text(ts.managedCityOptional) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                                Text(ts.globalAdminHint, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                             }
                         }
                     },
@@ -454,24 +458,24 @@ private fun AdminSubScreen(
                                     setAddUserSending(true); setAddUserResult(null); setAddUserError(null)
                                     try {
                                         if (addUserName.isBlank() || addUserEmail.isBlank() || addUserPhone.isBlank() || addUserPassword.isBlank()) {
-                                            setAddUserResult("❌ Tous les champs sont obligatoires")
+                                            setAddUserResult(ts.allFieldsRequired)
                                         } else {
                                             ApiClient.addUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole, addUserCity.ifBlank { null })
-                                            setAddUserResult("✅ Utilisateur $addUserName créé avec succès !")
+                                            setAddUserResult(ts.userCreatedSuccess.replace("%s", addUserName))
                                             setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword(""); setAddUserCity("")
                                             loadData()
                                         }
-                                    } catch (e: Exception) { setAddUserResult("❌ Erreur: ${e.message}") }
+                                    } catch (e: Exception) { setAddUserResult(ts.adminErrPrefix.replace("%s", e.message ?: "")) }
                                     setAddUserSending(false)
                                 }
                             },
                             enabled = !addUserSending
                         ) {
                             if (addUserSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
-                            else Text("Créer")
+                            else Text(ts.create)
                         }
                     },
-                    dismissButton = { TextButton(onClick = { setShowAddUserDialog(false) }, enabled = !addUserSending) { Text("Fermer") } }
+                    dismissButton = { TextButton(onClick = { setShowAddUserDialog(false) }, enabled = !addUserSending) { Text(ts.close) } }
                 )
             }
 
@@ -479,16 +483,16 @@ private fun AdminSubScreen(
             if (showUserNotifDialog && targetNotifUser != null) {
                 AlertDialog(
                     onDismissRequest = { if (!userNotifSending) setShowUserNotifDialog(false) },
-                    title = { Text("Notifier : ${targetNotifUser!!.name}") },
+                    title = { Text(ts.notifyUser.replace("%s", targetNotifUser!!.name)) },
                     text = {
                         Column(Modifier.width(300.dp)) {
                             if (userNotifResult != null) {
                                 Text(userNotifResult!!, color = if (userNotifResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(8.dp))
                             }
-                            OutlinedTextField(value = userNotifTitle, onValueChange = { setUserNotifTitle(it) }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = userNotifTitle, onValueChange = { setUserNotifTitle(it) }, label = { Text(ts.notifTitle) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall))
                             Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(value = userNotifMessage, onValueChange = { setUserNotifMessage(it) }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall))
+                            OutlinedTextField(value = userNotifMessage, onValueChange = { setUserNotifMessage(it) }, label = { Text(ts.messageLabel) }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall))
                         }
                     },
                     confirmButton = {
@@ -499,20 +503,20 @@ private fun AdminSubScreen(
                                     try {
                                         val ok = ApiClient.sendIndividualNotification(targetNotifUser!!.id, userNotifTitle, userNotifMessage)
                                         if (ok) {
-                                            setUserNotifResult("✅ Notification envoyée !")
+                                            setUserNotifResult(ts.notifSent)
                                             setUserNotifTitle(""); setUserNotifMessage("")
-                                        } else { setUserNotifResult("❌ Échec de l'envoi") }
-                                    } catch (e: Exception) { setUserNotifResult("❌ Échec : ${e.message}") }
+                                        } else { setUserNotifResult(ts.sendFailed) }
+                                    } catch (e: Exception) { setUserNotifResult(ts.sendErrPrefix.replace("%s", e.message ?: "")) }
                                     setUserNotifSending(false)
                                 }
                             },
                             enabled = !userNotifSending && userNotifTitle.isNotBlank() && userNotifMessage.isNotBlank()
                         ) {
                             if (userNotifSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
-                            else Text("Envoyer")
+                            else Text(ts.send)
                         }
                     },
-                    dismissButton = { TextButton(onClick = { setShowUserNotifDialog(false) }, enabled = !userNotifSending) { Text("Fermer") } }
+                    dismissButton = { TextButton(onClick = { setShowUserNotifDialog(false) }, enabled = !userNotifSending) { Text(ts.close) } }
                 )
             }
         }
@@ -528,6 +532,7 @@ private fun AdminUsersList(
     users: List<AdminUser>,
     isLoading: Boolean, errorMessage: String?,
     scope: kotlinx.coroutines.CoroutineScope, loadData: () -> Unit,
+    ts: com.tik_market.utils.AppStrings,
     setAddUserError: (String?) -> Unit,
     setTargetNotifUser: (AdminUser?) -> Unit,
     setUserNotifTitle: (String) -> Unit,
@@ -543,20 +548,20 @@ private fun AdminUsersList(
     ) {
         items(users.size) { index ->
             val user = users[index]
-            AdminUserCard(user,
+            AdminUserCard(user, ts,
                 onRoleChange = { role ->
                     scope.launch {
-                        try { ApiClient.updateUserRole(user.id, role) } catch (e: Exception) { setAddUserError("Erreur changement rôle: ${e.message}") }
+                        try { ApiClient.updateUserRole(user.id, role) } catch (e: Exception) { setAddUserError(ts.roleChangeError.replace("%s", e.message ?: "")) }
                     }
                 },
                 onDelete = {
                     scope.launch {
-                        try { ApiClient.deleteUser(user.id) } catch (e: Exception) { setAddUserError("Erreur suppression: ${e.message}") }
+                        try { ApiClient.deleteUser(user.id) } catch (e: Exception) { setAddUserError(ts.deleteErrorPrefix.replace("%s", e.message ?: "")) }
                     }
                 },
                 onBan = { newStatus ->
                     scope.launch {
-                        try { ApiClient.banUser(user.id, newStatus) } catch (e: Exception) { setAddUserError("Erreur: ${e.message}") }
+                        try { ApiClient.banUser(user.id, newStatus) } catch (e: Exception) { setAddUserError(ts.sendErrPrefix.replace("%s", e.message ?: "")) }
                     }
                 },
                 onNotify = {
@@ -577,6 +582,7 @@ private fun AdminUsersList(
 private fun AdminShopsList(
     shops: List<AdminShop>,
     scope: kotlinx.coroutines.CoroutineScope,
+    ts: com.tik_market.utils.AppStrings,
     setPromoShop: (AdminShop?) -> Unit,
     setPromoCode: (String) -> Unit,
     setPromoDiscountPct: (String) -> Unit,
@@ -592,12 +598,12 @@ private fun AdminShopsList(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (shops.isEmpty()) {
-            item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("Aucune boutique trouvée", color = TextSecondary) } }
+            item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text(ts.noShopsFound, color = TextSecondary) } }
         }
         items(shops.size) { index ->
             val shop = shops[index]
             AdminShopCard(
-                shop = shop,
+                shop = shop, ts = ts,
                 onToggleVerify = {
                     scope.launch { try { ApiClient.toggleShopVerification(shop.id, !shop.isVerified) } catch (_: Exception) {} }
                 },
@@ -629,7 +635,7 @@ private fun AdminShopsList(
 // ═══════════════════════════════════════════════
 
 @Composable
-private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, users: List<AdminUser>) {
+private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, users: List<AdminUser>, ts: com.tik_market.utils.AppStrings) {
     var notifTitle by remember { mutableStateOf("") }
     var notifMessage by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -659,7 +665,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
 
     Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         // ── Historique ──
-        Text("Historique des envois", style = MaterialTheme.typography.titleLarge)
+        Text(ts.sendHistory, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -671,7 +677,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                 if (isHistoryLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).size(24.dp))
                 } else if (history.isEmpty()) {
-                    Text("Aucun historique", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    Text(ts.noHistory, style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
                 } else {
                     history.take(10).forEach { h ->
                         Column {
@@ -691,7 +697,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                         }
                     }
                     if (history.size > 10) {
-                        Text("Et ${history.size - 10} autres...", style = MaterialTheme.typography.labelSmall, color = TextTertiary, modifier = Modifier.align(Alignment.CenterHorizontally))
+                        Text(ts.andOthers.replace("%d", "${history.size - 10}"), style = MaterialTheme.typography.labelSmall, color = TextTertiary, modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
                 }
             }
@@ -707,12 +713,12 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
             elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
         ) {
             Column(Modifier.padding(20.dp)) {
-                Text("Notification système", style = MaterialTheme.typography.titleLarge)
-                Text("Sera reçue par tous les utilisateurs.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text(ts.systemNotif, style = MaterialTheme.typography.titleLarge)
+                Text(ts.receivedByAll, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 Spacer(Modifier.height(16.dp))
-                OutlinedTextField(value = notifTitle, onValueChange = { notifTitle = it; notifResult = null }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true)
+                OutlinedTextField(value = notifTitle, onValueChange = { notifTitle = it; notifResult = null }, label = { Text(ts.notifTitle) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true)
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = notifMessage, onValueChange = { notifMessage = it; notifResult = null }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(CardShapeSmall))
+                OutlinedTextField(value = notifMessage, onValueChange = { notifMessage = it; notifResult = null }, label = { Text(ts.messageLabel) }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(CardShapeSmall))
                 Spacer(Modifier.height(20.dp))
                 if (notifResult != null) {
                     Text(notifResult!!, color = if (notifResult!!.startsWith("✅")) Green else RedAccent, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
@@ -721,7 +727,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                     onClick = {
                         scope.launch {
                             sending = true; notifResult = null
-                            try { ApiClient.sendSystemNotification(notifTitle, notifMessage); notifTitle = ""; notifMessage = ""; notifResult = "✅ Notification diffusée à tous les utilisateurs"; loadHistory() } catch (e: Exception) { notifResult = "❌ Échec : ${e.message}" }
+                            try { ApiClient.sendSystemNotification(notifTitle, notifMessage); notifTitle = ""; notifMessage = ""; notifResult = ts.notifBroadcastAll; loadHistory() } catch (e: Exception) { notifResult = ts.sendErrPrefix.replace("%s", e.message ?: "") }
                             sending = false
                         }
                     },
@@ -731,7 +737,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                     shape = RoundedCornerShape(CardShapeSmall)
                 ) {
                     if (sending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Text("Diffuser à tous", style = MaterialTheme.typography.labelLarge)
+                    else Text(ts.broadcastAll, style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -746,17 +752,17 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
             elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
         ) {
             Column(Modifier.padding(20.dp)) {
-                Text("Notification individuelle", style = MaterialTheme.typography.titleLarge)
-                Text("Envoyer à un utilisateur spécifique.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text(ts.individualNotif, style = MaterialTheme.typography.titleLarge)
+                Text(ts.sendToSpecific, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 Spacer(Modifier.height(16.dp))
 
                 if (indivUserId == null) {
-                    OutlinedTextField(value = userSearchQuery, onValueChange = { userSearchQuery = it; showUserSearch = it.length >= 2 }, label = { Text("Rechercher un utilisateur (min 2)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, trailingIcon = { Icon(Icons.Default.Search, null) })
+                    OutlinedTextField(value = userSearchQuery, onValueChange = { userSearchQuery = it; showUserSearch = it.length >= 2 }, label = { Text(ts.searchUserMin) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, trailingIcon = { Icon(Icons.Default.Search, null) })
                     if (showUserSearch) {
                         Spacer(Modifier.height(4.dp))
                         val filtered = users.filter { it.name.contains(userSearchQuery, ignoreCase = true) || it.email.contains(userSearchQuery, ignoreCase = true) }
                         if (filtered.isEmpty()) {
-                            Text("Aucun utilisateur trouvé", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(8.dp))
+                            Text(ts.noUserFound, style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(8.dp))
                         } else {
                             Surface(shape = RoundedCornerShape(CardShapeSmall), color = Color(0xFFF5F5F5), modifier = Modifier.fillMaxWidth()) {
                                 Column {
@@ -785,14 +791,14 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                         Box(Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) { Text(indivUserName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
                         Spacer(Modifier.width(12.dp))
                         Text(indivUserName, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { indivUserId = null; indivUserName = ""; indivTitle = ""; indivMessage = ""; indivResult = null }) { Text("Changer", color = RedAccent) }
+                        TextButton(onClick = { indivUserId = null; indivUserName = ""; indivTitle = ""; indivMessage = ""; indivResult = null }) { Text(ts.change, color = RedAccent) }
                     }
                 }
 
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = indivTitle, onValueChange = { indivTitle = it; indivResult = null }, label = { Text("Titre") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, enabled = indivUserId != null)
+                OutlinedTextField(value = indivTitle, onValueChange = { indivTitle = it; indivResult = null }, label = { Text(ts.notifTitle) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(CardShapeSmall), singleLine = true, enabled = indivUserId != null)
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = indivMessage, onValueChange = { indivMessage = it; indivResult = null }, label = { Text("Message") }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall), enabled = indivUserId != null)
+                OutlinedTextField(value = indivMessage, onValueChange = { indivMessage = it; indivResult = null }, label = { Text(ts.messageLabel) }, modifier = Modifier.fillMaxWidth().height(100.dp), shape = RoundedCornerShape(CardShapeSmall), enabled = indivUserId != null)
                 Spacer(Modifier.height(16.dp))
 
                 if (indivResult != null) {
@@ -805,8 +811,8 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                             indivSending = true; indivResult = null
                             try {
                                 val ok = ApiClient.sendIndividualNotification(indivUserId!!, indivTitle, indivMessage)
-                                if (ok) { indivResult = "✅ Notification envoyée à $indivUserName"; indivTitle = ""; indivMessage = ""; loadHistory() } else { indivResult = "❌ Échec de l'envoi" }
-                            } catch (e: Exception) { indivResult = "❌ Échec : ${e.message}" }
+                                if (ok) { indivResult = ts.sendTo.replace("%s", indivUserName); indivTitle = ""; indivMessage = ""; loadHistory() } else { indivResult = ts.sendFailed }
+                            } catch (e: Exception) { indivResult = ts.sendErrPrefix.replace("%s", e.message ?: "") }
                             indivSending = false
                         }
                     },
@@ -816,7 +822,7 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
                     shape = RoundedCornerShape(CardShapeSmall)
                 ) {
                     if (indivSending) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Text("Envoyer à $indivUserName", style = MaterialTheme.typography.labelLarge)
+                    else Text(ts.sendTo.replace("%s", indivUserName), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -841,7 +847,7 @@ data class AdminShop(
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () -> Unit, onBan: (String) -> Unit, onNotify: () -> Unit) {
+fun AdminUserCard(user: AdminUser, ts: com.tik_market.utils.AppStrings, onRoleChange: (String) -> Unit, onDelete: () -> Unit, onBan: (String) -> Unit, onNotify: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(CardShapeMedium),
@@ -854,7 +860,7 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
                 Text(user.email, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RoleBadge(user.role)
+                    RoleBadge(user.role, ts)
                     if (user.managedCity != null) {
                         Surface(color = BlueAccent.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
                             Text(user.managedCity, style = MaterialTheme.typography.labelSmall, color = BlueAccent, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
@@ -862,7 +868,7 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
                     }
                     if (user.status == "banned") {
                         Surface(color = RedAccent.copy(alpha = 0.12f), shape = RoundedCornerShape(4.dp)) {
-                            Text("Banni", style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Text(ts.bannedLabel, style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
                     }
                 }
@@ -871,22 +877,22 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
             Box {
                 IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary) }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    DropdownMenuItem(text = { Text("Envoyer notification") }, leadingIcon = { Icon(Icons.Default.Notifications, null, tint = Green) }, onClick = { onNotify(); showMenu = false })
+                    DropdownMenuItem(text = { Text(ts.sendNotifMenuItem) }, leadingIcon = { Icon(Icons.Default.Notifications, null, tint = Green) }, onClick = { onNotify(); showMenu = false })
                     if (ApiClient.isSuperAdmin()) {
                         HorizontalDivider()
-                        DropdownMenuItem(text = { Text("Rôle Super Admin") }, onClick = { onRoleChange("super_admin"); showMenu = false })
-                        DropdownMenuItem(text = { Text("Rôle Admin") }, onClick = { onRoleChange("admin"); showMenu = false })
+                        DropdownMenuItem(text = { Text(ts.roleSuperAdmin) }, onClick = { onRoleChange("super_admin"); showMenu = false })
+                        DropdownMenuItem(text = { Text(ts.roleAdmin) }, onClick = { onRoleChange("admin"); showMenu = false })
                     }
                     HorizontalDivider()
-                    DropdownMenuItem(text = { Text("Rôle Vendeur") }, onClick = { onRoleChange("vendor"); showMenu = false })
-                    DropdownMenuItem(text = { Text("Rôle Client") }, onClick = { onRoleChange("buyer"); showMenu = false })
+                    DropdownMenuItem(text = { Text(ts.roleVendor) }, onClick = { onRoleChange("vendor"); showMenu = false })
+                    DropdownMenuItem(text = { Text(ts.roleClient) }, onClick = { onRoleChange("buyer"); showMenu = false })
                     HorizontalDivider()
                     DropdownMenuItem(
-                        text = { Text(if (user.status == "banned") "Réactiver" else "Bannir", color = if (user.status == "banned") Green else RedAccent) },
+                        text = { Text(if (user.status == "banned") ts.reactivate else ts.ban, color = if (user.status == "banned") Green else RedAccent) },
                         leadingIcon = { Icon(if (user.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (user.status == "banned") Green else RedAccent) },
                         onClick = { onBan(if (user.status == "banned") "active" else "banned"); showMenu = false }
                     )
-                    DropdownMenuItem(text = { Text("Supprimer", color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { onDelete(); showMenu = false })
+                    DropdownMenuItem(text = { Text(ts.delete, color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { onDelete(); showMenu = false })
                 }
             }
         }
@@ -900,6 +906,7 @@ fun AdminUserCard(user: AdminUser, onRoleChange: (String) -> Unit, onDelete: () 
 @Composable
 fun AdminShopCard(
     shop: AdminShop,
+    ts: com.tik_market.utils.AppStrings,
     onToggleVerify: () -> Unit,
     onPromote: (Boolean) -> Unit,
     onBan: (String) -> Unit,
@@ -928,13 +935,13 @@ fun AdminShopCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(shop.name, style = MaterialTheme.typography.titleSmall)
                     if (shop.isFeatured) { Spacer(Modifier.width(4.dp)); Icon(Icons.Default.Star, null, tint = Orange, modifier = Modifier.size(14.dp)) }
-                    if (shop.status == "banned") { Spacer(Modifier.width(4.dp)); Surface(color = RedAccent.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) { Text("BANNIE", style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)) } }
+                    if (shop.status == "banned") { Spacer(Modifier.width(4.dp)); Surface(color = RedAccent.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) { Text(ts.bannedLabel.uppercase(), style = MaterialTheme.typography.labelSmall, color = RedAccent, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)) } }
                 }
                 Text(shop.vendorName, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("${shop.productCount} produits", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+                    Text(ts.productsCount.replace("%d", "${shop.productCount}"), style = MaterialTheme.typography.labelSmall, color = TextTertiary)
                     Text("•", style = MaterialTheme.typography.labelSmall, color = DividerGray)
-                    Text("${shop.totalSales} ventes", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+                    Text(ts.salesCount.replace("%d", "${shop.totalSales}"), style = MaterialTheme.typography.labelSmall, color = TextTertiary)
                     if (shop.location.isNotBlank()) { Text("•", style = MaterialTheme.typography.labelSmall, color = DividerGray); Text(shop.location, style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
@@ -942,12 +949,12 @@ fun AdminShopCard(
             Box {
                 IconButton(onClick = { showActions = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) }
                 DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
-                    DropdownMenuItem(text = { Text(if (shop.isVerified) "Dé-vérifier" else "Vérifier") }, leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) }, onClick = { onToggleVerify(); showActions = false })
-                    DropdownMenuItem(text = { Text(if (shop.isFeatured) "Retirer promo" else "Mettre en avant", color = Orange) }, leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) }, onClick = { onPromote(!shop.isFeatured); showActions = false })
-                    DropdownMenuItem(text = { Text("Créer promotion", color = Green) }, leadingIcon = { Icon(Icons.Default.AddCircle, null, tint = Green) }, onClick = { onAddPromo(); showActions = false })
+                    DropdownMenuItem(text = { Text(if (shop.isVerified) ts.unverify else ts.verifyAction) }, leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) }, onClick = { onToggleVerify(); showActions = false })
+                    DropdownMenuItem(text = { Text(if (shop.isFeatured) ts.removePromo else ts.featureShop, color = Orange) }, leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) }, onClick = { onPromote(!shop.isFeatured); showActions = false })
+                    DropdownMenuItem(text = { Text(ts.createPromo, color = Green) }, leadingIcon = { Icon(Icons.Default.AddCircle, null, tint = Green) }, onClick = { onAddPromo(); showActions = false })
                     HorizontalDivider()
-                    DropdownMenuItem(text = { Text(if (shop.status == "banned") "Réactiver" else "Bannir", color = if (shop.status == "banned") Green else RedAccent) }, leadingIcon = { Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (shop.status == "banned") Green else RedAccent) }, onClick = { onBan(if (shop.status == "banned") "active" else "banned"); showActions = false })
-                    DropdownMenuItem(text = { Text("Supprimer", color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { showDeleteConfirm = true; showActions = false })
+                    DropdownMenuItem(text = { Text(if (shop.status == "banned") ts.reactivate else ts.ban, color = if (shop.status == "banned") Green else RedAccent) }, leadingIcon = { Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, tint = if (shop.status == "banned") Green else RedAccent) }, onClick = { onBan(if (shop.status == "banned") "active" else "banned"); showActions = false })
+                    DropdownMenuItem(text = { Text(ts.delete, color = RedAccent) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = RedAccent) }, onClick = { showDeleteConfirm = true; showActions = false })
                 }
             }
         }
@@ -956,16 +963,16 @@ fun AdminShopCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Supprimer la boutique ?") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer « ${shop.name} » ?\nTous les produits et commandes liés seront définitivement supprimés.") },
-            confirmButton = { Button(onClick = { showDeleteConfirm = false; onDelete() }, colors = ButtonDefaults.buttonColors(containerColor = RedAccent)) { Text("Supprimer", color = Color.White) } },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuler") } }
+            title = { Text(ts.deleteShopTitle) },
+            text = { Text(ts.deleteShopConfirm.replace("%s", shop.name)) },
+            confirmButton = { Button(onClick = { showDeleteConfirm = false; onDelete() }, colors = ButtonDefaults.buttonColors(containerColor = RedAccent)) { Text(ts.delete, color = Color.White) } },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(ts.cancel) } }
         )
     }
 }
 
 @Composable
-fun RoleBadge(role: String) {
+fun RoleBadge(role: String, ts: com.tik_market.utils.AppStrings) {
     val color = when(role) { 
         "super_admin" -> Color(0xFFD32F2F)
         "admin" -> BlueAccent
@@ -975,11 +982,11 @@ fun RoleBadge(role: String) {
     Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(4.dp)) {
         Text(
             when(role) { 
-                "super_admin" -> "Super Admin"
-                "admin" -> "Admin"
-                "vendor" -> "Vendeur"
-                else -> "Client" 
-            }, 
+                "super_admin" -> ts.superAdminLabel
+                "admin" -> ts.adminLabel
+                "vendor" -> ts.vendor
+                else -> ts.clientLabel
+            },
             style = MaterialTheme.typography.labelSmall, 
             color = color, 
             fontWeight = FontWeight.SemiBold, 
@@ -993,7 +1000,7 @@ fun RoleBadge(role: String) {
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
+fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.tik_market.utils.AppStrings) {
     var data by remember { mutableStateOf<ApiAdminDashboardResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -1007,9 +1014,9 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
         if (ApiClient.isSuperAdmin()) {
-            Text("Filtrer par ville", style = MaterialTheme.typography.titleSmall)
+            Text(ts.filterByCity, style = MaterialTheme.typography.titleSmall)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = selectedCity == null, onClick = { selectedCity = null }, label = { Text("Toutes") })
+                FilterChip(selected = selectedCity == null, onClick = { selectedCity = null }, label = { Text(ts.allFilter) })
                 listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Bamenda").forEach { city ->
                     FilterChip(selected = selectedCity == city, onClick = { selectedCity = city }, label = { Text(city) })
                 }
@@ -1021,36 +1028,36 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
         val d = data ?: return@Column
         val kpis = d.kpis
 
-        Text("Vue d'ensemble", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.overview, style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiCard(title = "Clients", value = "${kpis.totalUsers}", color = BlueAccent, modifier = Modifier.weight(1f))
-            KpiCard(title = "Vendeurs", value = "${kpis.totalVendors}", color = Green, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.clientsLabel, value = "${kpis.totalUsers}", color = BlueAccent, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.vendorsLabel, value = "${kpis.totalVendors}", color = Green, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiCard(title = "En ligne", value = "${kpis.onlineUsers}", color = Orange, modifier = Modifier.weight(1f))
-            KpiCard(title = "Boutiques", value = "${kpis.totalShops}", color = Violet, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.onlineLabel, value = "${kpis.onlineUsers}", color = Orange, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.shop, value = "${kpis.totalShops}", color = Violet, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiCard(title = "Produits", value = "${kpis.totalProducts}", color = Orange, modifier = Modifier.weight(1f))
-            KpiCard(title = "Commandes", value = "${kpis.totalOrders}", color = BlueAccent, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.products, value = "${kpis.totalProducts}", color = Orange, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.ordersLabel, value = "${kpis.totalOrders}", color = BlueAccent, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiCard(title = "CA Total", value = FormatUtils.formatPrice(kpis.totalRevenue), color = GreenDark, modifier = Modifier.weight(1f))
-            KpiCard(title = "Aujourd'hui", value = FormatUtils.formatPrice(kpis.revenueToday), color = Orange, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.totalRevenueLabel, value = FormatUtils.formatPrice(kpis.totalRevenue), color = GreenDark, modifier = Modifier.weight(1f))
+            KpiCard(title = ts.todayLabel, value = FormatUtils.formatPrice(kpis.revenueToday), color = Orange, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(16.dp))
 
         if (kpis.pendingShops > 0 || kpis.bannedShops > 0) {
-            Text("Alertes", style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
+            Text(ts.alerts, style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.padding(bottom = 8.dp))
             if (kpis.pendingShops > 0) {
                 TiKCard(elevation = TiKCardElevation.Low) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.VerifiedUser, null, tint = Orange, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) { Text("$kpis.pendingShops boutiques en attente de vérification", style = MaterialTheme.typography.bodyMedium); Text("Allez dans l'onglet Boutiques pour les vérifier", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                        Column(Modifier.weight(1f)) { Text(ts.pendingVerifyShops.replace("%d", "$kpis.pendingShops"), style = MaterialTheme.typography.bodyMedium); Text(ts.goToShopsVerify, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
@@ -1060,19 +1067,19 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Block, null, tint = RedAccent, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) { Text("$kpis.bannedShops boutiques bannies", style = MaterialTheme.typography.bodyMedium); Text("Consultez l'onglet Boutiques pour plus de détails", style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                        Column(Modifier.weight(1f)) { Text(ts.bannedShopsLabel.replace("%d", "$kpis.bannedShops"), style = MaterialTheme.typography.bodyMedium); Text(ts.checkShopsDetails, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
             Spacer(Modifier.height(16.dp))
         }
 
-        Text("Inscriptions (30 jours)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
-        Text("+${kpis.newUsers30d} nouveaux utilisateurs ce mois", style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.registrations30, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+        Text(ts.newUsersMonth.replace("%d", "$kpis.newUsers30d"), style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(bottom = 8.dp))
         TiKCard(elevation = TiKCardElevation.Low) { SimpleBarChart(data = d.registrations.map { it.count }, modifier = Modifier.fillMaxWidth().height(80.dp)) }
         Spacer(Modifier.height(16.dp))
 
-        Text("Revenu mensuel (12 mois)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.monthlyRevenue12, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         TiKCard(elevation = TiKCardElevation.Low) {
             Column {
                 d.monthlyRevenue.forEach { m ->
@@ -1087,32 +1094,32 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
         }
         Spacer(Modifier.height(16.dp))
 
-        Text("Top vendeurs (CA)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.topVendorsCA, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         d.topVendors.forEachIndexed { idx, v ->
             TiKCard(elevation = TiKCardElevation.Low, modifier = Modifier.padding(bottom = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("#${idx + 1}", style = MaterialTheme.typography.titleSmall, color = if (idx < 3) Orange else TextTertiary, modifier = Modifier.width(28.dp))
                     Column(Modifier.weight(1f)) { Text(v.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium); Text(v.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
-                    Column(horizontalAlignment = Alignment.End) { Text(FormatUtils.formatPrice(v.revenue), style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text("${v.orderCount} commandes", style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
+                    Column(horizontalAlignment = Alignment.End) { Text(FormatUtils.formatPrice(v.revenue), style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text(ts.orderCountFmt.replace("%d", "${v.orderCount}"), style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
         }
         Spacer(Modifier.height(16.dp))
 
-        Text("Top produits vendus", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.topProductsSold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         d.topProducts.forEachIndexed { idx, p ->
             TiKCard(elevation = TiKCardElevation.Low, modifier = Modifier.padding(bottom = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("#${idx + 1}", style = MaterialTheme.typography.titleSmall, color = if (idx < 3) Orange else TextTertiary, modifier = Modifier.width(28.dp))
                     Column(Modifier.weight(1f)) { Text(p.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1); Text(p.shopName, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
-                    Column(horizontalAlignment = Alignment.End) { Text("${p.totalSold} vendus", style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text(FormatUtils.formatPrice(p.totalGenerated), style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
+                    Column(horizontalAlignment = Alignment.End) { Text(ts.soldCount.replace("%d", "${p.totalSold}"), style = MaterialTheme.typography.bodyMedium, color = Green, fontWeight = FontWeight.SemiBold); Text(FormatUtils.formatPrice(p.totalGenerated), style = MaterialTheme.typography.labelSmall, color = TextTertiary) }
                 }
             }
         }
 
         if (d.ordersByStatus.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("Commandes par statut", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(ts.ordersByStatus, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             TiKCard(elevation = TiKCardElevation.Low) {
                 Column {
                     val total = d.ordersByStatus.values.sum().toFloat()
@@ -1129,11 +1136,11 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope) {
 
         if (d.usersByRole.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("Utilisateurs par rôle", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(ts.usersByRole, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             TiKCard(elevation = TiKCardElevation.Low) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     d.usersByRole.forEach { (role, count) ->
-                        val label = when (role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }
+                        val label = when (role) { "admin" -> ts.adminLabel; "vendor" -> ts.vendor; else -> ts.clientLabel }
                         val color = when (role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("$count", style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold); Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary) }
                     }
@@ -1159,7 +1166,7 @@ private fun KpiCard(title: String, value: String, color: Color, modifier: Modifi
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
+fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.tik_market.utils.AppStrings) {
     var data by remember { mutableStateOf<ApiOnlineUsersResponse?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -1169,10 +1176,10 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Utilisateurs en ligne", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+            Text(ts.onlineUsersTitle, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
             TextButton(onClick = { load() }) {
                 if (isLoading) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                else { Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Actualiser") }
+                else { Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(ts.refreshLabel) }
             }
         }
         if (isLoading && data == null) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }; return@Column }
@@ -1182,12 +1189,12 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
         Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), shape = RoundedCornerShape(12.dp), color = Green.copy(alpha = 0.1f)) {
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).background(Green, CircleShape)); Spacer(Modifier.width(8.dp))
-                Text("${d.totalOnline} utilisateur${if (d.totalOnline > 1) "s" else ""} en ligne actuellement", fontWeight = FontWeight.SemiBold, color = GreenDark)
+                Text(ts.onlineUsersNow.replace("%d", "$d.totalOnline"), fontWeight = FontWeight.SemiBold, color = GreenDark)
             }
         }
 
         if (d.onlineUsers.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.PersonOff, null, Modifier.size(48.dp), tint = Color.LightGray); Spacer(Modifier.height(8.dp)); Text("Personne en ligne pour le moment", color = Color.Gray) } }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.PersonOff, null, Modifier.size(48.dp), tint = Color.LightGray); Spacer(Modifier.height(8.dp)); Text(ts.noOneOnline, color = Color.Gray) } }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -1196,7 +1203,7 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(d.onlineUsers.size) { index ->
-                    OnlineUserCard(d.onlineUsers[index])
+                    OnlineUserCard(d.onlineUsers[index], ts)
                 }
             }
         }
@@ -1204,7 +1211,7 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope) {
 }
 
 @Composable
-private fun OnlineUserCard(user: ApiOnlineUser) {
+private fun OnlineUserCard(user: ApiOnlineUser, ts: com.tik_market.utils.AppStrings) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box {
@@ -1222,9 +1229,9 @@ private fun OnlineUserCard(user: ApiOnlineUser) {
                 Text(user.name, fontWeight = FontWeight.Medium, fontSize = 15.sp); Text(user.email, fontSize = 12.sp, color = TextSecondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(4.dp), color = when (user.role) { "admin" -> RedAccent.copy(alpha = 0.1f); "vendor" -> Orange.copy(alpha = 0.1f); else -> Green.copy(alpha = 0.1f) }) {
-                        Text(when (user.role) { "admin" -> "Admin"; "vendor" -> "Vendeur"; else -> "Client" }, fontSize = 10.sp, color = when (user.role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green }, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Text(when (user.role) { "admin" -> ts.adminLabel; "vendor" -> ts.vendor; else -> ts.clientLabel }, fontSize = 10.sp, color = when (user.role) { "admin" -> RedAccent; "vendor" -> Orange; else -> Green }, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
-                    Spacer(Modifier.width(8.dp)); Text("il y a ${user.secondsAgo}s", fontSize = 11.sp, color = TextTertiary)
+                    Spacer(Modifier.width(8.dp)); Text(ts.secondsAgo.replace("%d", "${user.secondsAgo}"), fontSize = 11.sp, color = TextTertiary)
                 }
             }
         }
@@ -1236,7 +1243,7 @@ private fun OnlineUserCard(user: ApiOnlineUser) {
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>) {
+fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>, ts: com.tik_market.utils.AppStrings) {
     var stories by remember { mutableStateOf<List<ApiStory>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -1254,28 +1261,28 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Ad
 
     Column(Modifier.fillMaxSize().padding(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Toutes les stories", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(ts.allStories, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Button(onClick = { showAddDialog = true }, shape = RoundedCornerShape(8.dp)) {
                 Icon(Icons.Default.Add, null)
                 Spacer(Modifier.width(4.dp))
-                Text("Ajouter")
+                Text(ts.add)
             }
         }
         Spacer(Modifier.height(8.dp))
         if (isLoading) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
         else if (error != null) { TiKErrorState(message = error!!, onRetry = { load() }) }
-        else if (stories.isEmpty()) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Aucune story pour le moment", color = TextSecondary) } }
-        else { LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { items(stories.size) { index -> val story = stories[index]; AdminStoryCard(story = story, onDelete = { scope.launch { try { ApiClient.deleteStory(story.id); stories = stories.filter { it.id != story.id } } catch (e: Exception) { error = "Erreur suppression: ${e.message}" } } }) } } }
+        else if (stories.isEmpty()) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(ts.noStoryNow, color = TextSecondary) } }
+        else { LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { items(stories.size) { index -> val story = stories[index]; AdminStoryCard(story = story, ts, onDelete = { scope.launch { try { ApiClient.deleteStory(story.id); stories = stories.filter { it.id != story.id } } catch (e: Exception) { error = ts.deleteStoryError.replace("%s", e.message ?: "") } } }) } } }
     }
 
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { if (!isSubmitting) showAddDialog = false },
-            title = { Text("Nouvelle Story (Admin)") },
+            title = { Text(ts.newStoryAdmin) },
             text = {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                    Text("Média (Photo ou Vidéo max 30s)", style = MaterialTheme.typography.labelSmall)
-                    Text("Note : L'ajustement est automatique (30s max)", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    Text(ts.mediaPickLabel, style = MaterialTheme.typography.labelSmall)
+                    Text(ts.mediaAdjustNote, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                     MediaPicker(
                         currentUrl = newMediaUrl,
                         onMediaPicked = { res ->
@@ -1287,11 +1294,11 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Ad
                                     newMediaType = if (res.mimeType.startsWith("video/")) "video" else "image"
                                     newMediaDuration = res.durationSeconds.toInt()
                                 } catch (e: Exception) {
-                                    error = "Upload média : ${e.message}"
+error = ts.mediaUploadError.replace("%s", e.message ?: "")
                                 } finally { isSubmitting = false }
                             }
                         },
-                        label = "Sélectionner Média",
+                        label = ts.selectMedia,
                         allowVideo = true,
                         maxDurationSeconds = 30
                     )
@@ -1303,7 +1310,7 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Ad
                     OutlinedTextField(
                         value = newCaption,
                         onValueChange = { newCaption = it },
-                        label = { Text("Légende (Optionnel)") },
+                        label = { Text(ts.captionOptional) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1324,18 +1331,18 @@ fun AdminStoriesContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Ad
                     enabled = !isSubmitting && newMediaUrl.isNotBlank()
                 ) {
                     if (isSubmitting) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White)
-                    else Text("Publier")
+                    else Text(ts.publish)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }, enabled = !isSubmitting) { Text("Annuler") }
+                TextButton(onClick = { showAddDialog = false }, enabled = !isSubmitting) { Text(ts.cancel) }
             }
         )
     }
 }
 
 @Composable
-private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
+private fun AdminStoryCard(story: ApiStory, ts: com.tik_market.utils.AppStrings, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFE0E0E0))) {
@@ -1348,9 +1355,9 @@ private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(if (story.isAdmin != 0) "TIK-MARKET" else story.shopName.ifBlank { story.userName }, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                 if (!story.caption.isNullOrBlank()) Text(story.caption!!, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text("${story.mediaType} · ${story.replyCount} réponses", fontSize = 11.sp, color = TextTertiary)
+                Text("${story.mediaType} · ${ts.replyCountFmt.replace("%d", "${story.replyCount}")}", fontSize = 11.sp, color = TextTertiary)
             }
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, "Supprimer", tint = RedAccent) }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, ts.delete, tint = RedAccent) }
         }
     }
 }
@@ -1360,7 +1367,7 @@ private fun AdminStoryCard(story: ApiStory, onDelete: () -> Unit) {
 // ═══════════════════════════════════════════════
 
 @Composable
-fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>) {
+fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>, ts: com.tik_market.utils.AppStrings) {
     var heroItems by remember { mutableStateOf<List<com.tik_market.api.ApiHeroItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -1380,20 +1387,20 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Text("Gestion de la Hero Section", style = MaterialTheme.typography.titleLarge)
-            Text("Modifiez les bannières promotionnelles de l'accueil.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            Text(ts.heroSectionMgmt, style = MaterialTheme.typography.titleLarge)
+            Text(ts.heroModifyHint, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             Spacer(Modifier.height(16.dp))
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Ajouter une promotion", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, label = { Text("Titre (ex: Saveurs locales)") }, modifier = Modifier.fillMaxWidth())
+                    Text(ts.addPromotion, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, label = { Text(ts.heroTitleExample) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = newSubtitle, onValueChange = { newSubtitle = it }, label = { Text("Sous-titre (ex: Fruits du terroir)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newSubtitle, onValueChange = { newSubtitle = it }, label = { Text(ts.heroSubtitleExample) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(12.dp))
 
-                    Text("Image ou Vidéo (max 10s)", style = MaterialTheme.typography.labelSmall)
+                    Text(ts.heroMediaLabel, style = MaterialTheme.typography.labelSmall)
                     MediaPicker(
                         currentUrl = newImageUrl,
                         onMediaPicked = { res ->
@@ -1401,10 +1408,10 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                                 try {
                                     val url = ApiClient.uploadImage(res.dataUrl, res.fileName)
                                     newImageUrl = url
-                                } catch (e: Exception) { error = "Upload média : ${e.message}" }
+                                } catch (e: Exception) { error = ts.mediaUploadError.replace("%s", e.message ?: "") }
                             }
                         },
-                        label = "Sélectionner Média",
+                        label = ts.selectMedia,
                         allowVideo = true,
                         maxDurationSeconds = 10,
                         modifier = Modifier.padding(vertical = 8.dp)
@@ -1414,17 +1421,17 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text("Ou URL directe") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text(ts.orDirectUrl) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(12.dp))
 
-                    Text("Boutique à promouvoir (optionnel)", style = MaterialTheme.typography.labelSmall)
+                    Text(ts.shopToPromote, style = MaterialTheme.typography.labelSmall)
                     var showShopList by remember { mutableStateOf(false) }
                     Box {
                         OutlinedButton(onClick = { showShopList = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(shops.find { it.id == selectedShopId }?.name ?: "Aucune boutique"); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown, null)
+                            Text(shops.find { it.id == selectedShopId }?.name ?: ts.noShopSelected); Spacer(Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown, null)
                         }
                         DropdownMenu(expanded = showShopList, onDismissRequest = { showShopList = false }) {
-                            DropdownMenuItem(text = { Text("Aucune") }, onClick = { selectedShopId = null; showShopList = false })
+                            DropdownMenuItem(text = { Text(ts.noneLabel) }, onClick = { selectedShopId = null; showShopList = false })
                             shops.forEach { shop -> DropdownMenuItem(text = { Text(shop.name) }, onClick = { selectedShopId = shop.id; showShopList = false }) }
                         }
                     }
@@ -1441,14 +1448,14 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         modifier = Modifier.fillMaxWidth(), enabled = !isSubmitting && newTitle.isNotBlank() && newImageUrl.isNotBlank()
                     ) {
                         if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
-                        else Text("Ajouter à l'accueil")
+                        else Text(ts.addToHome)
                     }
                 }
             }
         }
-        item(span = { GridItemSpan(maxLineSpan) }) { Text("Bannières actives", style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)) }
+        item(span = { GridItemSpan(maxLineSpan) }) { Text(ts.activeBanners, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(8.dp)) }
         if (isLoading) { item(span = { GridItemSpan(maxLineSpan) }) { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } } }
-        else if (heroItems.isEmpty()) { item(span = { GridItemSpan(maxLineSpan) }) { Text("Aucune bannière personnalisée.", style = MaterialTheme.typography.bodySmall, color = TextTertiary) } }
+        else if (heroItems.isEmpty()) { item(span = { GridItemSpan(maxLineSpan) }) { Text(ts.noCustomBanner, style = MaterialTheme.typography.bodySmall, color = TextTertiary) } }
         else {
             items(heroItems.size) { index ->
                 val item = heroItems[index]
@@ -1463,7 +1470,7 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         Column(Modifier.weight(1f)) {
                             Text(item.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text(item.subtitle, fontSize = 12.sp, color = TextSecondary)
-                            if (item.shopName != null) Text("Lien: ${item.shopName}", fontSize = 10.sp, color = Orange, fontWeight = FontWeight.Bold)
+                            if (item.shopName != null) Text(ts.linkPrefix.replace("%s", item.shopName), fontSize = 10.sp, color = Orange, fontWeight = FontWeight.Bold)
                         }
                         IconButton(onClick = { scope.launch { try { ApiClient.deleteHeroItem(item.id); load() } catch (_: Exception) {} } }) { Icon(Icons.Default.Delete, null, tint = RedAccent) }
                     }

@@ -26,6 +26,7 @@ import com.tik_market.api.ApiClient
 import com.tik_market.data.models.CartItem
 import com.tik_market.data.models.Product
 import com.tik_market.api.toProduct
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +39,7 @@ fun CompareScreen(
     onProductClick: (Product) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Product>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
@@ -45,8 +47,8 @@ fun CompareScreen(
     if (products.isEmpty() && !isSearching) {
         Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             TopAppBar(
-                title = { Text("Comparateur") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour") } }
+                title = { Text(ts.comparateur) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, ts.back) } }
             )
             OutlinedTextField(
                 value = searchQuery, onValueChange = {
@@ -55,12 +57,12 @@ fun CompareScreen(
                     else { searchResults = emptyList() }
                 },
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                placeholder = { Text("Rechercher un produit à comparer...") },
+                placeholder = { Text(ts.searchCompareHint) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = ""; searchResults = emptyList(); isSearching = false }) {
-                            Icon(Icons.Filled.Clear, "Effacer")
+                            Icon(Icons.Filled.Clear, ts.clear)
                         }
                     }
                 },
@@ -86,8 +88,8 @@ fun CompareScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.SwapHoriz, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(16.dp))
-                        Text("Ajoutez 2 à 4 produits à comparer", style = MaterialTheme.typography.titleMedium)
-                        Text("Sélectionnez \"Comparer\" sur un produit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                        Text(ts.compareEmptyHint, style = MaterialTheme.typography.titleMedium)
+                        Text(ts.compareEmptyHint2, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     }
                 }
             }
@@ -97,11 +99,11 @@ fun CompareScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         TopAppBar(
-            title = { Text("Comparateur (${products.size}/4)") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour") } },
+            title = { Text(ts.compareSelection.format(products.size)) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, ts.back) } },
             actions = {
                 IconButton(onClick = { searchQuery = ""; searchResults = emptyList(); isSearching = !isSearching }) {
-                    Icon(if (isSearching) Icons.Filled.Close else Icons.Filled.Add, "Ajouter/Retirer")
+                    Icon(if (isSearching) Icons.Filled.Close else Icons.Filled.Add, ts.add)
                 }
             }
         )
@@ -113,7 +115,7 @@ fun CompareScreen(
                     if (it.length >= 2) { scope.launch { searchResults = ApiClient.fetchProducts(search = it).map { p -> p.toProduct() } } } else { searchResults = emptyList() }
                 },
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                placeholder = { Text("Ajouter un produit...") },
+                placeholder = { Text(ts.addCompareHint) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 singleLine = true, shape = RoundedCornerShape(12.dp)
             )
@@ -127,7 +129,7 @@ fun CompareScreen(
                                     Text("${product.price} FCFA", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                 }
                                 if (products.any { it.id == product.id }) {
-                                    Text("Déjà ajouté", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                    Text(ts.alreadyAdded, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -139,13 +141,13 @@ fun CompareScreen(
 
         val scrollState = rememberScrollState()
         val rowLabels = listOf<Pair<String, (Product) -> String>>(
-            "Prix" to { p -> "${p.price} FCFA" },
-            "Catégorie" to { p -> p.category },
-            "Stock" to { p -> if (p.stock > 0) "${p.stock} unités" else "Rupture" },
-            "Vendeur" to { p -> p.shopName.ifEmpty { "—" } },
-            "Localisation" to { p -> p.shopLocation.ifEmpty { "—" } },
-            "Note" to { p -> if (p.rating > 0f) "${"⭐".repeat(p.rating.toInt())}" else "Aucun avis" },
-            "Vendu" to { p -> "${p.totalSales} vendus" }
+            ts.price to { p -> "${p.price} FCFA" },
+            ts.category to { p -> p.category },
+            ts.stock to { p -> if (p.stock > 0) ts.units.format(p.stock) else ts.outOfStock },
+            ts.seller to { p -> p.shopName.ifEmpty { "—" } },
+            ts.localization to { p -> p.shopLocation.ifEmpty { "—" } },
+            ts.rating to { p -> if (p.rating > 0f) "${"⭐".repeat(p.rating.toInt())}" else ts.noReviews },
+            ts.sold to { p -> ts.soldCount.format(p.totalSales) }
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
@@ -161,18 +163,18 @@ fun CompareScreen(
                             Text(product.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
                             val minPrice = products.minOfOrNull { it.price }
                             if (product.price == minPrice && products.size > 1) {
-                                Text("Meilleur prix", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Text(ts.bestPrice, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 11.sp)
                             }
                             Spacer(Modifier.height(8.dp))
                             Row {
                                 IconButton(onClick = { onProductClick(product) }, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.Visibility, "Voir", modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Filled.Visibility, ts.view, modifier = Modifier.size(18.dp))
                                 }
                                 IconButton(onClick = { onRemoveProduct(product) }, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.Close, "Retirer", modifier = Modifier.size(18.dp), tint = Color.Red)
+                                    Icon(Icons.Filled.Close, ts.remove, modifier = Modifier.size(18.dp), tint = Color.Red)
                                 }
                                 IconButton(onClick = { onAddToCart(product) }, modifier = Modifier.size(36.dp)) {
-                                    Icon(Icons.Filled.AddShoppingCart, "Panier", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Filled.AddShoppingCart, ts.cart, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -211,11 +213,11 @@ fun CompareScreen(
                                 Icon(Icons.Filled.Star, null, tint = Color(0xFFFFA000), modifier = Modifier.size(40.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("Meilleur choix", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                                    Text(ts.bestChoice, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
                                     Text(bestValue.title, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                    Text("Rapport qualité/prix optimal", color = Color(0xFF558B2F), fontSize = 12.sp)
+                                    Text(ts.optimalValue, color = Color(0xFF558B2F), fontSize = 12.sp)
                                 }
-                                FilledTonalButton(onClick = { onProductClick(bestValue) }) { Text("Voir") }
+                                FilledTonalButton(onClick = { onProductClick(bestValue) }) { Text(ts.view) }
                             }
                         }
                     }

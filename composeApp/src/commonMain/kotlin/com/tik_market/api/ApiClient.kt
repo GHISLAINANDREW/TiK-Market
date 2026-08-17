@@ -598,7 +598,8 @@ object ApiClient {
     }
 
     suspend fun addFavoriteShop(shopId: Int) {
-        post("${Endpoints.FAVORITE_SHOPS}?shop_id=$shopId", "")
+        val body = buildJsonObject { put("shop_id", shopId) }.toString()
+        post(Endpoints.FAVORITE_SHOPS, body)
     }
 
     suspend fun removeFavoriteShop(shopId: Int) {

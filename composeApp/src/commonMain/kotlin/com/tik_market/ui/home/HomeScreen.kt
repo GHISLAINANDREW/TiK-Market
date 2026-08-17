@@ -37,6 +37,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.ui.story.StoryItem
 import com.tik_market.utils.safeApiCall
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.outlined.FilterList
@@ -115,6 +116,7 @@ fun HomeScreen(
     val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
     val cityColors = LocalCityColors.current
+    val s = LocalAppStrings.current
     
     // Sync products cache
     LaunchedEffect(cachedProducts, cachedCategories, wishlistProductIds) {
@@ -158,7 +160,7 @@ fun HomeScreen(
     suspend fun loadProducts(force: Boolean = false) {
         if (!force && localProducts.isNotEmpty() && searchQuery.isBlank() && selectedCategory == null) return
         
-        val cat = if (selectedCategory == "Tout") null else selectedCategory
+        val cat = if (selectedCategory == s.allCategories) null else selectedCategory
         val minP = minPrice.toDoubleOrNull()
         val maxP = maxPrice.toDoubleOrNull()
         
@@ -181,7 +183,7 @@ fun HomeScreen(
             localProducts = result.getOrDefault(emptyList()).map { it.toProduct() }.filter { !it.isStory }
             onCacheData(localProducts, localCategories, localWishlist)
         } else {
-            val err = (result as? com.tik_market.utils.ApiResult.Error)?.message ?: "Erreur inconnue"
+            val err = (result as? com.tik_market.utils.ApiResult.Error)?.message ?: s.unknownError
             onError(err)
         }
     }
@@ -294,7 +296,7 @@ fun HomeScreen(
                     ExtendedFloatingActionButton(
                         onClick = onCompareClick,
                         icon = { Icon(Icons.Default.CompareArrows, null) },
-                        text = { Text("Comparer ($comparisonCount)") },
+                        text = { Text(s.compareCta.format(comparisonCount)) },
                         containerColor = Orange,
                         contentColor = Color.White
                     )
@@ -325,7 +327,7 @@ fun HomeScreen(
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
                                         modifier = Modifier.height(30.dp)
                                     ) {
-                                        Text("S'inscrire", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(s.registerShort, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 } else if (userRole == "vendor") {
                                     Button(
@@ -337,7 +339,7 @@ fun HomeScreen(
                                     ) {
                                         Icon(Icons.Default.Storefront, null, modifier = Modifier.size(14.dp), tint = Amber)
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Boutique", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(s.shop, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
 
@@ -360,12 +362,12 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(24.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf("Produits", "Boutiques").forEach { tab ->
-                                val isSelected = tab == "Produits"
+                            listOf(s.products, s.shops).forEach { tab ->
+                                val isSelected = tab == s.products
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier.clickable {
-                                        if (tab == "Boutiques") onShopsClick()
+                                        if (tab == s.shops) onShopsClick()
                                     }
                                 ) {
                                     Text(tab, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = Color.White)
@@ -448,7 +450,7 @@ fun HomeScreen(
                                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("✨ Arrivages du jour", style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+                                Text(s.arrivalsToday, style = MaterialTheme.typography.titleSmall, color = TextPrimary)
                                 Spacer(Modifier.width(6.dp))
                                 Text("🔥", fontSize = 14.sp)
                             }
@@ -477,11 +479,11 @@ fun HomeScreen(
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Icon(Icons.Default.Add, null, tint = primary, modifier = Modifier.size(28.dp))
                                                 Spacer(Modifier.height(2.dp))
-                                                Text("Story", fontSize = 10.sp, color = primary, fontWeight = FontWeight.Bold)
+                                                Text(s.story, fontSize = 10.sp, color = primary, fontWeight = FontWeight.Bold)
                                             }
                                         }
                                         Spacer(Modifier.height(4.dp))
-                                        Text("Ajouter", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = primary)
+                                        Text(s.add, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = primary)
                                     }
                                 }
                                 
@@ -583,13 +585,9 @@ fun HomeScreen(
                         Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "Coups de cœur",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text("${filteredProducts.size} articles", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(s.favorites, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
+                        Spacer(Modifier.width(8.dp))
+                        Text(s.articlesCount.format(filteredProducts.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -605,12 +603,12 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val allCats = listOf("Tout") + localCategories
+                                val allCats = listOf(s.allCategories) + localCategories
                                 allCats.forEach { cat ->
-                                    val isSelected = (cat == "Tout" && selectedCategory == null) || cat == selectedCategory
+                                    val isSelected = (cat == s.allCategories && selectedCategory == null) || cat == selectedCategory
                                     FilterChip(
                                         selected = isSelected,
-                                        onClick = { selectedCategory = if (cat == "Tout") null else cat },
+                                        onClick = { selectedCategory = if (cat == s.allCategories) null else cat },
                                         label = { Text(cat, style = MaterialTheme.typography.labelMedium) },
                                         shape = RoundedCornerShape(20.dp),
                                         colors = FilterChipDefaults.filterChipColors(
@@ -643,11 +641,11 @@ fun HomeScreen(
                     // ── Rest of the file unchanged from here ──
                     Column(Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Filtres", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                            Text(s.filters, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                             Spacer(Modifier.weight(1f))
                             if (showFilters) {
                                 TextButton(onClick = { minPrice = ""; maxPrice = ""; sortBy = "newest" }) {
-                                    Text("Réinitialiser", fontSize = 12.sp, color = Orange)
+                                    Text(s.reset, fontSize = 12.sp, color = Orange)
                                 }
                             }
                             IconButton(onClick = { showFilters = !showFilters }) {
@@ -683,9 +681,9 @@ fun HomeScreen(
                                 Spacer(Modifier.height(8.dp))
                                 // Sort
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Trier :", fontSize = 12.sp, color = TextSecondary)
+                                    Text(s.sortBy, fontSize = 12.sp, color = TextSecondary)
                                     Spacer(Modifier.width(8.dp))
-                                    listOf("newest" to "Nouveautés", "price_asc" to "Prix ↑", "price_desc" to "Prix ↓").forEach { (key, label) ->
+                                    listOf("newest" to s.newest, "price_asc" to s.priceAsc, "price_desc" to s.priceDesc).forEach { (key, label) ->
                                         FilterChip(
                                             selected = sortBy == key,
                                             onClick = { sortBy = key },
@@ -718,9 +716,9 @@ fun HomeScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("🛰️", fontSize = 48.sp)
                                 Spacer(Modifier.height(8.dp))
-                                Text("Aucun produit trouvé", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                Text(s.noProductsFound, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                                 Spacer(Modifier.height(4.dp))
-                                Text("Vérifiez votre connexion ou les filtres", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                Text(s.noProductsFoundHint, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                                 Spacer(Modifier.height(16.dp))
                                 Button(onClick = { 
                                     scope.launch { 
@@ -730,7 +728,7 @@ fun HomeScreen(
                                         isRefreshing = false
                                     }
                                 }) {
-                                    Text("Réessayer")
+                                    Text(s.retry)
                                 }
                             }
                         }
@@ -819,8 +817,8 @@ fun HomeScreen(
         if (showStoryTypeDialog) {
             AlertDialog(
                 onDismissRequest = { showStoryTypeDialog = false },
-                title = { Text("Ajouter une story") },
-                text = { Text("Choisissez le type de story à publier.") },
+                title = { Text(s.addStory) },
+                text = { Text(s.addStoryHint) },
                 confirmButton = {
                     Column {
                         TextButton(onClick = {
@@ -830,7 +828,7 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Photo")
+                                Text(s.photo)
                             }
                         }
                         TextButton(onClick = {
@@ -840,7 +838,7 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Vidéo")
+                                Text(s.video)
                             }
                         }
                     }
@@ -853,7 +851,7 @@ fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.TextSnippet, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Texte uniquement")
+                            Text(s.textOnly)
                         }
                     }
                 }
@@ -863,15 +861,15 @@ fun HomeScreen(
         if (showCaptionDialog) {
             AlertDialog(
                 onDismissRequest = { showCaptionDialog = false },
-                title = { Text("Ajouter une légende") },
+                title = { Text(s.addCaption) },
                 text = {
                     Column {
-                        Text("Voulez-vous ajouter un message à votre story ?", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Text(s.addCaptionHint, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                         Spacer(Modifier.height(12.dp))
                         OutlinedTextField(
                             value = storyCaption,
                             onValueChange = { storyCaption = it },
-                            placeholder = { Text("Votre message...") },
+                            placeholder = { Text(s.yourMessage) },
                             modifier = Modifier.fillMaxWidth(),
                             maxLines = 3
                         )
@@ -887,12 +885,12 @@ fun HomeScreen(
                         }
                         storyCaption = ""
                     }) {
-                        Text("Publier")
+                        Text(s.publish)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showCaptionDialog = false }) {
-                        Text("Passer")
+                        Text(s.skip)
                     }
                 }
             )
@@ -901,20 +899,20 @@ fun HomeScreen(
         if (showTextStoryDialog) {
             AlertDialog(
                 onDismissRequest = { showTextStoryDialog = false },
-                title = { Text("Story texte") },
+                title = { Text(s.textStory) },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = textStoryContent,
                             onValueChange = { textStoryContent = it },
-                            placeholder = { Text("Que voulez-vous dire ?") },
+                            placeholder = { Text(s.whatDoYouWantToSay) },
                             modifier = Modifier.fillMaxWidth().height(120.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = textStoryColor.copy(alpha = 0.1f)
                             )
                         )
                         Spacer(Modifier.height(12.dp))
-                        Text("Couleur de fond :", style = MaterialTheme.typography.labelSmall)
+                        Text(s.backgroundColor, style = MaterialTheme.typography.labelSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                             listOf(Green, Orange, BlueAccent, RedAccent, Color.DarkGray).forEach { color ->
                                 Box(
@@ -946,12 +944,12 @@ fun HomeScreen(
                         },
                         enabled = textStoryContent.isNotBlank()
                     ) {
-                        Text("Publier")
+                        Text(s.publish)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTextStoryDialog = false }) {
-                        Text("Annuler")
+                        Text(s.cancel)
                     }
                 }
             )

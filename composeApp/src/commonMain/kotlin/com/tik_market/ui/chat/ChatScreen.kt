@@ -39,6 +39,7 @@ import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.getCurrentLocationLatLng
 import com.tik_market.utils.getCurrentLocationName
 import com.tik_market.utils.getPlaceName
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -84,6 +85,7 @@ fun ChatScreen(
     var isSending by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
     val currentUserId = remember { ApiClient.getCurrentUser()?.id ?: 0 }
 
     var showPlusMenu by remember { mutableStateOf(false) }
@@ -560,7 +562,7 @@ fun ChatScreen(
                                     value = messageText,
                                     onValueChange = { messageText = it },
                                     modifier = Modifier.weight(1f),
-                                    placeholder = { Text("Message", color = Color.Gray, fontSize = 16.sp) },
+                                    placeholder = { Text(s.typeMessage, color = Color.Gray, fontSize = 16.sp) },
                                     shape = RoundedCornerShape(24.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedContainerColor = Color.White,
@@ -641,8 +643,8 @@ fun ChatScreen(
     if (showDeleteConfirm && deleteTargetMsg != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false; deleteTargetMsg = null },
-            title = { Text("Supprimer le message") },
-            text = { Text("Voulez-vous vraiment supprimer ce message ?") },
+            title = { Text(s.deleteMessage) },
+            text = { Text(s.deleteMessageConfirm) },
             confirmButton = {
                 Button(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
@@ -657,12 +659,12 @@ fun ChatScreen(
                         }
                     }
                 ) {
-                    Text("Supprimer", color = Color.White)
+                    Text(s.deleteConfirm, color = Color.White)
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDeleteConfirm = false; deleteTargetMsg = null }) {
-                    Text("Annuler")
+                    Text(s.cancel)
                 }
             }
         )
@@ -702,6 +704,7 @@ private fun ChatBubble(
     var showContextMenu by remember { mutableStateOf(false) }
     var showReactionPicker by remember { mutableStateOf(false) }
     val quickEmojis = listOf("❤️", "👍", "😂", "😮", "😢", "🙏")
+    val s = LocalAppStrings.current
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
@@ -755,7 +758,7 @@ private fun ChatBubble(
                                 Box(Modifier.width(3.dp).height(24.dp).background(Color(0xFF25D366), RoundedCornerShape(2.dp)))
                                 Spacer(Modifier.width(6.dp))
                                 Column {
-                                    Text("Vous" /*will be fixed*/, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
+                                    Text(s.you /*will be fixed*/, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
                                     Text(msg.repliedText, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (isMe) Color(0xFF1C1C1C).copy(alpha = 0.7f) else Color.Gray)
                                 }
                             }
@@ -777,8 +780,8 @@ private fun ChatBubble(
                             ) {
                                 VerticalDivider(color = Orange, thickness = 3.dp, modifier = Modifier.height(30.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text("Story", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Orange)
-                                    Text(msg.productTitle ?: "Produit", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(s.story, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Orange)
+                                    Text(msg.productTitle ?: s.productLabel, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 // Product image thumbnail in chat bubble
                                 if (!msg.productImageUrl.isNullOrBlank()) {
@@ -850,7 +853,7 @@ private fun ChatBubble(
                                     ) {
                                         Icon(Icons.Default.Map, null, Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Ouvrir dans Maps", fontSize = 12.sp)
+                                        Text(s.openInMaps, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -916,19 +919,19 @@ private fun ChatBubble(
                     onDismissRequest = { showContextMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Répondre") },
+                        text = { Text(s.reply) },
                         onClick = { showContextMenu = false; onReply(msg) },
                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.Reply, null, Modifier.size(18.dp)) }
                     )
                     DropdownMenuItem(
-                        text = { Text("Réagir") },
+                        text = { Text(s.react) },
                         onClick = { showContextMenu = false; showReactionPicker = true },
                         leadingIcon = { Icon(Icons.Outlined.EmojiEmotions, null, Modifier.size(18.dp)) }
                     )
                     if (isMe) {
                         HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("Supprimer", color = Color(0xFFE53935)) },
+                            text = { Text(s.deleteConfirm, color = Color(0xFFE53935)) },
                             onClick = { showContextMenu = false; onDeleteRequest(msg) },
                             leadingIcon = { Icon(Icons.Default.Delete, null, Modifier.size(18.dp), tint = Color(0xFFE53935)) }
                         )
@@ -939,7 +942,7 @@ private fun ChatBubble(
                 if (showReactionPicker) {
                     AlertDialog(
                         onDismissRequest = { showReactionPicker = false },
-                        title = { Text("Réagir au message") },
+                        title = { Text(s.reactToMessage) },
                         text = {
                             Row(
                                 Modifier.fillMaxWidth(),
@@ -960,7 +963,7 @@ private fun ChatBubble(
                         },
                         confirmButton = {},
                         dismissButton = {
-                            TextButton(onClick = { showReactionPicker = false }) { Text("Annuler") }
+                            TextButton(onClick = { showReactionPicker = false }) { Text(s.cancel) }
                         }
                     )
                 }
@@ -1248,14 +1251,15 @@ private fun EmojiPicker(onEmojiSelect: (String) -> Unit) {
 // ── Plus Menu (WhatsApp attachment style) ──
 @Composable
 private fun PlusMenu(onAction: (String) -> Unit) {
+    val s = LocalAppStrings.current
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        PlusMenuItem(Icons.Default.Image, "Galerie", Color(0xFF4CAF50)) { onAction("image") }
-        PlusMenuItem(Icons.Default.CameraAlt, "Caméra", Color(0xFF2196F3)) { onAction("camera") }
-        PlusMenuItem(Icons.Default.AttachFile, "Fichier", Color(0xFF9C27B0)) { onAction("file") }
-        PlusMenuItem(Icons.Default.LocationOn, "Localisation", Color(0xFFFF5722)) { onAction("location") }
+        PlusMenuItem(Icons.Default.Image, s.gallery, Color(0xFF4CAF50)) { onAction("image") }
+        PlusMenuItem(Icons.Default.CameraAlt, s.camera, Color(0xFF2196F3)) { onAction("camera") }
+        PlusMenuItem(Icons.Default.AttachFile, s.file, Color(0xFF9C27B0)) { onAction("file") }
+        PlusMenuItem(Icons.Default.LocationOn, s.localization, Color(0xFFFF5722)) { onAction("location") }
     }
 }
 
@@ -1287,6 +1291,7 @@ private fun LocationPreviewDialog(
 ) {
     var mapBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var loadingMap by remember { mutableStateOf(true) }
+    val s = LocalAppStrings.current
 
     LaunchedEffect(lat, lng) {
         val url = "https://staticmap.openstreetmap.de/staticmap.php?" +
@@ -1297,7 +1302,7 @@ private fun LocationPreviewDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📍 Partager ma position") },
+        title = { Text(s.shareLocation) },
         text = {
             Column(
                 modifier = Modifier.width(300.dp),
@@ -1318,7 +1323,7 @@ private fun LocationPreviewDialog(
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                Text(placeName.ifEmpty { "Position actuelle" },
+                Text(placeName.ifEmpty { s.currentPosition },
                     style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 Text("Lat: ${"%.6f".latLngFormat(lat)}  Lng: ${"%.6f".latLngFormat(lng)}",
@@ -1327,11 +1332,11 @@ private fun LocationPreviewDialog(
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onOpenInMaps, modifier = Modifier.weight(1f)) {
-                        Text("🗺️ Carte")
+                        Text(s.map)
                     }
                     Button(onClick = onConfirm, modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C63FF))) {
-                        Text("Envoyer")
+                        Text(s.send)
                     }
                 }
             }

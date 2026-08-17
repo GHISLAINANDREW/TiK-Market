@@ -26,6 +26,7 @@ import com.tik_market.theme.Orange
 import com.tik_market.theme.VioletSoft
 import com.tik_market.ui.components.EmptyState
 import com.tik_market.utils.safeApiCall
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +39,7 @@ fun NotificationScreen(
     var notifications by remember { mutableStateOf<List<ApiNotification>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
 
     suspend fun loadNotifications() {
         val result = safeApiCall { ApiClient.fetchNotifications() }
@@ -68,16 +70,16 @@ fun NotificationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notifications", fontWeight = FontWeight.Bold, color = Color.White) },
+                title = { Text(s.notifications, fontWeight = FontWeight.Bold, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = s.back, tint = Color.White)
                     }
                 },
                 actions = {
                     if (notifications.isNotEmpty()) {
                         TextButton(onClick = { markAllAsRead() }) {
-                            Text("Tout lire", color = Color.White)
+                            Text(s.markAllRead, color = Color.White)
                         }
                     }
                 },
@@ -91,8 +93,8 @@ fun NotificationScreen(
             } else if (notifications.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.Notifications,
-                    title = "Aucune notification",
-                    subtitle = "Vous serez averti ici des nouveautés et mises à jour."
+                    title = s.noNotifications,
+                    subtitle = s.noNotificationsHint
                 )
             } else {
                 LazyColumn(
@@ -125,6 +127,7 @@ fun NotificationItem(
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val s = LocalAppStrings.current
     val icon = when (notification.type) {
         "product" -> Icons.Default.Store
         "order" -> Icons.Default.ShoppingCart
@@ -188,7 +191,7 @@ fun NotificationItem(
             }
 
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Supprimer", tint = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Delete, contentDescription = s.delete, tint = Color.LightGray.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
             }
         }
     }

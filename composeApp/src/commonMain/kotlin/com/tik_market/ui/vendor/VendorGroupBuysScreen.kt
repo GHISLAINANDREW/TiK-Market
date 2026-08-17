@@ -25,6 +25,7 @@ import com.tik_market.api.ApiGroupBuyParticipant
 import com.tik_market.api.ApiProduct
 import com.tik_market.theme.*
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -34,13 +35,6 @@ private val statusColors = mapOf(
     "filled" to Orange,
     "completed" to Color(0xFF1565C0),
     "cancelled" to Color.Gray
-)
-
-private val statusLabels = mapOf(
-    "open" to "Actif",
-    "filled" to "Rempli",
-    "completed" to "Terminé",
-    "cancelled" to "Annulé"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +58,7 @@ fun VendorGroupBuysScreen(
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
 
     // Charger shopId + group-buys + produits
     LaunchedEffect(refreshSignal) {
@@ -105,7 +100,7 @@ fun VendorGroupBuysScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Achats groupés", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.groupBuysTitle, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
@@ -117,7 +112,7 @@ fun VendorGroupBuysScreen(
                 containerColor = Green,
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("Lancer un groupe") }
+                text = { Text(ts.launchGroup) }
             )
         }
     ) { padding ->
@@ -134,7 +129,7 @@ fun VendorGroupBuysScreen(
             } else {
                 // ── Carte résumé ──
                 item {
-                    StatsSummaryCard(stats)
+                    StatsSummaryCard(stats, ts)
                 }
 
                 // ── Filtres ──
@@ -142,7 +137,8 @@ fun VendorGroupBuysScreen(
                     FilterRow(
                         selected = selectedFilter,
                         onSelect = { selectedFilter = it },
-                        counts = GroupBuyCounts(stats.active, stats.filled, stats.completed + stats.cancelled)
+                        counts = GroupBuyCounts(stats.active, stats.filled, stats.completed + stats.cancelled),
+                        ts = ts
                     )
                 }
 
@@ -153,9 +149,9 @@ fun VendorGroupBuysScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Group, null, Modifier.size(48.dp), tint = Color.LightGray)
                                 Spacer(Modifier.height(12.dp))
-                                Text("Aucun achat groupé", style = MaterialTheme.typography.titleSmall, color = Color.Gray)
+                                Text(ts.noGroupBuys, style = MaterialTheme.typography.titleSmall, color = Color.Gray)
                                 Text(
-                                    "Vous pouvez lancer des achats groupés sur vos produits\npour booster vos ventes.",
+                                    ts.noGroupBuysHint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.LightGray,
                                     textAlign = TextAlign.Center
@@ -171,6 +167,7 @@ fun VendorGroupBuysScreen(
                         groupBuy = gb,
                         isExpanded = expandedId == gb.id,
                         participants = participants[gb.id] ?: emptyList(),
+                        ts = ts,
                         onToggleExpand = {
                             expandedId = if (expandedId == gb.id) null else gb.id
                             if (expandedId == gb.id && participants[gb.id] == null) {
@@ -189,13 +186,13 @@ fun VendorGroupBuysScreen(
                                 try {
                                     val resp = ApiClient.cancelGroupBuy(gb.id)
                                     if (resp.success) {
-                                        snackbarHostState.showSnackbar("Achat groupé annulé")
+                                        snackbarHostState.showSnackbar(ts.groupBuyCancelled)
                                         groupBuys = ApiClient.fetchShopGroupBuys(shopId)
                                     } else {
-                                        snackbarHostState.showSnackbar(resp.error ?: "Erreur")
+                                        snackbarHostState.showSnackbar(resp.error ?: ts.error)
                                     }
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar(e.message ?: "Erreur")
+                                    snackbarHostState.showSnackbar(e.message ?: ts.error)
                                 }
                             }
                         },
@@ -204,13 +201,13 @@ fun VendorGroupBuysScreen(
                                 try {
                                     val resp = ApiClient.deleteGroupBuy(gb.id)
                                     if (resp.success) {
-                                        snackbarHostState.showSnackbar("Achat groupé supprimé")
+                                        snackbarHostState.showSnackbar(ts.groupBuyDeleted)
                                         groupBuys = ApiClient.fetchShopGroupBuys(shopId)
                                     } else {
-                                        snackbarHostState.showSnackbar(resp.error ?: "Erreur")
+                                        snackbarHostState.showSnackbar(resp.error ?: ts.error)
                                     }
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar(e.message ?: "Erreur")
+                                    snackbarHostState.showSnackbar(e.message ?: ts.error)
                                 }
                             }
                         },
@@ -227,19 +224,20 @@ fun VendorGroupBuysScreen(
         VendorCreateGroupBuyDialog(
             products = vendorProducts,
             onDismiss = { showCreateDialog = false },
+            ts = ts,
             onCreate = { productId, minQty, discountPct, hours ->
                 scope.launch {
                     try {
                         val resp = ApiClient.createGroupBuy(productId, minQty, discountPct, hours)
                         if (resp.groupBuy != null) {
-                            snackbarHostState.showSnackbar("Achat groupé lancé !")
+                            snackbarHostState.showSnackbar(ts.groupBuyLaunched)
                             groupBuys = ApiClient.fetchShopGroupBuys(shopId)
                             showCreateDialog = false
                         } else {
-                            snackbarHostState.showSnackbar(resp.error ?: "Erreur lors de la création")
+                            snackbarHostState.showSnackbar(resp.error ?: ts.errorCreatingGroup)
                         }
                     } catch (e: Exception) {
-                        snackbarHostState.showSnackbar(e.message ?: "Erreur")
+                        snackbarHostState.showSnackbar(e.message ?: ts.error)
                     }
                 }
             }
@@ -250,18 +248,19 @@ fun VendorGroupBuysScreen(
         VendorNotifyGroupDialog(
             groupBuy = showNotifyDialog!!,
             onDismiss = { showNotifyDialog = null },
+            ts = ts,
             onSend = { title, msg ->
                 scope.launch {
                     try {
                         val resp = ApiClient.notifyGroupParticipants(showNotifyDialog!!.id, title, msg)
                         if (resp.success) {
-                            snackbarHostState.showSnackbar("Notification envoyée aux participants")
+                            snackbarHostState.showSnackbar(ts.notificationSentParticipants)
                             showNotifyDialog = null
                         } else {
-                            snackbarHostState.showSnackbar(resp.error ?: "Erreur")
+                            snackbarHostState.showSnackbar(resp.error ?: ts.error)
                         }
                     } catch (e: Exception) {
-                        snackbarHostState.showSnackbar(e.message ?: "Erreur")
+                        snackbarHostState.showSnackbar(e.message ?: ts.error)
                     }
                 }
             }
@@ -281,16 +280,16 @@ private data class GroupBuyCounts(val active: Int, val filled: Int, val complete
 
 // ── Carte résumé stats ──
 @Composable
-private fun StatsSummaryCard(stats: GroupBuyStats) {
+private fun StatsSummaryCard(stats: GroupBuyStats, ts: com.tik_market.utils.AppStrings) {
     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(Modifier.padding(16.dp)) {
-            Text("Résumé", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(ts.summary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                StatItem(Icons.Default.Timer, "${stats.active}", "Actifs", Green)
-                StatItem(Icons.Default.CheckCircle, "${stats.filled}", "Remplis", Orange)
-                StatItem(Icons.Default.TaskAlt, "${stats.completed}", "Terminés", Color(0xFF1565C0))
-                StatItem(Icons.Default.People, "${stats.totalParticipants}", "Participants", GreenAccent)
+                StatItem(Icons.Default.Timer, "${stats.active}", ts.activePlural, Green)
+                StatItem(Icons.Default.CheckCircle, "${stats.filled}", ts.filledPlural, Orange)
+                StatItem(Icons.Default.TaskAlt, "${stats.completed}", ts.completedPlural, Color(0xFF1565C0))
+                StatItem(Icons.Default.People, "${stats.totalParticipants}", ts.participantsLabel, GreenAccent)
             }
         }
     }
@@ -308,12 +307,12 @@ private fun StatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
 
 // ── Rangée de filtres ──
 @Composable
-private fun FilterRow(selected: String, onSelect: (String) -> Unit, counts: GroupBuyCounts) {
+private fun FilterRow(selected: String, onSelect: (String) -> Unit, counts: GroupBuyCounts, ts: com.tik_market.utils.AppStrings) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip("Tous", "all", selected, onSelect, groupBuysCount = -1)
-        FilterChip("Actifs (${counts.active})", "active", selected, onSelect)
-        FilterChip("Remplis (${counts.filled})", "filled", selected, onSelect)
-        FilterChip("Terminés (${counts.completed})", "completed", selected, onSelect)
+        FilterChip(ts.allFilter, "all", selected, onSelect, groupBuysCount = -1)
+        FilterChip("${ts.activePlural} (${counts.active})", "active", selected, onSelect)
+        FilterChip("${ts.filledPlural} (${counts.filled})", "filled", selected, onSelect)
+        FilterChip("${ts.completedPlural} (${counts.completed})", "completed", selected, onSelect)
     }
 }
 
@@ -351,13 +350,20 @@ private fun GroupBuyVendorCard(
     onCancel: () -> Unit,
     onDelete: () -> Unit = {},
     onNotifyAll: () -> Unit = {},
-    onMessageParticipant: (Int, String) -> Unit = { _, _ -> }
+    onMessageParticipant: (Int, String) -> Unit = { _, _ -> },
+    ts: com.tik_market.utils.AppStrings
 ) {
     val canCancel = groupBuy.status == "open" || groupBuy.status == "filled"
     val canNotify = groupBuy.participantsCount > 0
     val progress = if (groupBuy.minQuantity > 0) (groupBuy.currentQty.toFloat() / groupBuy.minQuantity).coerceAtMost(1f) else 0f
     val statusColor = statusColors[groupBuy.status] ?: Color.Gray
-    val statusLabel = statusLabels[groupBuy.status] ?: groupBuy.status
+    val statusLabel = when (groupBuy.status) {
+        "open" -> ts.active
+        "filled" -> ts.filled
+        "completed" -> ts.completed
+        "cancelled" -> ts.cancelled
+        else -> groupBuy.status
+    }
 
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -368,14 +374,14 @@ private fun GroupBuyVendorCard(
             // ── En-tête : produit + statut ──
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(groupBuy.productTitle.ifBlank { "Produit #${groupBuy.productId}" }, fontWeight = FontWeight.Medium, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(groupBuy.productTitle.ifBlank { ts.productFallback.replace("%s", "${groupBuy.productId}") }, fontWeight = FontWeight.Medium, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Par ${groupBuy.creatorName.ifBlank { "Un acheteur" }}", fontSize = 12.sp, color = Color.Gray)
+                        Text(ts.byCreator.replace("%s", groupBuy.creatorName.ifBlank { ts.creatorAnonymous }), fontSize = 12.sp, color = Color.Gray)
                         Spacer(Modifier.width(8.dp))
                         Text("·", color = Color.LightGray)
                         Spacer(Modifier.width(8.dp))
-                        Text("${groupBuy.participantsCount} participant(s)", fontSize = 12.sp, color = Color.Gray)
+                        Text(ts.participantCountFmt.replace("%d", "${groupBuy.participantsCount}"), fontSize = 12.sp, color = Color.Gray)
                     }
                 }
                 Spacer(Modifier.width(8.dp))
@@ -399,15 +405,15 @@ private fun GroupBuyVendorCard(
             // ── Infos prix et réduction ──
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text("Prix original", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.originalPrice, fontSize = 11.sp, color = Color.Gray)
                     Text(FormatUtils.formatPrice(groupBuy.originalPrice), fontSize = 13.sp, color = Color.Gray, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${groupBuy.discountPct.toInt()}%", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Green)
-                    Text("RÉDUCTION", fontSize = 9.sp, color = Green, fontWeight = FontWeight.Bold)
+                    Text(ts.reduction, fontSize = 9.sp, color = Green, fontWeight = FontWeight.Bold)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Prix groupe", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.groupPrice, fontSize = 11.sp, color = Color.Gray)
                     Text(FormatUtils.formatPrice(groupBuy.targetPrice), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = GreenDark)
                 }
             }
@@ -417,7 +423,7 @@ private fun GroupBuyVendorCard(
             // ── Barre de progression ──
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Progression", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.progress, fontSize = 11.sp, color = Color.Gray)
                     Text("${groupBuy.currentQty}/${groupBuy.minQuantity}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = if (progress >= 1f) Green else Orange)
                 }
                 Spacer(Modifier.height(4.dp))
@@ -436,7 +442,7 @@ private fun GroupBuyVendorCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Schedule, null, Modifier.size(14.dp), tint = Color.Gray)
                     Spacer(Modifier.width(4.dp))
-                    Text("Expire le ${groupBuy.expiresAt.take(10)}", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.groupExpiry.replace("%s", groupBuy.expiresAt.take(10)), fontSize = 11.sp, color = Color.Gray)
                 }
             }
 
@@ -453,7 +459,7 @@ private fun GroupBuyVendorCard(
                     ) {
                         Icon(Icons.Default.Cancel, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Annuler le groupe", fontSize = 12.sp)
+                        Text(ts.cancelGroup, fontSize = 12.sp)
                     }
                 }
                 Spacer(Modifier.width(8.dp))
@@ -467,7 +473,7 @@ private fun GroupBuyVendorCard(
                 ) {
                     Icon(Icons.Default.Delete, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Supprimer", fontSize = 12.sp)
+                    Text(ts.delete, fontSize = 12.sp)
                 }
             }
 
@@ -477,7 +483,7 @@ private fun GroupBuyVendorCard(
                 HorizontalDivider(color = Color(0xFFF0F0F0))
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Participants", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(ts.participantsLabel, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     if (canNotify) {
                         TextButton(
                             onClick = onNotifyAll,
@@ -486,13 +492,13 @@ private fun GroupBuyVendorCard(
                         ) {
                             Icon(Icons.Default.NotificationsActive, null, Modifier.size(14.dp), tint = Green)
                             Spacer(Modifier.width(4.dp))
-                            Text("Notifier tous", fontSize = 11.sp, color = Green)
+                            Text(ts.notifyAll, fontSize = 11.sp, color = Green)
                         }
                     }
                 }
                 Spacer(Modifier.height(6.dp))
                 if (participants.isEmpty()) {
-                    Text("Chargement...", fontSize = 12.sp, color = Color.Gray)
+                    Text(ts.loading, fontSize = 12.sp, color = Color.Gray)
                 } else {
                     participants.forEach { p ->
                         Row(
@@ -504,7 +510,7 @@ private fun GroupBuyVendorCard(
                             }
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(p.name.ifBlank { "Anonyme" }, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text(p.name.ifBlank { ts.anonymous }, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                                 Text("x${p.quantity} • ${p.joinedAt.take(10)}", fontSize = 11.sp, color = Color.Gray)
                             }
                             IconButton(
@@ -541,7 +547,8 @@ private fun GroupBuyVendorCard(
 private fun VendorCreateGroupBuyDialog(
     products: List<ApiProduct>,
     onDismiss: () -> Unit,
-    onCreate: (productId: Int, minQty: Int, discountPct: Double, hours: Int) -> Unit
+    onCreate: (productId: Int, minQty: Int, discountPct: Double, hours: Int) -> Unit,
+    ts: com.tik_market.utils.AppStrings
 ) {
     var selectedProduct by remember { mutableStateOf<ApiProduct?>(products.firstOrNull()) }
     var minQty by remember { mutableStateOf("5") }
@@ -551,21 +558,21 @@ private fun VendorCreateGroupBuyDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nouvel achat groupé", fontWeight = FontWeight.Bold) },
+        title = { Text(ts.newGroupBuy, fontWeight = FontWeight.Bold) },
         text = {
             Column(Modifier.fillMaxWidth()) {
-                Text("Choisissez un produit et les conditions de l'offre.", fontSize = 13.sp, color = Color.Gray)
+                Text(ts.chooseProductOffer, fontSize = 13.sp, color = Color.Gray)
                 Spacer(Modifier.height(16.dp))
 
                 // Sélection du produit
-                Text("Produit", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Text(ts.productLabel, fontWeight = FontWeight.Medium, fontSize = 14.sp)
                 Spacer(Modifier.height(6.dp))
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedProduct?.title ?: "Sélectionner un produit",
+                        value = selectedProduct?.title ?: ts.selectProduct,
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -601,7 +608,7 @@ private fun VendorCreateGroupBuyDialog(
                     OutlinedTextField(
                         value = minQty,
                         onValueChange = { minQty = it.filter { c -> c.isDigit() } },
-                        label = { Text("Participants min.") },
+                        label = { Text(ts.minParticipants) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
@@ -610,7 +617,7 @@ private fun VendorCreateGroupBuyDialog(
                     OutlinedTextField(
                         value = discountPct,
                         onValueChange = { discountPct = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("Réduction %") },
+                        label = { Text(ts.discountPercent) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
@@ -623,7 +630,7 @@ private fun VendorCreateGroupBuyDialog(
                 OutlinedTextField(
                     value = hours,
                     onValueChange = { hours = it.filter { c -> c.isDigit() } },
-                    label = { Text("Durée de l'offre (heures)") },
+                    label = { Text(ts.offerDuration) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
@@ -634,8 +641,7 @@ private fun VendorCreateGroupBuyDialog(
                     val targetPrice = selectedProduct!!.price * (1 - disc / 100)
                     Spacer(Modifier.height(12.dp))
                     Surface(color = Green.copy(alpha = 0.05f), shape = RoundedCornerShape(8.dp)) {
-                        Text(
-                            "Prix final client : ${FormatUtils.formatPrice(targetPrice)}",
+                        Text(ts.finalClientPrice.replace("%s", FormatUtils.formatPrice(targetPrice)),
                             modifier = Modifier.padding(10.dp).fillMaxWidth(),
                             color = GreenDark,
                             fontWeight = FontWeight.Bold,
@@ -659,11 +665,11 @@ private fun VendorCreateGroupBuyDialog(
                 shape = RoundedCornerShape(12.dp),
                 enabled = selectedProduct != null
             ) {
-                Text("Lancer l'offre")
+                Text(ts.launchOffer)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(ts.cancel) }
         }
     )
 }
@@ -673,22 +679,23 @@ private fun VendorCreateGroupBuyDialog(
 private fun VendorNotifyGroupDialog(
     groupBuy: ApiGroupBuy,
     onDismiss: () -> Unit,
-    onSend: (title: String, message: String) -> Unit
+    onSend: (title: String, message: String) -> Unit,
+    ts: com.tik_market.utils.AppStrings
 ) {
-    var title by remember { mutableStateOf("Achat groupé : ${groupBuy.productTitle}") }
+    var title by remember { mutableStateOf(ts.groupBuyNotifTitle.replace("%s", groupBuy.productTitle)) }
     var message by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Notifier les participants", fontWeight = FontWeight.Bold) },
+        title = { Text(ts.notifyParticipantsTitle, fontWeight = FontWeight.Bold) },
         text = {
             Column(Modifier.fillMaxWidth()) {
-                Text("Envoyer une notification aux ${groupBuy.participantsCount} participants.", fontSize = 13.sp, color = Color.Gray)
+                Text(ts.sendNotificationParticipants.replace("%d", "${groupBuy.participantsCount}"), fontSize = 13.sp, color = Color.Gray)
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Titre") },
+                    label = { Text(ts.notifTitle) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -696,7 +703,7 @@ private fun VendorNotifyGroupDialog(
                 OutlinedTextField(
                     value = message,
                     onValueChange = { message = it },
-                    label = { Text("Message") },
+                    label = { Text(ts.messageLabel) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     shape = RoundedCornerShape(12.dp)
@@ -710,11 +717,11 @@ private fun VendorNotifyGroupDialog(
                 shape = RoundedCornerShape(12.dp),
                 enabled = message.isNotBlank()
             ) {
-                Text("Envoyer")
+                Text(ts.send)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(ts.cancel) }
         }
     )
 }

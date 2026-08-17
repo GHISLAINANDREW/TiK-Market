@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.ApiOrder
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +28,7 @@ fun PaymentScreen(
     onSuccess: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
     var provider by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf<String?>(null) }
@@ -39,7 +41,7 @@ fun PaymentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Paiement", color = Color.White) },
+                title = { Text(s.payment, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour", tint = Color.White)
@@ -64,21 +66,21 @@ fun PaymentScreen(
                 color = Color(0xFFF5F5FF)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Récapitulatif", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(s.recap, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Commande #${order.id}", fontSize = 14.sp)
                         Text("${order.totalAmount} FCFA", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text("$itemsCount article(s)", fontSize = 13.sp, color = Color.Gray)
+                    Text(s.orderItemsCount.format(itemsCount), fontSize = 13.sp, color = Color.Gray)
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
             // Sélection du provider
-            Text("Choisissez votre opérateur", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(s.chooseOperator, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(12.dp))
 
             Row(
@@ -117,7 +119,7 @@ fun PaymentScreen(
             Spacer(Modifier.height(24.dp))
 
             // Numéro de téléphone
-            Text("Numéro Mobile Money", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(s.phoneNumber, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
@@ -140,7 +142,7 @@ fun PaymentScreen(
             )
 
             Spacer(Modifier.height(8.dp))
-            Text("Exemple : 670000000 (9 chiffres)", fontSize = 11.sp, color = Color.Gray)
+            Text(s.invalidNumberExample, fontSize = 11.sp, color = Color.Gray)
 
             Spacer(Modifier.height(32.dp))
 
@@ -152,7 +154,7 @@ fun PaymentScreen(
                         return@Button
                     }
                     if (phone.length < 8) {
-                        phoneError = "Numéro invalide (9 chiffres attendus)"
+                        phoneError = s.invalidPhone
                         return@Button
                     }
                     isProcessing = true
@@ -165,7 +167,7 @@ fun PaymentScreen(
                                 "❌ Échec du paiement"
                             }
                         } catch (e: Exception) {
-                            paymentStatus = "❌ Erreur : ${e.message}"
+                            paymentStatus = "❌ ${s.errorPrefix.format(e.message ?: s.unknownError)}"
                         }
                         isProcessing = false
                     }
@@ -201,7 +203,7 @@ fun PaymentScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Retour aux commandes", color = Color.White)
+                        Text(s.backToOrders, color = Color.White)
                     }
                 }
             }

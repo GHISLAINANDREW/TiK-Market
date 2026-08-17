@@ -14,14 +14,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.theme.BrandTopBarColor
+import com.tik_market.utils.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LegalNoticeScreen(onBack: () -> Unit) {
+    val ts = LocalAppStrings.current
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mentions Légales", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.legalMentions, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -51,7 +53,7 @@ fun LegalNoticeScreen(onBack: () -> Unit) {
             
             Spacer(Modifier.height(32.dp))
             Text(
-                "Dernière mise à jour : Août 2026",
+                ts.lastUpdate.format("Août 2026"),
                 fontSize = 12.sp,
                 color = Color.Gray
             )
@@ -62,10 +64,11 @@ fun LegalNoticeScreen(onBack: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermsOfUseScreen(onBack: () -> Unit) {
+    val ts = LocalAppStrings.current
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Conditions d'Utilisation", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.termsOfUse, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -123,10 +126,11 @@ private fun Divider(color: Color) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
+    val ts = LocalAppStrings.current
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("À Propos", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.about, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -161,7 +165,7 @@ fun AboutScreen(onBack: () -> Unit) {
             
             Spacer(Modifier.height(16.dp))
             Text("TiK-Market", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text("Version 1.0.2", fontSize = 14.sp, color = Color.Gray)
+            Text(ts.version.format("1.0.2"), fontSize = 14.sp, color = Color.Gray)
             
             Spacer(Modifier.height(32.dp))
             Text(
@@ -189,7 +193,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Notre Mission", fontWeight = FontWeight.Bold, color = BrandTopBarColor)
+                    Text(ts.ourMissionTitle, fontWeight = FontWeight.Bold, color = BrandTopBarColor)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "Digitaliser les marchés locaux et faciliter les échanges entre vendeurs et acheteurs grâce à des solutions logicielles innovantes et sécurisées.",
@@ -200,12 +204,12 @@ fun AboutScreen(onBack: () -> Unit) {
             }
             
             Spacer(Modifier.height(24.dp))
-            Text("Contact Support", fontWeight = FontWeight.Bold)
+            Text(ts.contactSupport, fontWeight = FontWeight.Bold)
             Text("AdminAutenTiK@gmail.com", color = BrandTopBarColor)
             
             Spacer(Modifier.weight(1f))
             Text(
-                "© 2024 AUTENTIK SOFT SOLUTIONS SARLU. Tous droits réservés.",
+                ts.allRights,
                 fontSize = 12.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 32.dp)

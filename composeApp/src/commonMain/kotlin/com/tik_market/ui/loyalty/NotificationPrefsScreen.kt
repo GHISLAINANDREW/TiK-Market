@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.ApiNotificationPreferences
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +31,7 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
     var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(Unit) {
         try {
@@ -41,7 +43,7 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Préférences notifications", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.notifPrefsTitle, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
@@ -62,32 +64,32 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(16.dp)
                 ) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Notifications push", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(ts.pushNotifs, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Spacer(Modifier.height(4.dp))
-                        Text("Activez ou désactivez les types de notifications que vous souhaitez recevoir.", fontSize = 12.sp, color = Color.Gray)
+                        Text(ts.pushNotifsDesc, fontSize = 12.sp, color = Color.Gray)
                         Spacer(Modifier.height(16.dp))
 
                         val current = prefs ?: ApiNotificationPreferences()
 
-                        NotifToggle("Nouveaux produits", "Promotions et nouveaux arrivages", Icons.Default.Store, Green, current.allowProduct) {
+                        NotifToggle(ts.newProducts, ts.newProductsDesc, Icons.Default.Store, Green, current.allowProduct) {
                             prefs = current.copy(allowProduct = it)
                         }
-                        NotifToggle("Mises à jour commandes", "Statut de vos commandes", Icons.Default.ShoppingCart, Orange, current.allowOrder) {
+                        NotifToggle(ts.orderUpdates, ts.orderUpdatesDesc, Icons.Default.ShoppingCart, Orange, current.allowOrder) {
                             prefs = current.copy(allowOrder = it)
                         }
-                        NotifToggle("Offres promotionnelles", "Réductions et offres spéciales", Icons.Default.Sell, Color(0xFFE91E63), current.allowPromo) {
+                        NotifToggle(ts.promoOffers, ts.promoOffersDesc, Icons.Default.Sell, Color(0xFFE91E63), current.allowPromo) {
                             prefs = current.copy(allowPromo = it)
                         }
-                        NotifToggle("Messages", "Notifications de chat", Icons.Default.Chat, Color(0xFF1565C0), current.allowMessage) {
+                        NotifToggle(ts.messagesToggle, ts.messagesToggleDesc, Icons.Default.Chat, Color(0xFF1565C0), current.allowMessage) {
                             prefs = current.copy(allowMessage = it)
                         }
-                        NotifToggle("Système", "Informations générales", Icons.Default.Settings, Color.Gray, current.allowSystem) {
+                        NotifToggle(ts.systemToggle, ts.systemToggleDesc, Icons.Default.Settings, Color.Gray, current.allowSystem) {
                             prefs = current.copy(allowSystem = it)
                         }
 
                         HorizontalDivider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(vertical = 8.dp))
 
-                        NotifToggle("Push activé", "Recevoir les notifications même en arrière-plan", Icons.Default.Notifications, Green, current.pushEnabled) {
+                        NotifToggle(ts.pushEnabled, ts.pushEnabledDesc, Icons.Default.Notifications, Green, current.pushEnabled) {
                             prefs = current.copy(pushEnabled = it)
                         }
                     }
@@ -103,10 +105,10 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
                             saving = true
                             try {
                                 val ok = ApiClient.updateNotificationPrefs(p)
-                                if (ok) snackbar.showSnackbar("Préférences enregistrées")
-                                else snackbar.showSnackbar("Erreur lors de la sauvegarde")
+                                if (ok) snackbar.showSnackbar(ts.prefsSaved)
+                                else snackbar.showSnackbar(ts.errorSaving)
                             } catch (e: Exception) {
-                                snackbar.showSnackbar(e.message ?: "Erreur")
+                                snackbar.showSnackbar(e.message ?: ts.errorSaving)
                             }
                             saving = false
                         }
@@ -117,7 +119,7 @@ fun NotificationPrefsScreen(onBack: () -> Unit) {
                     enabled = !saving
                 ) {
                     if (saving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-                    else Text("Enregistrer", fontWeight = FontWeight.Bold)
+                    else Text(ts.save, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(Modifier.height(32.dp))

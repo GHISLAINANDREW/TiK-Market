@@ -20,6 +20,7 @@ import com.tik_market.api.ApiOrder
 import com.tik_market.data.models.OrderStatus
 import com.tik_market.ui.components.OrderProgressBar
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -31,6 +32,7 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val json = remember { Json { ignoreUnknownKeys = true } }
+    val ts = LocalAppStrings.current
 
     suspend fun loadVendorOrders() {
         try {
@@ -39,7 +41,7 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
             errorMessage = null
         } catch (e: Exception) {
             isLoading = false
-            errorMessage = e.message ?: "Erreur inconnue"
+            errorMessage = e.message ?: ts.unknownError
         }
     }
 
@@ -48,7 +50,7 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
             ApiClient.updateOrderStatus(orderId, status)
             loadVendorOrders()
         } catch (e: Exception) {
-            errorMessage = e.message ?: "Erreur lors de la mise à jour"
+            errorMessage = e.message ?: ts.updateError
         }
     }
 
@@ -57,7 +59,7 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestion des commandes", fontWeight = FontWeight.SemiBold) },
+                title = { Text(ts.manageOrders, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Green,
@@ -76,11 +78,11 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
                     Text(errorMessage ?: "", textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { isLoading = true; errorMessage = null; scope.launch { loadVendorOrders() } }) {
-                        Text("Réessayer")
+                        Text(ts.retry)
                     }
                 }
                 orders.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Aucune commande pour le moment", fontSize = 16.sp, color = Color.Gray)
+                    Text(ts.noOrdersNow, fontSize = 16.sp, color = Color.Gray)
                 }
                 else -> LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(orders) { order ->
@@ -96,6 +98,7 @@ fun ManageOrdersScreen(onBack: () -> Unit) {
 
 @Composable
 private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
+    val ts = LocalAppStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
@@ -122,9 +125,9 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
                 Spacer(Modifier.height(12.dp))
             }
 
-            Text("Infos Client", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Green)
-            Text("Tel: ${order.phone}", fontSize = 13.sp)
-            Text("Livraison: ${order.shippingAddress}", fontSize = 13.sp, color = Color.Gray)
+            Text(ts.customerInfo, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Green)
+            Text(ts.telPrefix.format(order.phone), fontSize = 13.sp)
+            Text(ts.deliveryPrefix.format(order.shippingAddress), fontSize = 13.sp, color = Color.Gray)
             
             Spacer(Modifier.height(12.dp))
             HorizontalDivider(color = Color(0xFFF5F5F5))
@@ -139,7 +142,7 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
             
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(if (order.shopTotal != null) "Part Boutique" else "Total", fontWeight = FontWeight.Bold)
+                Text(if (order.shopTotal != null) ts.shopShare else ts.total, fontWeight = FontWeight.Bold)
                 val displayTotal = (order.shopTotal ?: order.totalAmount).toInt()
                 Text("$displayTotal FCFA", fontWeight = FontWeight.ExtraBold, color = Green, fontSize = 16.sp)
             }
@@ -149,12 +152,12 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val currentStatus = OrderStatus.fromCode(order.status)
                 when (currentStatus) {
-                    OrderStatus.PENDING -> ActionButton("Confirmer la commande", Orange, Modifier.weight(1f)) { onUpdateStatus("confirmed") }
-                    OrderStatus.CONFIRMED -> ActionButton("Commencer préparation", GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
-                    OrderStatus.PREPARING -> ActionButton("Prêt pour livraison", Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
+                    OrderStatus.PENDING -> ActionButton(ts.confirmOrder, Orange, Modifier.weight(1f)) { onUpdateStatus("confirmed") }
+                    OrderStatus.CONFIRMED -> ActionButton(ts.startPrep, GreenAccent, Modifier.weight(1f)) { onUpdateStatus("preparing") }
+                    OrderStatus.PREPARING -> ActionButton(ts.readyForDelivery, Color(0xFF1565C0), Modifier.weight(1f)) { onUpdateStatus("delivering") }
                     OrderStatus.DELIVERING -> {
                         if (order.clientConfirmed == 1) {
-                            ActionButton("Confirmer la livraison finale", Green, Modifier.weight(1f)) { 
+                            ActionButton(ts.confirmFinalDelivery, Green, Modifier.weight(1f)) { 
                                 onUpdateStatus("delivered")
                             }
                         } else {
@@ -164,7 +167,7 @@ private fun VendorOrderCard(order: ApiOrder, onUpdateStatus: (String) -> Unit) {
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                             ) {
                                 Text(
-                                    "En attente de réception par le client",
+                                    ts.awaitingReceipt,
                                     modifier = Modifier.padding(12.dp),
                                     color = Color.Gray,
                                     fontWeight = FontWeight.Medium,

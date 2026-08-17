@@ -25,6 +25,7 @@ import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.theme.Green
 import com.tik_market.theme.GreenSurface
 import com.tik_market.theme.TextSecondary
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +35,7 @@ fun SubscribersScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(Unit) {
         try {
@@ -53,7 +55,7 @@ fun SubscribersScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mes Abonnés", fontWeight = FontWeight.Bold) },
+                title = { Text(ts.mySubscribers, fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White)
             )
@@ -65,7 +67,7 @@ fun SubscribersScreen(onBack: () -> Unit) {
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                placeholder = { Text("Rechercher un abonné...") },
+                placeholder = { Text(ts.searchSubscriber) },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -85,7 +87,7 @@ fun SubscribersScreen(onBack: () -> Unit) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Person, null, Modifier.size(64.dp), tint = Color.LightGray)
                         Spacer(Modifier.height(16.dp))
-                        Text("Aucun abonné trouvé", color = TextSecondary)
+                        Text(ts.noSubscriberFound, color = TextSecondary)
                     }
                 }
             } else {
@@ -105,6 +107,7 @@ fun SubscribersScreen(onBack: () -> Unit) {
 
 @Composable
 private fun SubscriberCard(user: ApiInteractionUser) {
+    val ts = LocalAppStrings.current
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -121,7 +124,7 @@ private fun SubscriberCard(user: ApiInteractionUser) {
             }
             Surface(shape = RoundedCornerShape(12.dp), color = Green.copy(alpha = 0.1f)) {
                 Text(
-                    "Abonné",
+                    ts.subscriber,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontSize = 10.sp,
                     color = Green,

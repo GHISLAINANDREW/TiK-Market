@@ -23,6 +23,7 @@ import com.tik_market.api.ApiShop
 import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.theme.Green
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.LocalAppStrings
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,7 @@ fun ShopsListScreen(
 ) {
     var shops by remember { mutableStateOf<List<ApiShop>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    val s = LocalAppStrings.current
 
     LaunchedEffect(city) {
         try {
@@ -80,7 +82,7 @@ fun ShopsListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (city.isNullOrBlank()) "Toutes les boutiques" else "Boutiques à $city", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text(if (city.isNullOrBlank()) s.allShops else s.shopsIn.format(city), color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -96,7 +98,7 @@ fun ShopsListScreen(
             }
         } else if (shops.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Aucune boutique trouvée", color = Color.Gray)
+                Text(s.noShopsFound, color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -115,6 +117,7 @@ fun ShopsListScreen(
 @Composable
 fun ShopItem(shop: ApiShop, onClick: () -> Unit) {
     var logoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    val s = LocalAppStrings.current
     
     LaunchedEffect(shop.logo) {
         if (!shop.logo.isNullOrBlank()) {
@@ -166,7 +169,7 @@ fun ShopItem(shop: ApiShop, onClick: () -> Unit) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        "Vérifiée",
+                        s.verified,
                         color = Green,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

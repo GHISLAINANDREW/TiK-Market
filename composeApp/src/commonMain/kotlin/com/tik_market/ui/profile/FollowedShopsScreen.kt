@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.ApiFavoriteShop
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +34,7 @@ fun FollowedShopsScreen(
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
 
     suspend fun loadShops() {
         try {
@@ -47,7 +49,7 @@ fun FollowedShopsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Boutiques suivies", fontWeight = FontWeight.Bold) },
+                title = { Text(ts.followedShops, fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor, titleContentColor = Color.White)
             )
@@ -62,7 +64,7 @@ fun FollowedShopsScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Store, null, Modifier.size(64.dp), tint = Color.LightGray)
                     Spacer(Modifier.height(16.dp))
-                    Text("Vous ne suivez aucune boutique", color = TextSecondary)
+                    Text(ts.noFollowedShops, color = TextSecondary)
                 }
             }
         } else {
@@ -79,10 +81,10 @@ fun FollowedShopsScreen(
                             scope.launch {
                                 try {
                                     val resp = ApiClient.removeFavoriteShop(shop.shopId)
-                                    snackbarHostState.showSnackbar("${shop.name} retiré des suivis")
+                                    snackbarHostState.showSnackbar(ts.unfollowedMsg.format(shop.name))
                                     loadShops()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Erreur: ${e.message?.take(50) ?: "échec"}")
+                                    snackbarHostState.showSnackbar(ts.unfollowError.format(e.message?.take(50) ?: ts.failed))
                                 }
                             }
                         }
@@ -95,6 +97,7 @@ fun FollowedShopsScreen(
 
 @Composable
 private fun FollowedShopCard(shop: ApiFavoriteShop, onClick: () -> Unit, onUnfollow: () -> Unit = {}) {
+    val ts = LocalAppStrings.current
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -115,9 +118,9 @@ private fun FollowedShopCard(shop: ApiFavoriteShop, onClick: () -> Unit, onUnfol
                 }
                 Text(shop.category, fontSize = 12.sp, color = TextSecondary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${shop.productCount} produits", fontSize = 11.sp, color = TextTertiary)
+                    Text(ts.productsCount.format(shop.productCount), fontSize = 11.sp, color = TextTertiary)
                     Text(" • ", color = DividerGray)
-                    Text("${shop.totalSales} ventes", fontSize = 11.sp, color = TextTertiary)
+                    Text(ts.salesCount.format(shop.totalSales), fontSize = 11.sp, color = TextTertiary)
                 }
             }
             // Bouton se désabonner
@@ -131,7 +134,7 @@ private fun FollowedShopCard(shop: ApiFavoriteShop, onClick: () -> Unit, onUnfol
             ) {
                 Icon(Icons.Default.RemoveCircleOutline, null, Modifier.size(14.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Se désabonner", fontSize = 10.sp)
+                Text(ts.unsubscribe, fontSize = 10.sp)
             }
         }
     }

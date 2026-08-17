@@ -47,7 +47,7 @@ fun OrdersScreen(
             try {
                 orders = ApiClient.fetchOrders()
             } catch (e: Exception) {
-                snackbarHostState.showSnackbar("Erreur : ${e.message}")
+                snackbarHostState.showSnackbar(s.errorPrefix.format(e.message ?: s.unknownError))
             }
             isLoading = false
         }
@@ -85,7 +85,7 @@ fun OrdersScreen(
                                     snackbarHostState.showSnackbar(s.orderCancelled)
                                     refreshOrders()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: s.orderActionError}")
+                                    snackbarHostState.showSnackbar(s.errorPrefix.format(e.message ?: s.orderActionError))
                                 }
                             }
                         },
@@ -96,7 +96,7 @@ fun OrdersScreen(
                                     snackbarHostState.showSnackbar(s.receptionConfirmed)
                                     refreshOrders()
                                 } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Erreur : ${e.message ?: s.orderActionError}")
+                                    snackbarHostState.showSnackbar(s.errorPrefix.format(e.message ?: s.orderActionError))
                                 }
                             }
                         }

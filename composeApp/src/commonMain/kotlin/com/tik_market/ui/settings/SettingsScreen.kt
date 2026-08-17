@@ -16,7 +16,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -141,7 +141,7 @@ fun SettingsScreen(
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Lock, null, Modifier.size(22.dp), tint = Orange)
                     Spacer(Modifier.width(12.dp))
-                    Text("Mentions Légales", fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text(s.legalMentions, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
             }
@@ -155,13 +155,13 @@ fun SettingsScreen(
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, null, Modifier.size(22.dp), tint = Orange)
                     Spacer(Modifier.width(12.dp))
-                    Text("Conditions d'Utilisation", fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text(s.termsOfUse, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
             }
             Spacer(Modifier.height(8.dp))
             // Téléchargements
-            Text("Téléchargements", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.Gray, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            Text(s.downloads, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.Gray, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
             // APK Android
             Surface(
                 onClick = onDownloadApk,
@@ -173,8 +173,8 @@ fun SettingsScreen(
                     Icon(Icons.Default.Android, null, Modifier.size(22.dp), tint = Orange)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("APK Android", fontSize = 15.sp)
-                        Text("v1.0.0 — Installer l'APK", fontSize = 11.sp, color = Color.Gray)
+                        Text(s.androidApk, fontSize = 15.sp)
+                        Text(s.installApk, fontSize = 11.sp, color = Color.Gray)
                     }
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
@@ -190,8 +190,8 @@ fun SettingsScreen(
                     Icon(Icons.Default.PhoneIphone, null, Modifier.size(22.dp), tint = Color.LightGray)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("App iOS", fontSize = 15.sp, color = Color.LightGray)
-                        Text("Bientôt disponible", fontSize = 11.sp, color = Color.LightGray)
+                        Text(s.iosApp, fontSize = 15.sp, color = Color.LightGray)
+                        Text(s.comingSoon, fontSize = 11.sp, color = Color.LightGray)
                     }
                 }
             }
@@ -206,7 +206,7 @@ fun SettingsScreen(
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, null, Modifier.size(22.dp), tint = Orange)
                     Spacer(Modifier.width(12.dp))
-                    Text("À propos", fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    Text(s.about, fontSize = 15.sp, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }
             }
