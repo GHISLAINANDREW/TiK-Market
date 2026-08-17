@@ -24,6 +24,7 @@ import com.tik_market.api.ApiShop
 import com.tik_market.theme.*
 import com.tik_market.ui.chat.openUrl
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.LocalAppStrings
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.launch
 
@@ -43,6 +44,7 @@ fun ShopsMapScreen(
     // Store loaded logos
     var shopLogos by remember { mutableStateOf<Map<Int, ImageBitmap>>(emptyMap()) }
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(Unit) {
         isLoading = true
@@ -73,7 +75,7 @@ fun ShopsMapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Carte des boutiques", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text(ts.shopsMapTitle, fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
             )
@@ -89,7 +91,7 @@ fun ShopsMapScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Rechercher une boutique...") },
+                    placeholder = { Text(ts.searchShop) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -108,7 +110,7 @@ fun ShopsMapScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.StoreMallDirectory, null, Modifier.size(48.dp), tint = Color.LightGray)
                                     Spacer(Modifier.height(12.dp))
-                                    Text("Aucune boutique trouvée", color = Color.Gray, fontSize = 14.sp)
+                                    Text(ts.noShopsFound, color = Color.Gray, fontSize = 14.sp)
                                 }
                             }
                         }
@@ -130,13 +132,13 @@ fun ShopsMapScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Info, null, Modifier.size(16.dp), tint = Orange)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Cliquez sur une boutique pour voir ses produits.", fontSize = 12.sp, color = Color.Gray)
+                                    Text(ts.shopClickTip, fontSize = 12.sp, color = Color.Gray)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Map, null, Modifier.size(16.dp), tint = Green)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Le bouton \"Carte\" ouvre Google Maps avec la localisation.", fontSize = 12.sp, color = Color.Gray)
+                                    Text(ts.mapOpensTip, fontSize = 12.sp, color = Color.Gray)
                                 }
                             }
                         }
@@ -154,6 +156,7 @@ private fun ShopMapCard(
     logo: ImageBitmap?,
     onClick: () -> Unit
 ) {
+    val ts = LocalAppStrings.current
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -209,7 +212,7 @@ private fun ShopMapCard(
                         Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Map, null, Modifier.size(14.dp), tint = Green)
                             Spacer(Modifier.width(4.dp))
-                            Text("Carte", fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
+                            Text(ts.map, fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -220,7 +223,7 @@ private fun ShopMapCard(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${shop.productCount}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
-                    Text("Produits", fontSize = 10.sp, color = Color.Gray)
+                    Text(ts.products, fontSize = 10.sp, color = Color.Gray)
                 }
                 if (shop.rating > 0) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -228,12 +231,12 @@ private fun ShopMapCard(
                             Text("${shop.rating}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Orange)
                             Icon(Icons.Default.Star, null, Modifier.size(12.dp), tint = Color(0xFFFFB300))
                         }
-                        Text("Note", fontSize = 10.sp, color = Color.Gray)
+                        Text(ts.rating, fontSize = 10.sp, color = Color.Gray)
                     }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${shop.totalSales}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1565C0))
-                    Text("Ventes", fontSize = 10.sp, color = Color.Gray)
+                    Text(ts.sales, fontSize = 10.sp, color = Color.Gray)
                 }
             }
         }

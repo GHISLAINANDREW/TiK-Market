@@ -24,6 +24,7 @@ import com.tik_market.api.ApiGroupBuy
 import com.tik_market.api.ApiGroupBuyDetail
 import com.tik_market.theme.*
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 private val statusColors = mapOf(
@@ -31,13 +32,6 @@ private val statusColors = mapOf(
     "filled" to Orange,
     "completed" to Color(0xFF1565C0),
     "cancelled" to Color.Gray
-)
-
-private val statusLabels = mapOf(
-    "open" to "Actif",
-    "filled" to "Rempli",
-    "completed" to "Terminé",
-    "cancelled" to "Annulé"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +43,7 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
     var selectedFilter by remember { mutableStateOf("all") }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(Unit) {
         isLoading = true
@@ -79,7 +74,7 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mes achats groupés", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text(ts.myGroupBuys, fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
             )
@@ -98,14 +93,14 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
                 // Stats rapides
                 item {
                     val stats = remember(groupBuys) {
-                        "${groupBuys.count { it.status == "open" }} actifs · ${groupBuys.count { it.status == "completed" }} terminés"
+                        ts.participantsStats.format(groupBuys.count { it.status == "open" }, groupBuys.count { it.status == "completed" })
                     }
                     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Group, null, Modifier.size(32.dp), tint = Green)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Mes participations", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(ts.myParticipations, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Text(stats, fontSize = 12.sp, color = Color.Gray)
                             }
                         }
@@ -115,7 +110,7 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
                 // Filtres
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("all" to "Tous", "active" to "Actifs", "completed" to "Terminés", "cancelled" to "Annulés").forEach { (key, label) ->
+                        listOf("all" to ts.allFilter, "active" to ts.activePlural, "completed" to ts.completedPlural, "cancelled" to ts.cancelledPlural).forEach { (key, label) ->
                             Surface(
                                 onClick = { selectedFilter = key },
                                 shape = RoundedCornerShape(20.dp),
@@ -133,8 +128,8 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.GroupOff, null, Modifier.size(48.dp), tint = Color.LightGray)
                                 Spacer(Modifier.height(12.dp))
-                                Text("Aucune participation", color = Color.Gray, fontSize = 14.sp)
-                                Text("Rejoignez des achats groupés sur les fiches produits.", fontSize = 12.sp, color = Color.LightGray, textAlign = TextAlign.Center)
+                                Text(ts.noParticipation, color = Color.Gray, fontSize = 14.sp)
+                                Text(ts.joinGroupHint, fontSize = 12.sp, color = Color.LightGray, textAlign = TextAlign.Center)
                             }
                         }
                     }
@@ -152,10 +147,17 @@ fun MyGroupBuysScreen(onBack: () -> Unit, onProductClick: (Int) -> Unit = {}) {
 
 @Composable
 private fun MyGroupBuyCard(gb: ApiGroupBuy, detail: ApiGroupBuyDetail?, onProductClick: (Int) -> Unit) {
+    val ts = LocalAppStrings.current
     var expanded by remember { mutableStateOf(false) }
     val progress = if (gb.minQuantity > 0) (gb.currentQty.toFloat() / gb.minQuantity).coerceAtMost(1f) else 0f
     val statusColor = statusColors[gb.status] ?: Color.Gray
-    val statusLabel = statusLabels[gb.status] ?: gb.status
+    val statusLabel = when (gb.status) {
+        "open" -> ts.active
+        "filled" -> ts.filled
+        "completed" -> ts.completed
+        "cancelled" -> ts.cancelled
+        else -> gb.status
+    }
 
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -178,15 +180,15 @@ private fun MyGroupBuyCard(gb: ApiGroupBuy, detail: ApiGroupBuyDetail?, onProduc
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("Prix original", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.originalPrice, fontSize = 11.sp, color = Color.Gray)
                     Text(FormatUtils.formatPrice(gb.originalPrice), fontSize = 12.sp, color = Color.Gray, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("${gb.discountPct.toInt()}%", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Green)
-                    Text("RÉDUCTION", fontSize = 9.sp, color = Green, fontWeight = FontWeight.Bold)
+                    Text(ts.reduction, fontSize = 9.sp, color = Green, fontWeight = FontWeight.Bold)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Mon prix", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.myPrice, fontSize = 11.sp, color = Color.Gray)
                     Text(FormatUtils.formatPrice(gb.targetPrice), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = GreenDark)
                 }
             }
@@ -196,7 +198,7 @@ private fun MyGroupBuyCard(gb: ApiGroupBuy, detail: ApiGroupBuyDetail?, onProduc
             // Progression
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Groupe", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.groupLabel, fontSize = 11.sp, color = Color.Gray)
                     Text("${gb.currentQty}/${gb.minQuantity}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = if (progress >= 1f) Green else Orange)
                 }
                 Spacer(Modifier.height(4.dp))
@@ -208,14 +210,14 @@ private fun MyGroupBuyCard(gb: ApiGroupBuy, detail: ApiGroupBuyDetail?, onProduc
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider(color = Color(0xFFF0F0F0))
                 Spacer(Modifier.height(8.dp))
-                Text("Participants (${detail.participants.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(ts.participantsCount.format(detail.participants.size), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 detail.participants.forEach { p ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(28.dp).background(Color(0xFFF0F0F0), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                             Text(p.name.take(1).uppercase(), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Green)
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(p.name.ifBlank { "Anonyme" }, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Text(p.name.ifBlank { ts.anonymous }, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         Text("x${p.quantity}", fontSize = 12.sp, color = Color.Gray)
                     }
                 }

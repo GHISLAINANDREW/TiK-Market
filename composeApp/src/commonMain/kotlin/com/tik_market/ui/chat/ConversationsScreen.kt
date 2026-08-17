@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.ApiConversation
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -53,6 +54,7 @@ fun ConversationsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
 
     // Delete conversation state
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -86,7 +88,7 @@ fun ConversationsScreen(
             errorMessage = null
         } catch (e: Exception) {
             if (conversations.isEmpty()) {
-                errorMessage = e.message ?: "Erreur de chargement"
+                errorMessage = e.message ?: s.error
             }
         }
         isLoading = false
@@ -112,7 +114,7 @@ fun ConversationsScreen(
         topBar = {
             Box(Modifier.background(cityColors.gradient).shadow(2.dp)) {
                 TopAppBar(
-                    title = { Text("Centre de messages", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) },
+                    title = { Text(s.messageCenter, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White) },
                     navigationIcon = { if (showBack) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
                         IconButton(onClick = {}) { Icon(Icons.Default.DoneAll, null, tint = Color.White) }
@@ -142,7 +144,7 @@ fun ConversationsScreen(
                                 errorMessage = null
                                 refreshConversations()
                             }
-                        }) { Text("Réessayer") }
+                        }) { Text(s.retry) }
                     }
                 }
             } else if (filteredConversations.isEmpty()) {
@@ -150,7 +152,7 @@ fun ConversationsScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.ChatBubbleOutline, null, Modifier.size(64.dp), tint = Color.LightGray)
                         Spacer(Modifier.height(16.dp))
-                        Text(if (searchQuery.isEmpty()) "Aucun message" else "Aucun résultat pour '$searchQuery'", fontSize = 16.sp, color = Color.Gray)
+                        Text(if (searchQuery.isEmpty()) s.noMessages else s.noResultsFor.format(searchQuery), fontSize = 16.sp, color = Color.Gray)
                     }
                 }
             } else {
@@ -173,8 +175,8 @@ fun ConversationsScreen(
             if (showDeleteConfirm && deleteTargetConv != null) {
                 AlertDialog(
                     onDismissRequest = { showDeleteConfirm = false; deleteTargetConv = null },
-                    title = { Text("Supprimer la conversation") },
-                    text = { Text("Voulez-vous vraiment supprimer la conversation avec ${deleteTargetConv!!.name} ?\nLes messages seront définitivement perdus.") },
+                    title = { Text(s.deleteConversation) },
+                    text = { Text(s.deleteConversationConfirm.format(deleteTargetConv!!.name)) },
                     confirmButton = {
                         Button(
                             onClick = {
@@ -190,12 +192,12 @@ fun ConversationsScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
                         ) {
-                            Text("Supprimer", color = Color.White)
+                            Text(s.deleteConfirm, color = Color.White)
                         }
                     },
                     dismissButton = {
                         OutlinedButton(onClick = { showDeleteConfirm = false; deleteTargetConv = null }) {
-                            Text("Annuler")
+                            Text(s.cancel)
                         }
                     }
                 )
@@ -206,6 +208,7 @@ fun ConversationsScreen(
 
 @Composable
 private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
+    val s = LocalAppStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth().padding(12.dp),
         shape = RoundedCornerShape(20.dp),
@@ -221,7 +224,7 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
             TextField(
                 value = value,
                 onValueChange = onValueChange,
-                placeholder = { Text("Rechercher un contact...", color = Color.Gray, fontSize = 14.sp) },
+                placeholder = { Text(s.searchContacts, color = Color.Gray, fontSize = 14.sp) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
@@ -238,6 +241,7 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
 
 @Composable
 private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: () -> Unit = {}) {
+    val s = LocalAppStrings.current
     Surface(onClick = onClick, color = Color.White) {
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
@@ -300,7 +304,7 @@ private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: 
             IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Supprimer la conversation",
+                    contentDescription = s.deleteConversation,
                     tint = Color(0xFFD32F2F),
                     modifier = Modifier.size(20.dp)
                 )

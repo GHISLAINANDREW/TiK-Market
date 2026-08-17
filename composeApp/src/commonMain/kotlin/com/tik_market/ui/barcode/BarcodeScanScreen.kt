@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.tik_market.api.ApiClient
 import com.tik_market.data.models.Product
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +32,7 @@ fun BarcodeScanScreen(
     onBack: () -> Unit,
     onResult: (String) -> Unit
 ) {
+    val s = LocalAppStrings.current
     val scope = rememberCoroutineScope()
     var barcode by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<Product>>(emptyList()) }
@@ -39,8 +41,8 @@ fun BarcodeScanScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         TopAppBar(
-            title = { Text("Scan code-barres") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Retour") } }
+            title = { Text(s.scanBarcodeTitle) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, s.back) } }
         )
 
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -53,8 +55,8 @@ fun BarcodeScanScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.QrCode, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
-                        Text("Utilisez la caméra de votre appareil", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("ou saisissez le code manuellement", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(s.useCameraHint, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(s.orTypeManually, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -63,22 +65,22 @@ fun BarcodeScanScreen(
             OutlinedTextField(
                 value = barcode, onValueChange = { barcode = it.filter { c -> c.isDigit() || c.isLetter() }; errorMsg = null },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ex: 4901234567890") },
-                label = { Text("Code-barres") },
+                placeholder = { Text(s.barcodeExample) },
+                label = { Text(s.barcodeLabel) },
                 leadingIcon = { Icon(Icons.Filled.QrCode, null) },
                 trailingIcon = {
                     if (barcode.isNotEmpty()) {
                         Row {
-                            IconButton(onClick = { barcode = ""; results = emptyList(); errorMsg = null }) { Icon(Icons.Filled.Clear, "Effacer") }
+                            IconButton(onClick = { barcode = ""; results = emptyList(); errorMsg = null }) { Icon(Icons.Filled.Clear, s.clear) }
                             IconButton(onClick = {
                                 isSearching = true; errorMsg = null
                                 scope.launch {
                                     try {
                                         onResult(barcode)
-                                    } catch (e: Exception) { errorMsg = "Erreur: ${e.message}" }
+                                    } catch (e: Exception) { errorMsg = s.errorPrefix.format(e.message ?: "") }
                                     finally { isSearching = false }
                                 }
-                            }, enabled = barcode.length >= 3) { Icon(Icons.Filled.Search, "Chercher") }
+                            }, enabled = barcode.length >= 3) { Icon(Icons.Filled.Search, s.searchAction) }
                         }
                     }
                 },

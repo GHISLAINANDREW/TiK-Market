@@ -24,6 +24,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.Orange
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.LocalAppStrings
 import androidx.compose.runtime.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,10 +36,11 @@ fun CompareScreen(
     onAddToCart: (Product) -> Unit,
     onProductClick: (Product) -> Unit = {}
 ) {
+    val ts = LocalAppStrings.current
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Comparatif (${products.size})") },
+                title = { Text(ts.comparatif.format(products.size)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
                 }
@@ -47,7 +49,7 @@ fun CompareScreen(
     ) { padding ->
         if (products.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Aucun produit à comparer", color = Color.Gray)
+                Text(ts.noProductsCompare, color = Color.Gray)
             }
         } else {
             Column(
@@ -75,12 +77,12 @@ fun CompareScreen(
 
                 // Attributes rows
                 val attributes = listOf(
-                    "Prix" to { p: Product -> FormatUtils.formatPrice(p.price) },
-                    "Catégorie" to { p: Product -> p.category },
-                    "Boutique" to { p: Product -> p.shopName },
-                    "Stock" to { p: Product -> if (p.stock > 0) "En stock (${p.stock})" else "Rupture" },
-                    "Note" to { p: Product -> "★ ${p.rating} (${p.totalReviews})" },
-                    "Unité" to { p: Product -> p.unit }
+                    ts.price to { p: Product -> FormatUtils.formatPrice(p.price) },
+                    ts.category to { p: Product -> p.category },
+                    ts.shop to { p: Product -> p.shopName },
+                    ts.stock to { p: Product -> if (p.stock > 0) ts.inStock.format(p.stock) else ts.outOfStock },
+                    ts.rating to { p: Product -> "★ ${p.rating} (${p.totalReviews})" },
+                    ts.unit to { p: Product -> p.unit }
                 )
 
                 attributes.forEach { (label, getValue) ->
@@ -117,7 +119,7 @@ fun CompareScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Description",
+                        text = ts.description,
                         modifier = Modifier.width(100.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
@@ -146,6 +148,7 @@ fun CompareProductHeader(
     onAddToCart: () -> Unit,
     onClick: () -> Unit = {}
 ) {
+    val ts = LocalAppStrings.current
     Column(
         modifier = Modifier.width(160.dp).padding(horizontal = 8.dp).clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
@@ -199,7 +202,7 @@ fun CompareProductHeader(
         ) {
             Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(4.dp))
-            Text("Ajouter", fontSize = 12.sp)
+            Text(ts.add, fontSize = 12.sp)
         }
     }
 }

@@ -227,7 +227,7 @@ fun CheckoutScreen(
                                         }
                                     }
                                     Spacer(Modifier.height(2.dp))
-                                    Text("Montant à transférer : ${finalTotal.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
+                                    Text("${s.amountToTransfer} : ${finalTotal.toInt()} FCFA", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BrandTopBarColor)
                                 }
                             }
                         }
@@ -339,7 +339,7 @@ promoValid = false; promoDiscount = 0; promoError = result.error ?: s.promoInval
                         Text("$deliveryFee FCFA", fontSize = 14.sp, color = Color.Gray)
                     }
                     Row(Modifier.fillMaxWidth()) {
-                        Text("Total", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                        Text(s.total, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f))
                         Text("${finalTotal.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
                     }
                 }

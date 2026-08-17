@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import com.tik_market.ui.components.loadImageFromUrl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,6 +81,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
 
     // Animation de particules flottantes (cercles décoratifs)
     val infiniteTransition = rememberInfiniteTransition()
@@ -330,7 +332,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                     )
                 ) {
                     Text(
-                        text = if (pagerState.currentPage < pages.size - 1) "Suivant" else "🚀 Commencer",
+                        text = if (pagerState.currentPage < pages.size - 1) s.next else s.start,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (pagerState.currentPage == pages.size - 1) Color.White
@@ -349,7 +351,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                         }
                     ) {
                         Text(
-                            "Passer",
+                            s.skip,
                             color = Color.White.copy(alpha = 0.5f),
                             fontSize = 13.sp
                         )

@@ -22,6 +22,7 @@ import com.tik_market.api.ApiVendorInteractionsResponse
 import com.tik_market.api.ApiInteractionUser
 import com.tik_market.api.ApiProductReview
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import com.tik_market.ui.components.rememberImagePickerLauncher
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.ui.components.loadImageFromUrl
@@ -42,6 +43,7 @@ fun ManageShopScreen(
 ) {
     BoxWithConstraints {
         val isCompact = maxWidth < 480.dp
+        val ts = LocalAppStrings.current
 
     var products by remember { mutableStateOf<List<ApiProduct>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -110,12 +112,12 @@ fun ManageShopScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gérer la boutique", fontWeight = FontWeight.SemiBold, fontSize = 18.sp) },
+                title = { Text(ts.manageShopTitle, fontWeight = FontWeight.SemiBold, fontSize = 18.sp) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 actions = {
                     TextButton(onClick = { showEditForm = !showEditForm }) {
                         Text(
-                            if (showEditForm) "Terminé" else "Modifier",
+                            if (showEditForm) ts.done else ts.edit,
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -155,14 +157,14 @@ fun ManageShopScreen(
                             Column(Modifier.weight(1f)) {
                                 Text(shopName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "${products.size} produits",
+                                    ts.productsCountLabel.replace("%d", products.size.toString()),
                                     fontSize = 13.sp,
                                     color = Color.Gray
                                 )
                             }
                             if (!showEditForm) {
                                 TextButton(onClick = { showEditForm = true }) {
-                                    Text("Modifier", color = Green, fontWeight = FontWeight.Bold)
+                                    Text(ts.edit, color = Green, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -209,25 +211,25 @@ fun ManageShopScreen(
                             Spacer(Modifier.height(16.dp))
 
                             OutlinedTextField(value = editName, onValueChange = { editName = it },
-                                label = { Text("Nom de la boutique") },
+                                label = { Text(ts.editShopName) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(value = editDescription, onValueChange = { editDescription = it },
-                                label = { Text("Description") },
+                                label = { Text(ts.description) },
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(value = editPhone, onValueChange = { editPhone = it },
-                                label = { Text("Téléphone") },
+                                label = { Text(ts.phone) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(value = editLocation, onValueChange = { editLocation = it },
-                                label = { Text("Localisation (Quartier/Rue)") },
+                                label = { Text(ts.editShopLocation) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, shape = RoundedCornerShape(12.dp),
                                 trailingIcon = {
@@ -292,7 +294,7 @@ fun ManageShopScreen(
                                     },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(12.dp)
-                                ) { Text("Annuler") }
+                                ) { Text(ts.cancel) }
                                 Button(
                                     onClick = {
                                         scope.launch {
@@ -313,12 +315,12 @@ fun ManageShopScreen(
                                                     category = editCategory,
                                                     imageUrl = finalLogoUrl
                                                 )
-                                                editSuccess = "Boutique mise à jour ✓"
+                                                editSuccess = ts.shopUpdated
                                                 editLogoUrl = finalLogoUrl
                                                 newImageBase64 = null
                                                 newImageBitmap = null
                                             } catch (e: Exception) {
-                                                editSuccess = "Erreur : ${e.message}"
+                                                editSuccess = ts.shopUpdateError.replace("%s", e.message ?: "")
                                             }
                                             editSaving = false
                                         }
@@ -331,7 +333,7 @@ fun ManageShopScreen(
                                     if (editSaving) {
                                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                     } else {
-                                        Text("Enregistrer", color = Color.White, fontWeight = FontWeight.Bold)
+                                        Text(ts.save, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -348,12 +350,12 @@ fun ManageShopScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Produits",
+                        ts.products,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "${products.size} article(s)",
+                        ts.articlesCount.replace("%d", products.size.toString()),
                         fontSize = 13.sp,
                         color = Color.Gray
                     )
@@ -387,12 +389,12 @@ fun ManageShopScreen(
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Aucun produit",
+                                ts.noProducts,
                                 fontSize = 16.sp,
                                 color = Color.Gray
                             )
                             Text(
-                                "Ajoutez votre premier produit !",
+                                ts.addFirstProductHint,
                                 fontSize = 13.sp,
                                 color = Color.LightGray
                             )
@@ -445,7 +447,7 @@ fun ManageShopScreen(
                                     fontSize = 14.sp
                                 )
                                 Text(
-                                    "${prod.price} FCFA • ${prod.stock} en stock",
+                                    "${prod.price} FCFA • ${prod.stock} ${ts.inStockShort}",
                                     fontSize = 12.sp,
                                     color = Color.Gray
                                 )
@@ -454,7 +456,7 @@ fun ManageShopScreen(
                             if (deleteConfirm == prod.id) {
                                 Row {
                                     TextButton(onClick = { deleteConfirm = null }) {
-                                        Text("Annuler", color = Color.Gray, fontSize = 12.sp)
+                                        Text(ts.cancel, color = Color.Gray, fontSize = 12.sp)
                                     }
                                     TextButton(onClick = {
                                         scope.launch {
@@ -465,7 +467,7 @@ fun ManageShopScreen(
                                             deleteConfirm = null
                                         }
                                     }) {
-                                        Text("Confirmer", color = RedAccent, fontSize = 12.sp)
+                                        Text(ts.confirm, color = RedAccent, fontSize = 12.sp)
                                     }
                                 }
                             } else {
@@ -507,7 +509,7 @@ fun ManageShopScreen(
             title = {
                 Column {
                     Text(selectedProductForInteractions!!.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("Interactions clients", fontSize = 12.sp, color = Color.Gray)
+                    Text(ts.interactionsCustomers, fontSize = 12.sp, color = Color.Gray)
                 }
             },
             text = {
@@ -536,7 +538,7 @@ fun ManageShopScreen(
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.FavoriteBorder, null, tint = Color.LightGray, modifier = Modifier.size(32.dp))
                                             Spacer(Modifier.height(4.dp))
-                                            Text("Aucun like", color = Color.Gray, fontSize = 13.sp)
+                                            Text(ts.noLikes, color = Color.Gray, fontSize = 13.sp)
                                         }
                                     }
                                 } else {
@@ -564,7 +566,7 @@ fun ManageShopScreen(
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.StarBorder, null, tint = Color.LightGray, modifier = Modifier.size(32.dp))
                                             Spacer(Modifier.height(4.dp))
-                                            Text("Aucun avis", color = Color.Gray, fontSize = 13.sp)
+                                            Text(ts.noReviews, color = Color.Gray, fontSize = 13.sp)
                                         }
                                     }
                                 } else {
@@ -597,7 +599,7 @@ fun ManageShopScreen(
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.PeopleOutline, null, tint = Color.LightGray, modifier = Modifier.size(32.dp))
                                             Spacer(Modifier.height(4.dp))
-                                            Text("Aucun abonné", color = Color.Gray, fontSize = 13.sp)
+                                            Text(ts.noSubscribers, color = Color.Gray, fontSize = 13.sp)
                                         }
                                     }
                                 } else {
@@ -623,7 +625,7 @@ fun ManageShopScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showInteractionDialog = false }) { Text("Fermer") }
+                TextButton(onClick = { showInteractionDialog = false }) { Text(ts.close) }
             }
         )
     }

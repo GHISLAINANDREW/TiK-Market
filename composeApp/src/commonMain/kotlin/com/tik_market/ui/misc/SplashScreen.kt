@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.graphicsLayer
 import com.tik_market.theme.Green
 import com.tik_market.ui.components.TiKLogo
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 
 @Composable
@@ -63,7 +64,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Version 2.0",
+                LocalAppStrings.current.version.format("2.0"),
                 color = Color.Gray,
                 fontSize = 12.sp
             )

@@ -13,7 +13,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') { json(200, []); }
 
 $userId = getAuthUserId();
-$shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
+
+$input = json_decode(file_get_contents('php://input'), true);
+$shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : (isset($input['shop_id']) ? (int)$input['shop_id'] : 0);
 
 try {
     $db = getDB();

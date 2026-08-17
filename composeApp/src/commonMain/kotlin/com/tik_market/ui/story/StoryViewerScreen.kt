@@ -27,6 +27,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -69,6 +70,7 @@ fun StoryViewerScreen(
     var replyText by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val ts = LocalAppStrings.current
     val storyDurationMs = 5000L // 5 seconds per story
 
     // Auto-advance timer using delay.
@@ -95,7 +97,7 @@ fun StoryViewerScreen(
 
     if (stories.isEmpty()) {
         Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-            Text("Aucune story disponible", color = Color.White, fontSize = 18.sp)
+            Text(ts.noStory, color = Color.White, fontSize = 18.sp)
         }
         return
     }
@@ -314,15 +316,15 @@ fun StoryViewerScreen(
                                 } else if (currentStory.product != null) {
                                     onDeleteStory?.invoke(currentStory.product)
                                 }
-                                snackbarHostState.showSnackbar("Story supprimée")
+                                snackbarHostState.showSnackbar(ts.storyDeleted)
                                 onRefreshStories()
                                 onBack()
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Erreur: ${e.message}")
+                                snackbarHostState.showSnackbar(ts.storyError.format(e.message ?: ""))
                             }
                         }
                     }) {
-                        Icon(Icons.Default.Delete, "Supprimer", tint = Color.White)
+                        Icon(Icons.Default.Delete, ts.delete, tint = Color.White)
                     }
                 }
 
@@ -367,7 +369,7 @@ fun StoryViewerScreen(
                     OutlinedTextField(
                         value = replyText,
                         onValueChange = { replyText = it },
-                        placeholder = { Text("Répondre au vendeur...", color = Color.White.copy(alpha = 0.5f)) },
+                        placeholder = { Text(ts.replyToSeller, color = Color.White.copy(alpha = 0.5f)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         shape = RoundedCornerShape(24.dp),
@@ -403,9 +405,9 @@ fun StoryViewerScreen(
                                                     productImageUrl = currentStory.imageUrl,
                                                     productTitle = "Story: ${currentStory.title}"
                                                 )
-                                                snackbarHostState.showSnackbar("Message envoyé au vendeur")
+                                                snackbarHostState.showSnackbar(ts.msgSentToSeller)
                                             } else {
-                                                snackbarHostState.showSnackbar("Impossible d'identifier le vendeur")
+                                                snackbarHostState.showSnackbar(ts.vendorNotFound)
                                             }
                                         } else if (currentStory.product != null) {
                                             // Legacy: use onReply callback
@@ -413,7 +415,7 @@ fun StoryViewerScreen(
                                             onReply?.invoke(msg, currentStory.product)
                                         }
                                     } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar("Erreur: ${e.message}")
+                                        snackbarHostState.showSnackbar(ts.storyError.format(e.message ?: ""))
                                     }
                                 }
                             }

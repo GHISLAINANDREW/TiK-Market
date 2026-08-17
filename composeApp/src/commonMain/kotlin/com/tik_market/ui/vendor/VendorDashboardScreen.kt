@@ -24,6 +24,7 @@ import com.tik_market.api.ApiClient
 import com.tik_market.data.models.Product
 import com.tik_market.data.models.OrderStatus
 import com.tik_market.theme.*
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -47,6 +48,7 @@ fun VendorDashboardScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(refreshSignal, internalRefresh) {
         isLoading = true
@@ -73,10 +75,10 @@ fun VendorDashboardScreen(
     val overview = stats?.overview
     val displayStats = remember(overview) {
         if (overview == null) emptyList() else listOf(
-            DashboardStat("Produits", "${overview.productCount}", Icons.Default.Store, Green),
-            DashboardStat("Commandes", "${overview.totalOrders}", Icons.Default.ShoppingCart, GreenAccent),
-            DashboardStat("Vendus", "${overview.totalItemsSold}", Icons.Default.TrendingUp, Color(0xFF1565C0)),
-            DashboardStat("Revenu", "${overview.totalRevenue.toInt().let { if (it >= 1000) "${it / 1000}k" else "$it" }} FCFA", Icons.Default.AccountBalance, GreenDark)
+            DashboardStat(ts.products, "${overview.productCount}", Icons.Default.Store, Green),
+            DashboardStat(ts.orders, "${overview.totalOrders}", Icons.Default.ShoppingCart, GreenAccent),
+            DashboardStat(ts.sold, "${overview.totalItemsSold}", Icons.Default.TrendingUp, Color(0xFF1565C0)),
+            DashboardStat(ts.revenue, "${overview.totalRevenue.toInt().let { if (it >= 1000) "${it / 1000}k" else "$it" }} FCFA", Icons.Default.AccountBalance, GreenDark)
         )
     }
 
@@ -87,7 +89,7 @@ fun VendorDashboardScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Tableau de bord", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                        Text(ts.dashboardTitle, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                         Text(stats?.shopName ?: shopName, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
                     }
                 },
@@ -134,7 +136,7 @@ fun VendorDashboardScreen(
                             }
                         } else {
                             Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                                Text("Aucune statistique disponible", color = Color.Gray)
+                                Text(ts.noStatsAvailable, color = Color.Gray)
                             }
                         }
                     }
@@ -155,11 +157,11 @@ fun VendorDashboardScreen(
                                             }
                                             Spacer(Modifier.width(12.dp))
                                             Column(Modifier.weight(1f)) {
-                                                Text("Alertes de stock", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE65100))
+                                                Text(ts.stockAlerts, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE65100))
                                                 if (ov.lowStockCount > 0)
-                                                    Text("${ov.lowStockCount} produit(s) bientôt épuisé(s)", fontSize = 13.sp, color = Color(0xFFE65100).copy(alpha = 0.8f))
+                                                    Text(ts.lowStock.format(ov.lowStockCount), fontSize = 13.sp, color = Color(0xFFE65100).copy(alpha = 0.8f))
                                                 if (ov.outOfStockCount > 0)
-                                                    Text("${ov.outOfStockCount} produit(s) en rupture de stock", fontSize = 13.sp, color = Color.Red.copy(alpha = 0.8f))
+                                                    Text(ts.outOfStockCount.format(ov.outOfStockCount), fontSize = 13.sp, color = Color.Red.copy(alpha = 0.8f))
                                             }
                                         }
                                         
@@ -171,7 +173,7 @@ fun VendorDashboardScreen(
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
                                             shape = RoundedCornerShape(12.dp)
                                         ) {
-                                            Text("Mettre à jour le stock", fontWeight = FontWeight.Bold)
+                                            Text(ts.updateStock, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -186,7 +188,7 @@ fun VendorDashboardScreen(
                             Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Revenus (7 jours)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text(ts.revenue7d, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                         val totalWeek = dailyRev.sumOf { it.revenue }
                                         Text("${totalWeek.toInt()} FCFA", fontSize = 14.sp, color = Green, fontWeight = FontWeight.SemiBold)
                                     }
@@ -212,7 +214,7 @@ fun VendorDashboardScreen(
                             Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Revenus mensuels", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        Text(ts.monthlyRevenue, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                         val total6m = monthlyRev.sumOf { it.revenue }
                                         Text("${total6m.toInt()} FCFA", fontSize = 14.sp, color = GreenAccent, fontWeight = FontWeight.SemiBold)
                                     }
@@ -240,7 +242,7 @@ fun VendorDashboardScreen(
                         item {
                             Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                                 Column(Modifier.padding(16.dp)) {
-                                    Text("Commandes par statut", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(ts.ordersByStatus, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Spacer(Modifier.height(12.dp))
                                     val statusColors = mapOf(
                                         OrderStatus.PENDING to Color(0xFFFFA000),
@@ -268,27 +270,27 @@ fun VendorDashboardScreen(
                     item {
                         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(16.dp)) {
-                                Text("Actions rapides", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(ts.quickActions, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.AddCircle, "Ajouter\nproduit", Green, onAddProduct, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.Store, "Gérer\nboutique", GreenAccent, onManageShop, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.ShoppingBag, "Voir\ncommandes", Color(0xFF1565C0), onViewOrders, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.AddCircle, ts.addNewLineProduct, Green, onAddProduct, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Store, ts.manageShop, GreenAccent, onManageShop, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.ShoppingBag, ts.viewOrders, Color(0xFF1565C0), onViewOrders, Modifier.weight(1f))
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Group, "Achats\ngroupés", Orange, onGroupBuys, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.People, "Voir\nabonnés", GreenAccent, onSubscribers, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.Download, "Export\nCSV", Color(0xFF1565C0), {
+                                    ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, Orange, onGroupBuys, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.People, ts.viewSubscribers, GreenAccent, onSubscribers, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Download, ts.exportCsv, Color(0xFF1565C0), {
                                         com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=products")
                                     }, Modifier.weight(1f))
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Receipt, "CSV\nCommandes", Color(0xFF1565C0), {
+                                    ActionButton(Icons.Default.Receipt, ts.csvOrders, Color(0xFF1565C0), {
                                         com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=orders")
                                     }, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.TrendingUp, "CSV\nRevenus", GreenDark, {
+                                    ActionButton(Icons.Default.TrendingUp, ts.csvRevenue, GreenDark, {
                                         com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=revenue")
                                     }, Modifier.weight(1f))
                                     Spacer(Modifier.weight(1f))
@@ -303,17 +305,17 @@ fun VendorDashboardScreen(
                         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Top produits", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    TextButton(onClick = onAddProduct) { Text("+ Ajouter", color = Green) }
+                                    Text(ts.topProducts, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    TextButton(onClick = onAddProduct) { Text(ts.addPlus, color = Green) }
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 if (topProducts.isEmpty()) {
                                     Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Icon(Icons.Default.Inventory, null, tint = Color.LightGray)
-                                            Text("Aucun produit pour le moment", color = Color.Gray, fontSize = 12.sp)
+                                            Text(ts.noProductsForNow, color = Color.Gray, fontSize = 12.sp)
                                             Button(onClick = onAddProduct, colors = ButtonDefaults.buttonColors(containerColor = Green)) {
-                                                Text("Ajouter mon premier produit", fontSize = 12.sp)
+                                                Text(ts.addFirstProduct, fontSize = 12.sp)
                                             }
                                         }
                                     }
@@ -331,7 +333,7 @@ fun VendorDashboardScreen(
                                             Column(Modifier.weight(1f)) {
                                                 Text(prod.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                                                 Row {
-                                                    Text("${prod.totalSold} vendu(s)", fontSize = 12.sp, color = Color.Gray)
+                                                    Text(ts.soldCount.format(prod.totalSold), fontSize = 12.sp, color = Color.Gray)
                                                     Spacer(Modifier.width(8.dp))
                                                     Text("${prod.totalGenerated.toInt()} FCFA", fontSize = 12.sp, color = Green, fontWeight = FontWeight.Medium)
                                                 }
@@ -348,12 +350,12 @@ fun VendorDashboardScreen(
                         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Tous mes produits", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(ts.allMyProducts, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                     Text("${myProducts.size}", fontSize = 14.sp, color = Green, fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 if (myProducts.isEmpty()) {
-                                    Text("Aucun produit répertorié.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(vertical = 8.dp))
+                                    Text(ts.noProductsListed, fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(vertical = 8.dp))
                                 } else {
                                     myProducts.forEachIndexed { index, prod ->
                                         if (index > 0) HorizontalDivider(color = Color(0xFFF0F0F0))

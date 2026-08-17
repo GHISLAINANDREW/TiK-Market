@@ -29,6 +29,7 @@ import com.tik_market.ui.components.EmptyState
 import com.tik_market.ui.components.PriceDisplay
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.safeApiCall
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +42,7 @@ fun WishlistScreen(
     var items by remember { mutableStateOf<List<ApiWishlistItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
+    val s = LocalAppStrings.current
 
     fun loadWishlist() {
         scope.launch {
@@ -49,7 +51,7 @@ fun WishlistScreen(
             if (result.isSuccess) {
                 items = result.getOrDefault(emptyList())
             } else {
-                val err = (result as? com.tik_market.utils.ApiResult.Error)?.message ?: "Erreur"
+                val err = (result as? com.tik_market.utils.ApiResult.Error)?.message ?: s.error
                 onError(err)
             }
             isLoading = false
@@ -61,7 +63,7 @@ fun WishlistScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mes Favoris", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text(s.myFavorites, fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = BrandTopBarColor,
@@ -79,8 +81,8 @@ fun WishlistScreen(
                 items.isEmpty() -> {
                     EmptyState(
                         icon = Icons.Outlined.FavoriteBorder,
-                        title = "Aucun favori",
-                        subtitle = "Ajoutez des produits en c\u0153ur depuis l'accueil"
+                        title = s.emptyFavorites,
+                        subtitle = s.emptyFavoritesHint
                     )
                 }
                 else -> {
@@ -120,6 +122,7 @@ private fun WishlistItemCard(
     onClick: () -> Unit
 ) {
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    val s = LocalAppStrings.current
 
     LaunchedEffect(item.imageUrl) {
         imageBitmap = loadImageFromUrl(item.imageUrl)
@@ -141,7 +144,7 @@ private fun WishlistItemCard(
             contentAlignment = Alignment.Center
         ) {
             if (imageBitmap != null) {
-                Image(imageBitmap!!, "Produit", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Image(imageBitmap!!, s.productLabel, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             } else {
                 Icon(Icons.Filled.Favorite, null, tint = Orange.copy(alpha = 0.5f), modifier = Modifier.size(32.dp))
             }
@@ -174,7 +177,7 @@ private fun WishlistItemCard(
 
         // Remove button
         IconButton(onClick = onRemove) {
-            Icon(Icons.Filled.Delete, "Retirer", tint = MaterialTheme.colorScheme.error)
+            Icon(Icons.Filled.Delete, s.remove, tint = MaterialTheme.colorScheme.error)
         }
     }
 }

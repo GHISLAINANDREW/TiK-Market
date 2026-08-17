@@ -25,6 +25,7 @@ import com.tik_market.data.models.SampleData
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.utils.shareText
+import com.tik_market.utils.LocalAppStrings
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch
@@ -53,6 +54,7 @@ fun ProductDetailScreen(
     var shopLogoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val scope = rememberCoroutineScope()
     val productId = product.id.toIntOrNull() ?: 0
+    val s = LocalAppStrings.current
 
     // Load wishlist status
     LaunchedEffect(Unit) {
@@ -87,7 +89,7 @@ fun ProductDetailScreen(
                 reviewResource = Resource.Success(emptyList())
             }
         } catch (e: Exception) {
-            reviewResource = Resource.Error(e.message ?: "Erreur de chargement des avis")
+            reviewResource = Resource.Error(e.message ?: s.unknownError)
         }
     }
 
@@ -105,14 +107,14 @@ fun ProductDetailScreen(
                 .toList()
             similarResource = Resource.Success(similar)
         } catch (e: Exception) {
-            similarResource = Resource.Error(e.message ?: "Erreur de chargement")
+            similarResource = Resource.Error(e.message ?: s.unknownError)
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Détails du produit", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = { Text(s.productDetails, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 actions = {
                     IconButton(onClick = onToggleCompare) {
@@ -132,7 +134,7 @@ fun ProductDetailScreen(
                         IconButton(onClick = { showMenu = true }) { Icon(Icons.Default.MoreVert, null) }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Signaler ce produit") },
+                                text = { Text(s.reportProduct) },
                                 onClick = { showMenu = false; showReportDialog = true },
                                 leadingIcon = { Icon(Icons.Default.Report, null) }
                             )
@@ -270,20 +272,20 @@ fun ProductDetailScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     RatingBar(product.rating, product.totalReviews)
                     Text("|", color = Color.LightGray)
-                    Text("${product.totalSales} vendus", fontSize = 13.sp, color = Color.Gray)
+                    Text(s.soldCount.format(product.totalSales), fontSize = 13.sp, color = Color.Gray)
                     if (product.userPurchaseCount > 0) {
                         Text("|", color = Color.LightGray)
-                        Text("Déjà acheté : ${product.userPurchaseCount} fois", fontSize = 13.sp, color = Green, fontWeight = FontWeight.Bold)
+                        Text(s.alreadyBought.format(product.userPurchaseCount), fontSize = 13.sp, color = Green, fontWeight = FontWeight.Bold)
                     }
                     if (product.stock in 1..5) {
                         Spacer(Modifier.width(8.dp))
                         Surface(color = Color.Red.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
-                            Text("Plus que ${product.stock} restants !", color = Color.Red, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Bold)
+                            Text(s.onlyLeft.format(product.stock), color = Color.Red, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(Modifier.weight(1f))
                     Surface(color = Orange.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
-                        Text("N°1 des ventes", color = Orange, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Bold)
+                        Text(s.bestSeller, color = Orange, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -299,7 +301,7 @@ fun ProductDetailScreen(
                 Spacer(Modifier.height(24.dp))
 
                 // Options : Couleur
-                Text("Couleur", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(s.color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     repeat(3) { i ->
@@ -311,7 +313,7 @@ fun ProductDetailScreen(
                         }
                     }
                     Box(Modifier.height(40.dp).padding(horizontal = 12.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFF0F0F0)).clickable { }, contentAlignment = Alignment.Center) {
-                        Text("Voir tout", fontSize = 12.sp, color = Color.Gray)
+                        Text(s.seeAll, fontSize = 12.sp, color = Color.Gray)
                     }
                 }
 
@@ -352,7 +354,7 @@ fun ProductDetailScreen(
                                         Icon(Icons.Default.Verified, null, Modifier.size(14.dp), tint = Color(0xFF1890FF))
                                         Spacer(Modifier.width(4.dp))
                                     }
-                                    Text(if (product.shopVerified) "Vendeur vérifié" else "Vendeur", fontSize = 12.sp, color = Color.Gray)
+                                    Text(if (product.shopVerified) s.verifiedVendor else s.vendor, fontSize = 12.sp, color = Color.Gray)
                                 }
                             }
                         }
@@ -360,9 +362,9 @@ fun ProductDetailScreen(
                         Spacer(Modifier.height(16.dp))
                         
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            VendorStatItem(if (product.rating > 0) "${product.rating}/5" else "N/A", "Note")
-                            VendorStatItem("${product.totalReviews}", "Avis")
-                            VendorStatItem("${product.totalSales}", "Ventes")
+                            VendorStatItem(if (product.rating > 0) "${product.rating}/5" else "N/A", s.rating)
+                            VendorStatItem("${product.totalReviews}", s.reviews)
+                            VendorStatItem("${product.totalSales}", s.sales)
                         }
 
                         Spacer(Modifier.height(12.dp))
@@ -383,7 +385,7 @@ fun ProductDetailScreen(
                             border = BorderStroke(1.dp, Color(0xFF25D366)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF25D366))
                         ) {
-                            Text("WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(s.whatsapp, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                         OutlinedButton(
                             onClick = { com.tik_market.ui.chat.openUrl("tel:${product.vendorPhone}") },
@@ -392,7 +394,7 @@ fun ProductDetailScreen(
                             border = BorderStroke(1.dp, Color(0xFF1976D2)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1976D2))
                         ) {
-                            Text("Appeler", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(s.call, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -416,7 +418,7 @@ fun ProductDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Avis & Notes", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(s.reviewsAndRatings, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     if (product.totalReviews > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(product.rating.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFA000))
@@ -435,7 +437,7 @@ fun ProductDetailScreen(
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Aucun avis pour le moment", fontSize = 14.sp, color = Color.Gray)
+                            Text(s.noReviews, fontSize = 14.sp, color = Color.Gray)
                         }
                     } else {
                         reviews.forEach { review ->
@@ -491,7 +493,7 @@ fun ProductDetailScreen(
                         color = Color(0xFFF0F0FF)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Donner mon avis", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text(s.giveReview, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                             Spacer(Modifier.height(8.dp))
 
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -512,7 +514,7 @@ fun ProductDetailScreen(
                             OutlinedTextField(
                                 value = myComment,
                                 onValueChange = { myComment = it },
-                                placeholder = { Text("Votre commentaire (optionnel)...") },
+                                placeholder = { Text(s.yourComment) },
                                 modifier = Modifier.fillMaxWidth().height(80.dp),
                                 shape = RoundedCornerShape(12.dp),
                             textStyle = MaterialTheme.typography.bodySmall
@@ -553,7 +555,7 @@ fun ProductDetailScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 if (submittingReview) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White)
-                                else Text("Publier mon avis")
+                                else Text(s.publishReview)
                             }
                         }
                     }
@@ -562,7 +564,7 @@ fun ProductDetailScreen(
                 Spacer(Modifier.height(32.dp))
 
                 // ─── PRODUITS SIMILAIRES ───
-                Text("Produits similaires", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(s.similarProducts, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.height(12.dp))
                 
                 ResourceBox(resource = similarResource) { similar ->
@@ -595,7 +597,7 @@ fun ProductDetailScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.SearchOff, null, tint = Color.Gray, modifier = Modifier.size(32.dp))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Aucun produit similaire", color = Color.Gray, fontSize = 14.sp)
+                                Text(s.noSimilarProducts, color = Color.Gray, fontSize = 14.sp)
                             }
                         }
                     }
@@ -623,7 +625,7 @@ fun ProductDetailScreen(
                             modifier = Modifier.clickable { onShopClick(product) }.padding(horizontal = 4.dp)
                         ) {
                             Icon(Icons.Default.Store, null, tint = Color.Gray, modifier = Modifier.size(24.dp))
-                            Text("Boutique", fontSize = 10.sp, color = Color.Gray)
+                            Text(s.shop, fontSize = 10.sp, color = Color.Gray)
                         }
 
                         // Chat Button
@@ -634,7 +636,7 @@ fun ProductDetailScreen(
                             border = BorderStroke(1.dp, Orange),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Orange)
                         ) {
-                            Text("Discuter", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(s.chat, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         // Order Button
@@ -644,7 +646,7 @@ fun ProductDetailScreen(
                             shape = RoundedCornerShape(23.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Orange)
                         ) {
-                            Text("Commander", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            Text(s.buyNow, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                         }
                         
                         // Bargain Button (New)
@@ -656,7 +658,7 @@ fun ProductDetailScreen(
                             border = BorderStroke(1.dp, Green)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Handshake, "Négocier", tint = Green, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.Handshake, s.negotiate, tint = Green, modifier = Modifier.size(24.dp))
                             }
                         }
                     }
@@ -675,10 +677,10 @@ fun ProductDetailScreen(
 
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Signaler ce produit") },
+            title = { Text(s.reportProduct) },
             text = {
                 if (submitted) {
-                    Text("✅ Signalement envoyé. Merci de contribuer à la qualité de TiK-Market.", fontSize = 14.sp)
+                    Text(s.reportSent, fontSize = 14.sp)
                 } else {
                     Column(modifier = Modifier.width(280.dp)) {
                         reasons.forEach { r ->
@@ -695,7 +697,7 @@ fun ProductDetailScreen(
                         OutlinedTextField(
                             value = reportComment,
                             onValueChange = { reportComment = it },
-                            placeholder = { Text("Commentaire (optionnel)", fontSize = 12.sp) },
+                            placeholder = { Text(s.reportCommentPlaceholder, fontSize = 12.sp) },
                             modifier = Modifier.fillMaxWidth().height(72.dp),
                             shape = RoundedCornerShape(8.dp),
                             textStyle = LocalTextStyle.current.copy(fontSize = 13.sp)
@@ -705,7 +707,7 @@ fun ProductDetailScreen(
             },
             confirmButton = {
                 if (submitted) {
-                    TextButton(onClick = { showReportDialog = false }) { Text("Fermer") }
+                    TextButton(onClick = { showReportDialog = false }) { Text(s.close) }
                 } else {
                     Button(
                         onClick = {
@@ -721,12 +723,12 @@ fun ProductDetailScreen(
                             }
                         },
                         enabled = reason.isNotBlank()
-                    ) { Text("Envoyer le signalement") }
+                    ) { Text(s.sendReport) }
                 }
             },
             dismissButton = {
                 if (!submitted) {
-                    TextButton(onClick = { showReportDialog = false }) { Text("Annuler") }
+                    TextButton(onClick = { showReportDialog = false }) { Text(s.cancel) }
                 }
             }
         )

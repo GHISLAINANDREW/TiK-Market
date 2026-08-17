@@ -19,17 +19,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tik_market.utils.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodeScanScreen(onBack: () -> Unit, onResult: (String) -> Unit = {}) {
+    val ts = LocalAppStrings.current
     var isFlashOn by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scanner un produit", color = Color.White) },
+                title = { Text(ts.scanProduct, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -49,7 +51,7 @@ fun BarcodeScanScreen(onBack: () -> Unit, onResult: (String) -> Unit = {}) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color.White.copy(alpha = 0.5f))
                     Spacer(Modifier.height(16.dp))
-                    Text("Initialisation de la caméra...", color = Color.White.copy(alpha = 0.7f))
+                    Text(ts.cameraInit, color = Color.White.copy(alpha = 0.7f))
                 }
             }
 
@@ -64,7 +66,7 @@ fun BarcodeScanScreen(onBack: () -> Unit, onResult: (String) -> Unit = {}) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Placez le code-barres dans le cadre pour le scanner",
+                    ts.barcodeHint,
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 40.dp),

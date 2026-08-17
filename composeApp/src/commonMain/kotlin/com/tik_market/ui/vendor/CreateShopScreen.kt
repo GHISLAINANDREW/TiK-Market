@@ -28,6 +28,7 @@ import com.tik_market.utils.getCurrentLocationName
 import com.tik_market.utils.getPlaceName
 import com.tik_market.ui.components.loadImageFromUrl
 import androidx.compose.ui.text.style.TextAlign
+import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -57,6 +58,7 @@ fun CreateShopScreen(
     var shopImageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
     val scope = rememberCoroutineScope()
+    val ts = LocalAppStrings.current
 
     val imagePicker = rememberImagePickerLauncher { result ->
         if (result != null) {
@@ -68,7 +70,7 @@ fun CreateShopScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Créer ma boutique", fontWeight = FontWeight.SemiBold) },
+            title = { Text(ts.createMyShop, fontWeight = FontWeight.SemiBold) },
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Green, titleContentColor = Color.White, navigationIconContentColor = Color.White)
         )
@@ -105,7 +107,7 @@ fun CreateShopScreen(
                         }
                     }
                     TextButton(onClick = { imagePicker() }) {
-                        Text("Ajouter une photo de boutique", color = Green, fontSize = 13.sp)
+                        Text(ts.addShopPhoto, color = Green, fontSize = 13.sp)
                     }
                 }
             }
@@ -114,30 +116,30 @@ fun CreateShopScreen(
 
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Informations de la boutique", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(ts.shopInfo, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(16.dp))
 
                     OutlinedTextField(value = name, onValueChange = { name = it; errorMessage = null },
-                        label = { Text("Nom de la boutique *") }, modifier = Modifier.fillMaxWidth(),
+                        label = { Text(ts.shopNameRequired) }, modifier = Modifier.fillMaxWidth(),
                         singleLine = true, shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.Store, null, tint = Green) },
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                     Spacer(Modifier.height(12.dp))
 
                     OutlinedTextField(value = description, onValueChange = { description = it },
-                        label = { Text("Description") }, modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                        label = { Text(ts.description) }, modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                     Spacer(Modifier.height(12.dp))
 
                     OutlinedTextField(value = phone, onValueChange = { phone = it; errorMessage = null },
-                        label = { Text("Téléphone *") }, modifier = Modifier.fillMaxWidth(),
+                        label = { Text(ts.shopPhoneRequired) }, modifier = Modifier.fillMaxWidth(),
                         singleLine = true, shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.Phone, null, tint = Green) },
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                     Spacer(Modifier.height(12.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(value = location, onValueChange = { location = it; errorMessage = null },
-                            label = { Text("Localisation *") }, modifier = Modifier.weight(1f),
+                            label = { Text(ts.locationRequiredField) }, modifier = Modifier.weight(1f),
                             singleLine = true, shape = RoundedCornerShape(12.dp), leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = Green) },
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Green, focusedLabelColor = Green))
                         
@@ -147,12 +149,12 @@ fun CreateShopScreen(
                             onClick = { showLocationPicker = true },
                             modifier = Modifier.padding(top = 8.dp).background(Green.copy(alpha = 0.1f), CircleShape)
                         ) {
-                            Icon(Icons.Default.Map, "Choisir sur la carte", tint = Green)
+                            Icon(Icons.Default.Map, ts.chooseOnMap, tint = Green)
                         }
                     }
                     
                     Spacer(Modifier.height(8.dp))
-                    Text("Suggestions :", fontSize = 11.sp, color = Color.Gray)
+                    Text(ts.suggestions, fontSize = 11.sp, color = Color.Gray)
                     FlowRow(
                         modifier = Modifier.padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -176,13 +178,13 @@ fun CreateShopScreen(
 
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Catégorie", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(ts.category, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(16.dp))
 
                     ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = it }) {
                         OutlinedTextField(
                             value = category, onValueChange = {},
-                            readOnly = true, label = { Text("Catégorie *") },
+                            readOnly = true, label = { Text(ts.categoryRequired) },
                             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable), singleLine = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                             shape = RoundedCornerShape(12.dp),
@@ -206,10 +208,10 @@ fun CreateShopScreen(
             Button(
                 onClick = {
                     when {
-                        name.isBlank() -> errorMessage = "Veuillez saisir le nom de la boutique"
-                        phone.isBlank() -> errorMessage = "Veuillez saisir le numéro de téléphone"
-                        location.isBlank() -> errorMessage = "Veuillez saisir la localisation"
-                        category.isBlank() -> errorMessage = "Veuillez sélectionner une catégorie"
+                        name.isBlank() -> errorMessage = ts.errShopName
+                        phone.isBlank() -> errorMessage = ts.errPhoneField
+                        location.isBlank() -> errorMessage = ts.errLocationField
+                        category.isBlank() -> errorMessage = ts.errCategoryField
                         else -> {
                             loading = true
                             errorMessage = null
@@ -222,7 +224,7 @@ fun CreateShopScreen(
                                     ApiClient.createShop(name.trim(), description.trim(), phone.trim(), location.trim(), category, imageUrl)
                                     onShopCreated(name.trim())
                                 } catch (e: Exception) {
-                                    errorMessage = e.message ?: "Une erreur est survenue"
+                                    errorMessage = e.message ?: ts.errGeneric
                                 } finally {
                                     loading = false
                                 }
@@ -238,7 +240,7 @@ fun CreateShopScreen(
                 if (loading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Créer ma boutique", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(ts.createMyShop, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 
@@ -262,11 +264,12 @@ fun LocationPickerDialog(
     onDismiss: () -> Unit,
     onLocationSelected: (String, Double?, Double?) -> Unit
 ) {
+    val ts = LocalAppStrings.current
     var lat by remember { mutableStateOf(5.4627) } // Dschang approx
     var lng by remember { mutableStateOf(10.0533) }
     var zoom by remember { mutableStateOf(15) }
     var isLoading by remember { mutableStateOf(true) }
-    var address by remember { mutableStateOf("Chargement...") }
+    var address by remember { mutableStateOf(ts.loading) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -292,7 +295,7 @@ fun LocationPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Choisir sur la carte") },
+        title = { Text(ts.chooseOnMap) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
@@ -364,17 +367,17 @@ fun LocationPickerDialog(
                 ) {
                     Icon(Icons.Default.MyLocation, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Ma position", fontSize = 12.sp)
+                    Text(ts.myPosition, fontSize = 12.sp)
                 }
             }
         },
         confirmButton = {
             Button(onClick = { onLocationSelected(address, lat, lng) }, colors = ButtonDefaults.buttonColors(containerColor = Green)) {
-                Text("Confirmer")
+                Text(ts.confirm)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Annuler") }
+            TextButton(onClick = onDismiss) { Text(ts.cancel) }
         }
     )
 }

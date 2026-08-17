@@ -29,6 +29,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.chat.openUrl
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.LocalAppStrings
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.launch
 
@@ -45,6 +46,7 @@ fun ShopPageScreen(
     var shopLogoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var shopReviews by remember { mutableStateOf<List<ApiReview>>(emptyList()) }
     var featuredProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
+    val ts = LocalAppStrings.current
 
     LaunchedEffect(shopId) {
         isLoading = true
@@ -135,6 +137,7 @@ fun ShopPageScreen(
     var useGrid by remember { mutableStateOf(true) }
     var isFavorited by remember { mutableStateOf(false) }
     var favLoading by remember { mutableStateOf(true) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     // Load favorite status
@@ -148,9 +151,10 @@ fun ShopPageScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(s?.name ?: "Boutique", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color.White) },
+                title = { Text(s?.name ?: ts.shop, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor),
                 actions = {
@@ -169,7 +173,7 @@ fun ShopPageScreen(
             }
         } else if (s == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Boutique non trouvée", color = Color.Gray)
+                Text(ts.shopNotFound, color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -228,7 +232,7 @@ fun ShopPageScreen(
                                         Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Default.Chat, null, Modifier.size(16.dp), tint = Color.White)
                                             Spacer(Modifier.width(4.dp))
-                                            Text("WhatsApp", fontSize = 12.sp, color = Color.White)
+                                            Text(ts.whatsapp, fontSize = 12.sp, color = Color.White)
                                         }
                                     }
                                 }
@@ -242,7 +246,7 @@ fun ShopPageScreen(
                                         Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Icon(Icons.Default.Phone, null, Modifier.size(16.dp), tint = Color.White)
                                             Spacer(Modifier.width(4.dp))
-                                            Text("Appeler", fontSize = 12.sp, color = Color.White)
+                                            Text(ts.call, fontSize = 12.sp, color = Color.White)
                                         }
                                     }
                                 }
@@ -261,11 +265,11 @@ fun ShopPageScreen(
                         Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("${s.productCount}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Orange)
-                                Text("Produits", fontSize = 11.sp, color = Color.Gray)
+                                Text(ts.products, fontSize = 11.sp, color = Color.Gray)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("${s.totalSales}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Orange)
-                                Text("Vendus", fontSize = 11.sp, color = Color.Gray)
+                                Text(ts.sold, fontSize = 11.sp, color = Color.Gray)
                             }
                             if (s.rating > 0) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -274,7 +278,7 @@ fun ShopPageScreen(
                                         Text(ratingStr, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Orange)
                                         Icon(Icons.Default.Star, null, Modifier.size(14.dp), tint = Color(0xFFFFB300))
                                     }
-                                    Text("Note", fontSize = 11.sp, color = Color.Gray)
+                                    Text(ts.rating, fontSize = 11.sp, color = Color.Gray)
                                 }
                             }
                         }
@@ -285,16 +289,26 @@ fun ShopPageScreen(
                 item {
                     Button(
                         onClick = {
+                            if (!ApiClient.isLoggedIn()) {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(ts.loginRequiredHint)
+                                }
+                                return@Button
+                            }
                             coroutineScope.launch {
                                 try {
                                     if (isFavorited) {
                                         ApiClient.removeFavoriteShop(shopId)
                                         isFavorited = false
+                                        snackbarHostState.showSnackbar(ts.unfollowedMsg.format(s.name))
                                     } else {
                                         ApiClient.addFavoriteShop(shopId)
                                         isFavorited = true
+                                        snackbarHostState.showSnackbar("Boutique suivie !")
                                     }
-                                } catch (_: Exception) { }
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar(ts.failed + ": ${e.message}")
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(44.dp),
@@ -310,7 +324,7 @@ fun ShopPageScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (isFavorited) "Ne plus suivre" else "Suivre cette boutique",
+                            if (isFavorited) ts.unfollow else ts.followShop,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -329,7 +343,7 @@ fun ShopPageScreen(
                                 Spacer(Modifier.width(8.dp))
                                 Text(s.location, fontSize = 13.sp, modifier = Modifier.weight(1f))
                                 TextButton(onClick = { openUrl("https://www.google.com/maps/search/${s.location.replace(" ", "+")}") }) {
-                                    Text("Carte", fontSize = 12.sp)
+                                    Text(ts.map, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -340,7 +354,7 @@ fun ShopPageScreen(
                 if (featuredProducts.isNotEmpty()) {
                     item {
                         Text(
-                            "⭐ Produits en vedette",
+                            ts.featuredProducts,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -409,7 +423,7 @@ fun ShopPageScreen(
                 if (shopReviews.isNotEmpty()) {
                     item {
                         Text(
-                            "💬 Avis clients (${shopReviews.size})",
+                            ts.customerReviews.format(shopReviews.size),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -466,7 +480,7 @@ fun ShopPageScreen(
                     ) {
                         Icon(Icons.Default.Chat, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Contacter le vendeur", fontWeight = FontWeight.SemiBold)
+                        Text(ts.contactSeller, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -474,7 +488,7 @@ fun ShopPageScreen(
                 if (displayProducts.isNotEmpty()) {
                     item {
                         Text(
-                            "Produits (${displayProducts.size})",
+                            "${ts.products} (${displayProducts.size})",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -521,7 +535,7 @@ fun ShopPageScreen(
                 } else {
                     item {
                         Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("Aucun produit pour le moment", color = Color.Gray, fontSize = 14.sp)
+                            Text(ts.noProductsForNow, color = Color.Gray, fontSize = 14.sp)
                         }
                     }
                 }
