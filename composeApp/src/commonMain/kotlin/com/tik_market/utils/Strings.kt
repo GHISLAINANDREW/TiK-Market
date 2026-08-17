@@ -6,22 +6,29 @@ import androidx.compose.runtime.staticCompositionLocalOf
 val LocalAppStrings = staticCompositionLocalOf<AppStrings> { getStrings("fr") }
 
 /**
- * Multiplatform replacement for String.format()
+ * Robust Multiplatform replacement for String.format()
  * Supports %s and %d placeholders.
  */
 fun String.format(vararg args: Any?): String {
     if (args.isEmpty()) return this
-    var res = this
-    for (arg in args) {
-        val sIdx = res.indexOf("%s")
-        val dIdx = res.indexOf("%d")
-        val finalIdx = if (sIdx != -1 && (dIdx == -1 || sIdx < dIdx)) sIdx else dIdx
-        
-        if (finalIdx != -1) {
-            res = res.substring(0, finalIdx) + arg.toString() + res.substring(finalIdx + 2)
+    var result = ""
+    var currentArg = 0
+    var i = 0
+    while (i < this.length) {
+        if (i < this.length - 1 && this[i] == '%' && (this[i+1] == 's' || this[i+1] == 'd')) {
+            if (currentArg < args.size) {
+                result += args[currentArg].toString()
+                currentArg++
+            } else {
+                result += this[i].toString() + this[i+1].toString()
+            }
+            i += 2
+        } else {
+            result += this[i]
+            i++
         }
     }
-    return res
+    return result
 }
 
 // ── SUB-CLASSES TO AVOID HUGE CONSTRUCTOR ──
@@ -1263,7 +1270,7 @@ private fun getSettingsMiscStrings(lang: String) = if (lang == "en") SettingsMis
     contactSupport = "Contact Support", allRights = "© 2024 AUTENTIK SOFT SOLUTIONS SARLU. Tous droits réservés.", comparatif = "Comparatif (%d)", noProductsCompare = "Aucun produit à comparer", unit = "Unité",
     inStock = "En stock (%d)", description = "Description", shopsMapTitle = "Carte des boutiques", searchShop = "Chercher une boutique...", shopClickTip = "Cliquez sur une boutique pour voir ses produits.",
     mapOpensTip = "Le bouton \"Carte\" ouvre Google Maps avec la position.", scanProduct = "Scanner un produit", cameraInit = "Initialisation de la caméra...", barcodeHint = "Placez le code-barres dans le cadre pour le scanner", scanBarcodeTitle = "Scan code-barres",
-    useCameraHint = "Utilisez la caméra de votre appareil", orTypeManually = "ou saisissez le code manuellement", barcodeLabel = "Code-barres", barcodeExample = "Ex: 4901234567890", searchAction = "Chercher",
+    useCameraHint = "Utilisez la caméra de votre appareil", orTypeManually = "ou saisissez le code manuel", barcodeLabel = "Code-barres", barcodeExample = "Ex: 4901234567890", searchAction = "Chercher",
     errorPrefix = "Erreur: %s", noNotifications = "Aucune notification", noNotificationsHint = "Vous serez averti ici des nouveautés et mises à jour.", emptyFavorites = "Aucun favori", emptyFavoritesHint = "Ajoutez des produits en cœur depuis l'accueil",
     negotiate = "Négocier", paymentTitle = "Paiement", amountToPay = "Montant à payer", phoneNumberPrefix = "Numéro %s", confirmPayment = "Confirmer le paiement",
     howItWorks = "Comment ça marche ?", step1Send = "1. Envoyez le paiement", step1SendDesc = "Utilisez le numéro ci-dessus pour envoyer le montant", step2Confirm = "2. Confirmez la demande", step2ConfirmDesc = "Vous recevrez une notification sur votre téléphone",
@@ -1301,7 +1308,7 @@ private fun getVendorStrings(lang: String) = if (lang == "en") VendorStrings(
     creatorAnonymous = "A buyer", participantCountFmt = "%d participant(s)", progress = "Progress", groupPrice = "Group price", groupExpiry = "Expires on %s",
     cancelGroup = "Cancel group", notifyAll = "Notify all", newGroupBuy = "New group buy", chooseProductOffer = "Choose a product and the offer conditions.", selectProduct = "Select a product",
     minParticipants = "Min. participants", discountPercent = "Discount %", offerDuration = "Offer duration (hours)", finalClientPrice = "Final client price: %s", launchOffer = "Launch the offer",
-    notifyParticipantsTitle = "Notify participants", sendNotificationParticipants = "Send a notification to the %d participants.", notifTitle = "Title", messageLabel = "Message", groupBuyNotifTitle = "Group buy: %s"
+    notifyParticipantsTitle = "Notify participants", sendNotificationParticipants = "Send a notification to the %d participants.", notifTitle = "Title", messageLabel = "Message", groupBuyNotifTitle = "Achat groupé : %s"
 ) else VendorStrings(
     createMyShop = "Créer ma boutique", addShopPhoto = "Ajouter une photo de boutique", shopInfo = "Informations de la boutique", shopNameRequired = "Nom de la boutique *", shopPhoneRequired = "Téléphone *",
     locationRequiredField = "Localisation *", chooseOnMap = "Choisir sur la carte", suggestions = "Suggestions :", categoryRequired = "Catégorie *", errShopName = "Veuillez saisir le nom de la boutique",
