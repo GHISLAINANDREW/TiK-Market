@@ -38,6 +38,7 @@ import com.tik_market.ui.components.*
 import com.tik_market.ui.story.StoryItem
 import com.tik_market.utils.safeApiCall
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.outlined.FilterList

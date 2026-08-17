@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.currentTimeMillis
 import com.tik_market.theme.*
+import com.tik_market.utils.format
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
