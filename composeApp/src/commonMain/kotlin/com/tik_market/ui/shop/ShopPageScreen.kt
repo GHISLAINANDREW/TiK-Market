@@ -30,6 +30,7 @@ import com.tik_market.theme.*
 import com.tik_market.ui.chat.openUrl
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.launch
 
