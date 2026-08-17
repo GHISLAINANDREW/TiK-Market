@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.theme.*
 import com.tik_market.utils.AppStrings
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

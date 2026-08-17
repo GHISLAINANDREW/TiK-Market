@@ -24,6 +24,7 @@ import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.theme.Green
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip

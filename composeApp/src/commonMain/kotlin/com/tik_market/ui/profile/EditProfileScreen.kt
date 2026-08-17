@@ -26,6 +26,7 @@ import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.ui.components.rememberImagePickerLauncher
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

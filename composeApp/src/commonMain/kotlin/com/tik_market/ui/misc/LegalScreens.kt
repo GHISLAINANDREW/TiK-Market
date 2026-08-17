@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
