@@ -1,4 +1,5 @@
-name: Deploy Web (Max Compatibility) to Vercel
+name: Deploy Web (WasmJS) to Vercel
+# v1.0.2 - Forcing refresh
 
 on:
   push:
@@ -7,7 +8,12 @@ on:
       - 'composeApp/**'
       - 'gradle/**'
       - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
       - 'web/**'
+      - 'vercel.json'
+      - '.github/workflows/deploy-web.yml'
 
 jobs:
   build-and-deploy:
@@ -21,24 +27,24 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Build Web (Universal JS - Robust)
+      - name: Build Web (WasmJS)
         run: |
           chmod +x gradlew
-          # We use jsBrowserDistribution for max compatibility
-          ./gradlew :composeApp:jsBrowserDistribution --no-daemon --stacktrace
+          ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
 
       - name: Prepare Distribution
         run: |
           mkdir -p final_deploy
-          # Find the JS production folder
-          SOURCE_DIR=$(find composeApp/build/dist/js -name "productionExecutable" -type d | head -n 1)
+          SOURCE_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
           if [ -z "$SOURCE_DIR" ]; then exit 1; fi
           cp -rv "$SOURCE_DIR"/* final_deploy/
           if [ -d "web" ]; then cp -rv web/* final_deploy/; fi
