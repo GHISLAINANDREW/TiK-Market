@@ -4,7 +4,6 @@ import kotlinx.browser.window
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-import kotlinx.serialization.json.Json
 
 private const val REQUEST_TIMEOUT_MS = 25000
 private const val MAX_ATTEMPTS = 2
@@ -32,15 +31,16 @@ actual object HttpEngine {
     }
 
     private suspend fun performFetch(url: String, method: String, headers: Map<String, String>, body: String?): String = suspendCoroutine { cont ->
-        val controller = js("new AbortController()")
+        val controller = window.asDynamic().eval("new AbortController()")
         val timeoutId = window.setTimeout({ controller.abort() }, REQUEST_TIMEOUT_MS)
 
         val init = js("{}")
-        init.method = method
-        init.headers = js("{}")
-        headers.forEach { (k, v) -> init.headers[k] = v }
-        init.signal = controller.signal
-        if (body != null) init.body = body
+        init["method"] = method
+        val jsHeaders = js("{}")
+        headers.forEach { (k, v) -> jsHeaders[k] = v }
+        init["headers"] = jsHeaders
+        init["signal"] = controller.signal
+        if (body != null) init["body"] = body
 
         window.fetch(url, init.unsafeCast<org.w3c.fetch.RequestInit>()).then({ response ->
             window.clearTimeout(timeoutId)
@@ -48,7 +48,6 @@ actual object HttpEngine {
                 if (response.ok) {
                     cont.resume(text)
                 } else {
-                    // Try to parse error from JSON
                     try {
                         val obj = JSON.parse<dynamic>(text)
                         if (obj != null && obj.error != undefined) {
@@ -66,7 +65,8 @@ actual object HttpEngine {
             })
         }, { err ->
             window.clearTimeout(timeoutId)
-            val msg = if (err.asDynamic().name == "AbortError") "Timeout: ${REQUEST_TIMEOUT_MS}ms" else err.toString()
+            val errName = err.asDynamic()?.name ?: ""
+            val msg = if (errName == "AbortError") "Timeout: ${REQUEST_TIMEOUT_MS}ms" else err.toString()
             cont.resumeWithException(Exception(msg))
         })
     }

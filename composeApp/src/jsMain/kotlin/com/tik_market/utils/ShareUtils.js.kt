@@ -1,13 +1,16 @@
 package com.tik_market.utils
 
+import kotlinx.browser.window
+
 actual fun shareText(text: String, title: String) {
-    js("""
-        if (navigator.share) {
-            navigator.share({ title: title, text: text }).catch(function(e) {});
-        } else {
-            navigator.clipboard.writeText(text).then(function() {
-                alert('Lien copié dans le presse-papier !');
-            }).catch(function(e) {});
-        }
-    """)
+    val nav = window.navigator.asDynamic()
+    if (nav.share != null) {
+        nav.share(js("{ title: title, text: text }")).catch { }
+    } else {
+        window.navigator.clipboard.writeText(text).then({
+            window.alert("Lien copié dans le presse-papier !")
+        }, {
+            // handle error
+        })
+    }
 }
