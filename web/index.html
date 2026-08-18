@@ -6,7 +6,6 @@
   <title>TiK-Market</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
-  <!-- Apple PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TiK-Market">
@@ -15,7 +14,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100dvh; overflow: hidden; position: fixed; background: white; }
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; }
+    body { font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; }
     #composeApp { width: 100%; height: 100dvh; flex: 1; }
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -34,7 +33,6 @@
       background: #FFFFFF; z-index: 10001; color: #1B5E20; text-align: center; padding: 32px;
     }
     #error-screen.visible { display: flex; }
-    .err-icon { font-size: 64px; margin-bottom: 20px; }
     button { background: #1B5E20; color: white; border: none; padding: 12px 32px; border-radius: 28px; font-size: 15px; cursor: pointer; }
   </style>
 </head>
@@ -52,7 +50,7 @@
       <div class="splash-title">TIK MARKET</div>
     </div>
     <div class="splash-footer">
-        <div class="splash-version">Version 2.6 (Stable)</div>
+        <div class="splash-version">Version 2.7 (Universal Mode)</div>
         <div class="splash-footer-brand">TIK MARKET</div>
     </div>
   </div>
@@ -60,18 +58,24 @@
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
     <h2>Un instant...</h2>
-    <p>L'application met plus de temps que prévu à charger.<br>Vérifiez votre connexion ou essayez un navigateur plus récent.</p>
+    <p>L'application s'initialise. Si cet écran persiste, vérifiez votre connexion.</p>
     <button onclick="location.reload()">Réessayer</button>
   </div>
 
-  <script src="composeApp.js"></script>
+  <script>
+    // Ensure we load the script after page is ready
+    window.addEventListener('load', function() {
+      var script = document.createElement('script');
+      script.src = 'composeApp.js?v=' + Date.now();
+      document.body.appendChild(script);
+    });
+  </script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
 
-      // Detect app rendering
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
           splash.classList.add('hidden');
@@ -81,23 +85,12 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Increase timeout to 120s for slow networks
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 120000);
-
-      // Auto-hide splash on error to see console
-      window.addEventListener('error', function() {
-          setTimeout(function() {
-              if (appEl.children.length === 0) {
-                  splash.classList.add('hidden');
-                  errorScreen.classList.add('visible');
-              }
-          }, 5000);
-      });
+      }, 180000); // 3 minutes timeout
     })();
   </script>
 </body>
