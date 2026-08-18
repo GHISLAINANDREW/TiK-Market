@@ -386,6 +386,22 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
                     modifier = Modifier.fillMaxSize(),
                     containerColor = Color.Transparent,
                     snackbarHost = { SnackbarHost(snackbarHostState) },
+                    floatingActionButton = {
+                        val showWhatsAppFab = appState.currentScreen in listOf(NavScreen.Home, NavScreen.Profile, NavScreen.Cart)
+                        if (showWhatsAppFab) {
+                            FloatingActionButton(
+                                onClick = {
+                                    com.tik_market.ui.chat.openUrl("https://wa.me/237690000001?text=Bonjour%20TiK-Market,%20j'ai%20besoin%20d'aide.")
+                                },
+                                containerColor = Color(0xFF25D366),
+                                contentColor = Color.White,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.padding(bottom = if (hideBottomBar) 0.dp else 16.dp)
+                            ) {
+                                Icon(Icons.Default.SupportAgent, "WhatsApp Support")
+                            }
+                        }
+                    },
                     bottomBar = {
                         if (!hideBottomBar) {
                             Surface(

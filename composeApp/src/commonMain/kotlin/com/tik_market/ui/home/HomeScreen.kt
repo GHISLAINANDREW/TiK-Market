@@ -423,9 +423,21 @@ fun HomeScreen(
                                 Icon(Icons.Default.Search, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
                             },
                             trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Clear, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Default.Clear, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                    IconButton(onClick = {
+                                        com.tik_market.ui.chat.startSpeechToText { text ->
+                                            if (text.isNotBlank()) {
+                                                searchQuery = text
+                                                onSearchQuerySubmit(text)
+                                            }
+                                        }
+                                    }) {
+                                        Icon(Icons.Default.Mic, "Recherche vocale", tint = primary, modifier = Modifier.size(20.dp))
                                     }
                                 }
                             },

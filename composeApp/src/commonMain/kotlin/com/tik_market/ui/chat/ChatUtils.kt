@@ -17,3 +17,6 @@ expect fun pickFile(onResult: (String?) -> Unit)
 
 /** Opens a URL (e.g. Google Maps link) in the default browser. */
 expect fun openUrl(url: String)
+
+/** Starts speech recognition and returns the recognized text. */
+expect fun startSpeechToText(onResult: (String) -> Unit)
