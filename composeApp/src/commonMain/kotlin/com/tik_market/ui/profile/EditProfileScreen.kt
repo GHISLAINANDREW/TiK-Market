@@ -27,6 +27,7 @@ import com.tik_market.ui.components.loadImageFromUrl
 import com.tik_market.ui.components.rememberImagePickerLauncher
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.format
+import com.tik_market.utils.appCities
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +43,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
     var location by remember { mutableStateOf(currentUser?.location ?: "") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var showCityDialog by remember { mutableStateOf(false) }
 
     var avatarUrl by remember { mutableStateOf(currentUser?.avatar ?: "") }
     var coverUrl by remember { mutableStateOf(currentUser?.coverPhoto ?: "") }
@@ -51,7 +53,6 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
 
     var isSaving by remember { mutableStateOf(false) }
 
-    // Load images
     LaunchedEffect(currentUser) {
         if (avatarUrl.isNotBlank()) {
             val fullUrl = if (avatarUrl.startsWith("http")) avatarUrl else "${ApiClient.baseUrl.trimEnd('/')}/${avatarUrl.trimStart('/')}"
@@ -140,9 +141,7 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                 .verticalScroll(rememberScrollState())
                 .background(BackgroundGray)
         ) {
-            // Header: Cover and Avatar
             Box(Modifier.height(200.dp).fillMaxWidth()) {
-                // Cover Photo
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -157,7 +156,6 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                             Icon(Icons.Default.Image, null, Modifier.size(40.dp), tint = Color.White)
                         }
                     }
-                    // Overlay change icon
                     Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
                         Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.5f), modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.padding(6.dp))
@@ -165,12 +163,11 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                     }
                 }
 
-                // Avatar Photo
                 Box(
                     Modifier
                         .size(100.dp)
                         .align(Alignment.BottomCenter)
-                        .offset(y = 0.dp) // center the avatar on the line
+                        .offset(y = 0.dp)
                         .clip(CircleShape)
                         .border(4.dp, Color.White, CircleShape)
                         .background(Color.White)
@@ -182,7 +179,6 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                     } else {
                         Icon(Icons.Default.Person, null, Modifier.size(50.dp), tint = Color.Gray)
                     }
-                    // Overlay camera icon
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
                         Surface(shape = CircleShape, color = Green, modifier = Modifier.size(28.dp).border(2.dp, Color.White, CircleShape)) {
                             Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.padding(6.dp))
@@ -193,7 +189,6 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
 
             Spacer(Modifier.height(24.dp))
 
-            // Form Fields
             Column(Modifier.padding(horizontal = 20.dp)) {
                 Text(ts.personalInfo, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                 Spacer(Modifier.height(12.dp))
@@ -218,15 +213,27 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
                 )
                 Spacer(Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text(ts.locationLabel) },
+                // New City Selection Field
+                Surface(
+                    onClick = { showCityDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.LocationOn, null) },
-                    placeholder = { Text(ts.locationPlaceholder) }
-                )
+                    border = BorderStroke(1.dp, Color.LightGray),
+                    color = Color.White
+                ) {
+                    Row(
+                        Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.LocationOn, null, tint = Green)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(ts.locationLabel, fontSize = 12.sp, color = Color.Gray)
+                            Text(location.ifBlank { ts.locationPlaceholder }, fontSize = 16.sp)
+                        }
+                        Icon(Icons.Default.ArrowDropDown, null)
+                    }
+                }
 
                 Spacer(Modifier.height(24.dp))
                 Text(ts.security, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
@@ -284,6 +291,45 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.
             }
             
             Spacer(Modifier.height(40.dp))
+        }
+
+        if (showCityDialog) {
+            AlertDialog(
+                onDismissRequest = { showCityDialog = false },
+                title = { Text(ts.myPosition, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        appCities.forEach { city ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        location = city.name
+                                        showCityDialog = false
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.LocationOn, null, tint = Green, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(city.name, style = MaterialTheme.typography.bodyLarge)
+                                if (location == city.name) {
+                                    Spacer(Modifier.weight(1f))
+                                    Icon(Icons.Default.Check, null, tint = Green)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showCityDialog = false }) { Text(ts.cancel) }
+                }
+            )
         }
     }
 }

@@ -30,7 +30,7 @@ val VioletSoft = Color(0xFFF3E5F5)
 val Brown = Color(0xFF5D4037)
 val RedAccent = Color(0xFFD32F2F)
 val BlueAccent = Color(0xFF1565C0)
-val DarkGreenOrange = Color(0xFF1B3022) // Vert sombre
+val DarkGreenOrange = Color(0xFF1B3022)
 val BrandGradient = Brush.horizontalGradient(listOf(Orange, GreenDark))
 val BrandTopBarColor = Color(0xFF2E4D23)
 
@@ -51,47 +51,80 @@ val TikMarketColors = CityColors(
 )
 
 val BafoussamColors = CityColors(
-    primary = Color(0xFFD32F2F), // Rouge
-    secondary = Color(0xFFFFD600), // Jaune/Or
+    primary = Color(0xFFD32F2F), // Rouge Passion
+    secondary = Color(0xFFFFD600), // Or
     gradient = Brush.horizontalGradient(listOf(Color(0xFFFFD600), Color(0xFFD32F2F))),
     topBar = Color(0xFF8B0000)
 )
 
 val DoualaColors = CityColors(
-    primary = Color(0xFF1976D2), // Bleu
-    secondary = Color(0xFFBBDEFB), // Bleu clair
+    primary = Color(0xFF1976D2), // Bleu Océan
+    secondary = Color(0xFFBBDEFB),
     gradient = Brush.horizontalGradient(listOf(Color(0xFF1976D2), Color(0xFF64B5F6))),
     topBar = Color(0xFF0D47A1)
 )
 
 val YaoundeColors = CityColors(
-    primary = Color(0xFF388E3C), // Vert forêt
-    secondary = Color(0xFFD32F2F), // Rouge
+    primary = Color(0xFF388E3C), // Vert Forêt
+    secondary = Color(0xFFD32F2F),
     gradient = Brush.horizontalGradient(listOf(Color(0xFF388E3C), Color(0xFFD32F2F))),
     topBar = Color(0xFF1B5E20)
 )
 
 val BamendaColors = CityColors(
-    primary = Color(0xFF7B1FA2), // Violet
-    secondary = Color(0xFFE1BEE7), // Violet clair
+    primary = Color(0xFF7B1FA2), // Violet Royal
+    secondary = Color(0xFFE1BEE7),
     gradient = Brush.horizontalGradient(listOf(Color(0xFF7B1FA2), Color(0xFF9C27B0))),
     topBar = Color(0xFF4A148C)
 )
 
-val DefaultColors = TikMarketColors
+val GarouaColors = CityColors(
+    primary = Color(0xFFFBC02D), // Jaune Sahel
+    secondary = Color(0xFFF57F17),
+    gradient = Brush.horizontalGradient(listOf(Color(0xFFFBC02D), Color(0xFFF57F17))),
+    topBar = Color(0xFFBF8F00)
+)
 
+val KribiColors = CityColors(
+    primary = Color(0xFF00ACC1), // Turquoise Plage
+    secondary = Color(0xFFE0F7FA),
+    gradient = Brush.horizontalGradient(listOf(Color(0xFF00ACC1), Color(0xFF007C91))),
+    topBar = Color(0xFF00838F)
+)
+
+val BueaColors = CityColors(
+    primary = Color(0xFF5E35B1), // Violet Montagne
+    secondary = Color(0xFFD1C4E9),
+    gradient = Brush.horizontalGradient(listOf(Color(0xFF5E35B1), Color(0xFF4527A0))),
+    topBar = Color(0xFF311B92)
+)
+
+val BertouaColors = CityColors(
+    primary = Color(0xFF8BC34A), // Vert Lime
+    secondary = Color(0xFFFFC107),
+    gradient = Brush.horizontalGradient(listOf(Color(0xFF8BC34A), Color(0xFFFFC107))),
+    topBar = Color(0xFF33691E)
+)
+
+val EdeaColors = CityColors(
+    primary = Color(0xFF00897B), // Vert Eau
+    secondary = Color(0xFFB2DFDB),
+    gradient = Brush.horizontalGradient(listOf(Color(0xFF00897B), Color(0xFF004D40))),
+    topBar = Color(0xFF00695C)
+)
+
+val DefaultColors = TikMarketColors
 val LocalCityColors = staticCompositionLocalOf { DefaultColors }
 
 // ── Neutral / Surface ──
 val SurfaceWhite = Color(0xFFFFFFFF)
-val BackgroundViolet = Color(0xFFF5F3FF) // Violet très clair, plus doux
+val BackgroundViolet = Color(0xFFF5F3FF)
 val BackgroundGray = Color(0xFFF8F9FA)
 val CardWhite = Color(0xFFFFFFFF)
 val DividerGray = Color(0xFFEEEEEE)
 val TextPrimary = Color(0xFF1A1A2E)
 val TextSecondary = Color(0xFF6B7280)
 val TextTertiary = Color(0xFF9CA3AF)
-val SurfaceElevated = Color(0xFFFFFFFF)
 
 // ── Dark theme ──
 private val DarkBackground = Color(0xFF0F0F1A)
@@ -106,18 +139,11 @@ private val LightColors = lightColorScheme(
     onPrimaryContainer = GreenDark,
     secondary = Orange,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFF3E0),
-    onSecondaryContainer = Color(0xFFE65100),
     tertiary = Violet,
-    background = BackgroundViolet,
-    surface = BackgroundViolet,
-    surfaceVariant = Color(0xFFEBE7F2),
+    background = BackgroundGray,
+    surface = SurfaceWhite,
     onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary,
-    error = RedAccent,
-    outline = DividerGray,
-    outlineVariant = Color(0xFFE5E7EB)
+    onSurface = TextPrimary
 )
 
 private val DarkColors = darkColorScheme(
@@ -127,90 +153,22 @@ private val DarkColors = darkColorScheme(
     onPrimaryContainer = GreenSurface,
     secondary = Orange,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFF3E2723),
-    onSecondaryContainer = Color(0xFFFFCC80),
     tertiary = VioletLight,
     background = DarkBackground,
     surface = DarkSurface,
-    surfaceVariant = DarkCard,
     onBackground = DarkText,
-    onSurface = DarkText,
-    onSurfaceVariant = Color(0xFFB0B0B0),
-    error = Color(0xFFEF5350),
-    outline = Color(0xFF444466)
+    onSurface = DarkText
 )
 
-// ── Typography ──
 private val AppTypography = Typography(
-    headlineLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.5).sp
-    ),
-    headlineMedium = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 32.sp
-    ),
-    headlineSmall = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 28.sp
-    ),
-    titleLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp
-    ),
-    titleMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 22.sp
-    ),
-    titleSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-    bodyLarge = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp
-    ),
-    bodyMedium = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-    bodySmall = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 16.sp
-    ),
-    labelLarge = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
-    ),
-    labelMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp
-    ),
-    labelSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
+    headlineSmall = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 28.sp),
+    titleLarge = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp),
+    titleMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp),
+    titleSmall = TextStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+    bodyLarge = TextStyle(fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyMedium = TextStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
+    labelMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp)
 )
-
-val CardElevation = 0.5.dp
-val CardElevationRaised = 2.dp
-val CardShapeLarge = 16.dp
-val CardShapeMedium = 12.dp
-val CardShapeSmall = 8.dp
 
 @Composable
 fun TiKMarketTheme(
@@ -219,30 +177,38 @@ fun TiKMarketTheme(
     content: @Composable () -> Unit
 ) {
     val cityColors = when {
-        city?.contains("Bafoussam", ignoreCase = true) == true || city?.contains("Fu'sap", ignoreCase = true) == true -> BafoussamColors
-        city?.contains("Douala", ignoreCase = true) == true -> DoualaColors
-        city?.contains("Yaoundé", ignoreCase = true) == true || city?.contains("Yaounde", ignoreCase = true) == true -> YaoundeColors
+        city?.contains("Bafoussam", ignoreCase = true) == true || city?.contains("Fu'sap", ignoreCase = true) == true || 
+        city?.contains("Mbouda", ignoreCase = true) == true || city?.contains("Bangangté", ignoreCase = true) == true || 
+        city?.contains("Foumban", ignoreCase = true) == true -> BafoussamColors
+        
+        city?.contains("Douala", ignoreCase = true) == true || city?.contains("Nkongsamba", ignoreCase = true) == true -> DoualaColors
+        
+        city?.contains("Yaoundé", ignoreCase = true) == true || city?.contains("Yaounde", ignoreCase = true) == true || 
+        city?.contains("Ebolowa", ignoreCase = true) == true -> YaoundeColors
+        
         city?.contains("Bamenda", ignoreCase = true) == true -> BamendaColors
+        
+        city?.contains("Garoua", ignoreCase = true) == true || city?.contains("Maroua", ignoreCase = true) == true || 
+        city?.contains("Ngaoundéré", ignoreCase = true) == true -> GarouaColors
+        
+        city?.contains("Kribi", ignoreCase = true) == true || city?.contains("Limbé", ignoreCase = true) == true -> KribiColors
+        
+        city?.contains("Buea", ignoreCase = true) == true -> BueaColors
+        
+        city?.contains("Bertoua", ignoreCase = true) == true -> BertouaColors
+        
+        city?.contains("Edéa", ignoreCase = true) == true -> EdeaColors
+
         else -> TikMarketColors
     }
 
     val colorScheme = if (darkTheme) {
-        DarkColors.copy(
-            primary = cityColors.primary,
-            secondary = cityColors.secondary
-        )
+        DarkColors.copy(primary = cityColors.primary, secondary = cityColors.secondary)
     } else {
-        LightColors.copy(
-            primary = cityColors.primary,
-            secondary = cityColors.secondary
-        )
+        LightColors.copy(primary = cityColors.primary, secondary = cityColors.secondary)
     }
 
     CompositionLocalProvider(LocalCityColors provides cityColors) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = AppTypography,
-            content = content
-        )
+        MaterialTheme(colorScheme = colorScheme, typography = AppTypography, content = content)
     }
 }
