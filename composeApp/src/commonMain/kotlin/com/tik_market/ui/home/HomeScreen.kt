@@ -83,10 +83,8 @@ fun HomeScreen(
     var minPrice by remember { mutableStateOf("") }
     var maxPrice by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("newest") }
-    var showFilters by remember { mutableStateOf(false) }
     var userLocationName by remember { mutableStateOf<String?>(null) }
     var marketName by remember { mutableStateOf("TiK-Market") }
-    var showCityDialog by remember { mutableStateOf(false) }
     
     LaunchedEffect(overrideCity, isLoggedIn) {
         if (!isLoggedIn) {
@@ -113,7 +111,6 @@ fun HomeScreen(
     var localHeroItems by remember { mutableStateOf<List<com.tik_market.api.ApiHeroItem>>(emptyList()) }
 
     val primary = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
     val cityColors = LocalCityColors.current
     val s = LocalAppStrings.current
     
@@ -176,7 +173,7 @@ fun HomeScreen(
                 val cleanBase = ApiClient.baseUrl.trimEnd('/')
                 val cleanPath = apiStory.mediaUrl.trimStart('/', '\\').replace("\\", "/")
                 val finalMediaUrl = if (apiStory.mediaUrl.startsWith("http") || apiStory.mediaType == "text") apiStory.mediaUrl else "$cleanBase/$cleanPath"
-                
+
                 StoryItem(
                     title = apiStory.shopName.ifBlank { apiStory.userName },
                     imageUrl = finalMediaUrl,
@@ -241,8 +238,6 @@ fun HomeScreen(
 
     BoxWithConstraints {
         val screenWidth = maxWidth
-        val isCompact = screenWidth < 480.dp
-
         Scaffold(
             floatingActionButton = {
                 if (comparisonCount > 0) {
@@ -253,10 +248,7 @@ fun HomeScreen(
                 Box(Modifier.background(cityColors.gradient).shadow(2.dp).statusBarsPadding()) {
                     Column(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { showCityDialog = true }) {
-                                Text(marketName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                                Icon(Icons.Default.ArrowDropDown, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            }
+                            Text(marketName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (!isLoggedIn) {
                                     Button(onClick = { onVendorClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)), shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp), modifier = Modifier.height(30.dp)) {
@@ -391,7 +383,6 @@ fun HomeScreen(
                         item { EmptyState(Icons.Default.Inventory, "Aucun produit trouvé") }
                     } else {
                         val columns = if (screenWidth < 600.dp) 2 else if (screenWidth < 900.dp) 3 else 4
-                        // Use ProductGridSection directly for simplicity across all cities
                         item {
                             ProductGridSection(
                                 products = filteredProducts,
@@ -416,23 +407,6 @@ fun HomeScreen(
         }
         if (showTextStoryDialog) {
             AlertDialog(onDismissRequest = { showTextStoryDialog = false }, title = { Text(s.textStory) }, text = { Column { OutlinedTextField(value = textStoryContent, onValueChange = { textStoryContent = it }, placeholder = { Text(s.whatDoYouWantToSay) }, modifier = Modifier.fillMaxWidth().height(120.dp), colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = textStoryColor.copy(alpha = 0.1f))); Spacer(Modifier.height(12.dp)); Text(s.backgroundColor, style = MaterialTheme.typography.labelSmall); Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) { listOf(Green, Orange, BlueAccent, RedAccent, Color.DarkGray).forEach { color -> Box(Modifier.size(32.dp).clip(RoundedCornerShape(16.dp)).background(color).border(if (textStoryColor == color) 2.dp else 0.dp, Color.White, RoundedCornerShape(16.dp)).clickable { textStoryColor = color }) } } } }, confirmButton = { Button(onClick = { showTextStoryDialog = false; val colorHex = when(textStoryColor) { Green -> "#4CAF50"; Orange -> "#FF9800"; BlueAccent -> "#2196F3"; RedAccent -> "#F44336"; else -> "#333333" }; onAddStory(colorHex, "text", textStoryContent); textStoryContent = "" }, enabled = textStoryContent.isNotBlank()) { Text(s.publish) } }, dismissButton = { TextButton(onClick = { showTextStoryDialog = false }) { Text(s.cancel) } })
-        }
-        if (showCityDialog) {
-            AlertDialog(
-                onDismissRequest = { showCityDialog = false },
-                title = { Text(s.myPosition, fontWeight = FontWeight.Bold) },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
-                        com.tik_market.utils.appCities.forEach { city ->
-                            Row(modifier = Modifier.fillMaxWidth().clickable { userLocationName = city.name; marketName = city.marketName ?: "TiK-Market"; showCityDialog = false; scope.launch { loadProducts(force = true) } }.padding(vertical = 12.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.LocationOn, null, tint = primary, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(12.dp)); Text(city.name, style = MaterialTheme.typography.bodyLarge)
-                                if (userLocationName == city.name) { Spacer(Modifier.weight(1f)); Icon(Icons.Default.Check, null, tint = primary) }
-                            }
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { showCityDialog = false }) { Text(s.cancel) } }
-            )
         }
     }
 }
