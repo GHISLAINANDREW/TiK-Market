@@ -52,25 +52,26 @@
       <div class="splash-title">TIK MARKET</div>
     </div>
     <div class="splash-footer">
-        <div class="splash-version">Version 2.5 (Fast Load)</div>
+        <div class="splash-version">Version 2.6 (Stable)</div>
         <div class="splash-footer-brand">TIK MARKET</div>
     </div>
   </div>
 
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
-    <h2>Mise à jour requise</h2>
-    <p>Votre navigateur ne supporte pas les technologies modernes de TiK-Market.<br>Veuillez utiliser la dernière version de Chrome ou Safari.</p>
+    <h2>Un instant...</h2>
+    <p>L'application met plus de temps que prévu à charger.<br>Vérifiez votre connexion ou essayez un navigateur plus récent.</p>
     <button onclick="location.reload()">Réessayer</button>
   </div>
 
-  <script src="composeApp.js?v=2.5"></script>
+  <script src="composeApp.js"></script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
 
+      // Detect app rendering
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
           splash.classList.add('hidden');
@@ -80,12 +81,23 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
+      // Increase timeout to 120s for slow networks
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 30000);
+      }, 120000);
+
+      // Auto-hide splash on error to see console
+      window.addEventListener('error', function() {
+          setTimeout(function() {
+              if (appEl.children.length === 0) {
+                  splash.classList.add('hidden');
+                  errorScreen.classList.add('visible');
+              }
+          }, 5000);
+      });
     })();
   </script>
 </body>
