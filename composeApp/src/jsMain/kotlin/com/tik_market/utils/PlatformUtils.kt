@@ -2,6 +2,8 @@ package com.tik_market.utils
 
 import kotlinx.browser.window
 import kotlinx.browser.document
+import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.events.Event
 
 private val startupParams = mutableMapOf<String, String?>()
 
@@ -34,43 +36,38 @@ actual fun updateUnreadBadge(count: Int) {
 }
 
 actual fun setupTabFocusRefresh(callback: () -> Unit) {
-    js("""
-        window.appStateRefresh = function() {};
-        window.dispatchEvent(new CustomEvent('app-focus'));
-        window.addEventListener('app-focus', function() {
-            if (typeof window._onFocusRefresh === 'function') {
-                window._onFocusRefresh();
-            }
-        });
-        window._onFocusRefresh = callback;
-    """)
+    window.asDynamic().appStateRefresh = {}
+    window.dispatchEvent(window.asDynamic().eval("new CustomEvent('app-focus')"))
+    window.addEventListener("app-focus", { e: Event ->
+        val refresh = window.asDynamic()._onFocusRefresh
+        if (refresh != null) {
+            refresh()
+        }
+    })
+    window.asDynamic()._onFocusRefresh = callback
 }
 
 actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
-    val observerFunc = js("""
-        function(callback) {
-            var onlineHandler = function() { callback(1); };
-            var offlineHandler = function() { callback(0); };
-            window.addEventListener('online', onlineHandler);
-            window.addEventListener('offline', offlineHandler);
-            setTimeout(function() { callback(navigator.onLine ? 1 : 0); }, 0);
-            return function() {
-                window.removeEventListener('online', onlineHandler);
-                window.removeEventListener('offline', offlineHandler);
-            };
-        }
-    """)
-    val cleanup = observerFunc({ status: Int -> onChange(status == 1) })
-    return cleanup.unsafeCast<() -> Unit>()
+    val onlineHandler = { e: Event -> onChange(true) }
+    val offlineHandler = { e: Event -> onChange(false) }
+    window.addEventListener("online", onlineHandler)
+    window.addEventListener("offline", offlineHandler)
+    
+    window.setTimeout({
+        onChange(window.navigator.onLine)
+    }, 0)
+    
+    return {
+        window.removeEventListener("online", onlineHandler)
+        window.removeEventListener("offline", offlineHandler)
+    }
 }
 
 actual fun downloadFile(url: String, filename: String) {
-    js("""
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    """)
+    val a = document.createElement("a") as HTMLAnchorElement
+    a.href = url
+    a.setAttribute("download", filename)
+    document.body?.appendChild(a)
+    a.click()
+    document.body?.removeChild(a)
 }

@@ -29,7 +29,7 @@ actual fun getPlaceName(lat: Double, lng: Double, onResult: (String) -> Unit) {
     val url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&accept-language=fr"
     window.fetch(url).then({ response ->
         response.json().then({ data ->
-            val display = data.asDynamic().display_name as? String
+            val display = data.asDynamic()?.display_name as? String
             if (display != null) {
                 onResult(display.split(",")[0].trim())
             } else {
