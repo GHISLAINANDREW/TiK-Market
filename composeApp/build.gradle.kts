@@ -18,14 +18,6 @@ kotlin {
         binaries.executable()
     }
 
-    js(IR) {
-        moduleName = "composeApp"
-        browser {
-            // Optimisation du temps de build en limitant les tâches inutiles
-        }
-        binaries.executable()
-    }
-
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
@@ -42,13 +34,6 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.serialization.json)
         }
-        
-        val webMain by creating {
-            dependsOn(commonMain.get())
-        }
-        
-        wasmJsMain.get().dependsOn(webMain)
-        jsMain.get().dependsOn(webMain)
         androidMain.dependencies {
             implementation(compose.preview)
             implementation("androidx.activity:activity-compose:1.9.3")
