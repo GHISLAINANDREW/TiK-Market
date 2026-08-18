@@ -11,75 +11,36 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TiK-Market">
   <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23FFFFFF'/%3E%3Ccircle cx='50' cy='28' r='22' stroke='%231B5E20' stroke-width='8' fill='none'/%3E%3Ccircle cx='50' cy='28' r='6' fill='%231B5E20'/%3E%3Cpath d='M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z' fill='%231B5E20'/%3E%3Ctext x='50' y='78' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='24' fill='white'%3ETiK%3C/text%3E%3C/svg%3E">
-  <!-- Theme -->
   <meta name="theme-color" content="#FFFFFF">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100dvh; overflow: hidden;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: none;
-      position: fixed;
-      background: white;
-    }
-    body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      flex-direction: column;
-    }
-    #composeApp {
-      width: 100%;
-      height: 100dvh;
-      flex: 1;
-    }
-    /* Splash screen */
+    html, body { width: 100%; height: 100dvh; overflow: hidden; position: fixed; background: white; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; }
+    #composeApp { width: 100%; height: 100dvh; flex: 1; }
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: #FFFFFF;
-      z-index: 9999;
-      transition: opacity 0.5s ease-out;
+      background: #FFFFFF; z-index: 9999; transition: opacity 0.5s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
-    .splash-logo-container {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transform: scale(1.1);
-    }
     .tik-logo-svg { width: 120px; height: 120px; }
-    .splash-title {
-      font-size: 26px; font-weight: 800;
-      color: #1B5E20; letter-spacing: 1px; margin-top: 15px;
-    }
-    .splash-footer {
-        position: absolute; bottom: 50px; text-align: center;
-    }
+    .splash-title { font-size: 26px; font-weight: 800; color: #1B5E20; letter-spacing: 1px; margin-top: 15px; }
+    .splash-footer { position: absolute; bottom: 50px; text-align: center; }
     .splash-version { font-size: 12px; color: #9E9E9E; margin-bottom: 6px; }
     .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; }
-
-    /* Error screen */
     #error-screen {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      display: none; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: #FFFFFF; z-index: 10001;
-      color: #1B5E20; text-align: center; padding: 32px;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      background: #FFFFFF; z-index: 10001; color: #1B5E20; text-align: center; padding: 32px;
     }
     #error-screen.visible { display: flex; }
-    #error-screen .err-icon { font-size: 64px; margin-bottom: 20px; color: #FF9800; }
-    #error-screen h2 { font-size: 20px; margin-bottom: 12px; font-weight: 700; }
-    #error-screen p { font-size: 14px; color: #757575; margin-bottom: 24px; line-height: 1.5; }
-    #error-screen button {
-      background: #1B5E20; color: white; border: none;
-      padding: 12px 32px; border-radius: 28px; font-size: 15px;
-      cursor: pointer; font-weight: 600;
-    }
+    .err-icon { font-size: 64px; margin-bottom: 20px; }
+    button { background: #1B5E20; color: white; border: none; padding: 12px 32px; border-radius: 28px; font-size: 15px; cursor: pointer; }
   </style>
 </head>
 <body>
   <div id="composeApp"></div>
 
-  <!-- Splash Screen -->
   <div id="splash">
     <div class="splash-logo-container">
       <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
@@ -91,31 +52,27 @@
       <div class="splash-title">TIK MARKET</div>
     </div>
     <div class="splash-footer">
-        <div class="splash-version">Version 2.2 (Universal JS)</div>
+        <div class="splash-version">Version 2.5 (Fast Load)</div>
         <div class="splash-footer-brand">TIK MARKET</div>
     </div>
   </div>
 
-  <!-- Error screen -->
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
-    <h2>Problème de chargement</h2>
-    <p id="error-message">L'application n'a pas pu s'initialiser.<br>Vérifiez votre connexion internet ou réessayez.</p>
+    <h2>Mise à jour requise</h2>
+    <p>Votre navigateur ne supporte pas les technologies modernes de TiK-Market.<br>Veuillez utiliser la dernière version de Chrome ou Safari.</p>
     <button onclick="location.reload()">Réessayer</button>
   </div>
 
-  <script src="composeApp.js"></script>
+  <script src="composeApp.js?v=2.5"></script>
   <script>
     (function() {
-      console.log("[Index] Page initialization started");
       var splash = document.getElementById('splash');
       var appEl = document.getElementById('composeApp');
       var errorScreen = document.getElementById('error-screen');
 
-      // ── When compose renders, hide splash ──
       var observer = new MutationObserver(function() {
         if (appEl.children.length > 0) {
-          console.log("[Index] Compose rendered, hiding splash");
           splash.classList.add('hidden');
           observer.disconnect();
           clearTimeout(failTimer);
@@ -123,48 +80,12 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Show error if app fails to load after 60s
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
-          console.error("[Index] Timeout reached, app failed to load");
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 60000);
-
-      window.addEventListener('error', function(e) {
-        console.error("[Index] Runtime error:", e.message);
-      });
-
-      // ── Google Sign-In Helper ──
-      window.googleSignIn = function(clientId, onResult) {
-        try {
-          google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (response) => {
-              if (response.credential) {
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                const payload = JSON.parse(jsonPayload);
-                onResult({
-                  idToken: response.credential,
-                  name: payload.name || payload.email,
-                  email: payload.email
-                });
-              } else {
-                onResult(null);
-              }
-            }
-          });
-          google.accounts.id.prompt();
-        } catch (e) {
-          console.error("GSI Error:", e);
-          onResult(null);
-        }
-      };
+      }, 30000);
     })();
   </script>
 </body>

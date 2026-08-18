@@ -21,6 +21,7 @@ kotlin {
     js(IR) {
         moduleName = "composeApp"
         browser {
+            // Optimisation du temps de build en limitant les tâches inutiles
         }
         binaries.executable()
     }
