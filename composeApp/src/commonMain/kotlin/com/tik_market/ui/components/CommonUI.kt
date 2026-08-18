@@ -121,25 +121,56 @@ fun TiKLogo(
             
             // Draw Shopping Bag Body (Filled with rounded corners look)
             val bagPath = Path().apply {
-                moveTo(w * 0.15f, h * 0.45f)
-                lineTo(w * 0.85f, h * 0.45f)
-                lineTo(w * 0.80f, h * 0.92f)
-                lineTo(w * 0.20f, h * 0.92f)
+                moveTo(w * 0.20f, h * 0.45f)
+                lineTo(w * 0.80f, h * 0.45f)
+                lineTo(w * 0.80f, h * 0.85f)
+                quadraticBezierTo(w * 0.80f, h * 0.95f, w * 0.70f, h * 0.95f)
+                lineTo(w * 0.30f, h * 0.95f)
+                quadraticBezierTo(w * 0.20f, h * 0.95f, w * 0.20f, h * 0.85f)
                 close()
             }
             drawPath(path = bagPath, color = color)
             
-            // Small "T" cut-out inside the bag
-            // (Simulated by drawing a white/surface color T)
+            // Draw "TiK" text inside (simplified paths for cross-platform canvas)
+            // This replaces the old "T" with the full "TiK" style from the web icon
+            val textScale = w / 100f
+            
+            // T
             val tPath = Path().apply {
-                // Horizontal bar
-                moveTo(w * 0.40f, h * 0.65f)
-                lineTo(w * 0.60f, h * 0.65f)
-                // Vertical bar
-                moveTo(w * 0.50f, h * 0.65f)
-                lineTo(w * 0.50f, h * 0.85f)
+                moveTo(38f * textScale, 62f * textScale)
+                lineTo(48f * textScale, 62f * textScale)
+                lineTo(48f * textScale, 65f * textScale)
+                lineTo(44f * textScale, 65f * textScale)
+                lineTo(44f * textScale, 77f * textScale)
+                lineTo(42f * textScale, 77f * textScale)
+                lineTo(42f * textScale, 65f * textScale)
+                lineTo(38f * textScale, 65f * textScale)
+                close()
             }
-            drawPath(path = tPath, color = Color.White, style = Stroke(width = w * 0.06f, cap = StrokeCap.Round))
+            // i
+            val iPath = Path().apply {
+                addRect(androidx.compose.ui.geometry.Rect(51f * textScale, 62f * textScale, 53f * textScale, 64f * textScale))
+                addRect(androidx.compose.ui.geometry.Rect(51f * textScale, 66f * textScale, 53f * textScale, 77f * textScale))
+            }
+            // k
+            val kPath = Path().apply {
+                addRect(androidx.compose.ui.geometry.Rect(57f * textScale, 62f * textScale, 59f * textScale, 77f * textScale))
+                moveTo(59f * textScale, 70f * textScale)
+                lineTo(64f * textScale, 62f * textScale)
+                lineTo(66f * textScale, 62f * textScale)
+                lineTo(61f * textScale, 70f * textScale)
+                lineTo(67f * textScale, 77f * textScale)
+                lineTo(65f * textScale, 77f * textScale)
+                lineTo(60f * textScale, 71f * textScale)
+                lineTo(59f * textScale, 72f * textScale)
+                lineTo(59f * textScale, 77f * textScale)
+                lineTo(57f * textScale, 77f * textScale)
+                close()
+            }
+            
+            drawPath(path = tPath, color = Color.White)
+            drawPath(path = iPath, color = Color.White)
+            drawPath(path = kPath, color = Color.White)
         }
         
         if (showText) {

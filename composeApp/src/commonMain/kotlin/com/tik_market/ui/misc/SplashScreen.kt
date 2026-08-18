@@ -65,7 +65,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                LocalAppStrings.current.version.format("2.0"),
+                LocalAppStrings.current.version.format("2.5"),
                 color = Color.Gray,
                 fontSize = 12.sp
             )
