@@ -155,3 +155,32 @@ actual fun openUrl(url: String) {
     a.click()
     window.setTimeout({ document.body?.removeChild(a) }, 100)
 }
+
+actual fun startSpeechToText(onResult: (String) -> Unit) {
+    val recognition = window.asDynamic().eval("""
+        (function() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return null;
+            const rec = new SpeechRecognition();
+            rec.lang = 'fr-FR';
+            rec.continuous = false;
+            rec.interimResults = false;
+            return rec;
+        })()
+    """)
+    
+    if (recognition != null) {
+        recognition.onresult = { event: dynamic ->
+            val text = event.results[0][0].transcript as String
+            onResult(text)
+        }
+        recognition.onerror = { e: dynamic ->
+            println("Speech recognition error: " + e.error)
+            onResult("")
+        }
+        recognition.start()
+    } else {
+        window.alert("La reconnaissance vocale n'est pas supportée sur ce navigateur.")
+        onResult("")
+    }
+}

@@ -22,10 +22,11 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - **SQL ANSI_QUOTES corrigé** – Tous les identifiants SQL utilisent `'`
 - **Cloudinary configuré** – `cloud_name=***REMOVED***`, `api_key=***REMOVED***`, `api_secret=***REMOVED***`
 - **APK Android buildé** – `TiK-Market_v1.0.6.apk` (URL API : `https://tik-market.onrender.com`)
-- **Web WasmJS buildé et déployé** – `https://tik-market-app.vercel.app`
-- **GitHub Actions workflow corrigé** – Déploiement automatique fonctionnel.
+- **Web Universel (JS IR) buildé et déployé** – `https://tik-market-app.vercel.app` (Compatibilité maximale).
+- **GitHub Actions workflow optimisé** – Déploiement automatique fonctionnel en mode compatibilité.
 - **Design Parity Web/APK** – Splash screen (blanc), logo TiK-Market, favicon et icônes Apple synchronisés.
-- **Support Wasm GC** – Vérification de compatibilité ajoutée au chargement web.
+- **Support Navigateurs Anciens** – Passage de Wasm à JS IR pour inclure les vieux téléphones et navigateurs.
+- **Feature Addition (In Progress)** – Ajout d'un bouton de support WhatsApp flottant.
 
 ### Chat / Messages
 - **Messages vocaux** – Upload Cloudinary permanent + ajout optimiste (émetteur voit son message immédiatement)

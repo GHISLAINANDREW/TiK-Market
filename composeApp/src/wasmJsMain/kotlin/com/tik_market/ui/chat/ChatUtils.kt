@@ -236,3 +236,22 @@ actual fun openUrl(url: String) {
     setTimeout(() => document.body.removeChild(a), 100);
 }""")
 private external fun openUrlJs(url: String)
+
+@JsFun("""(onResult) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("La reconnaissance vocale n'est pas supportée sur ce navigateur.");
+        onResult("");
+        return;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = 'fr-FR';
+    rec.onresult = (event) => onResult(event.results[0][0].transcript);
+    rec.onerror = () => onResult("");
+    rec.start();
+}""")
+private external fun jsSpeechToText(onResult: (String) -> Unit)
+
+actual fun startSpeechToText(onResult: (String) -> Unit) {
+    jsSpeechToText(onResult)
+}
