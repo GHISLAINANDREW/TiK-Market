@@ -8,20 +8,33 @@ import kotlin.math.PI
 
 /**
  * Villes couvertes par l'application, avec les coordonnées GPS du centre-ville.
- * Utilisées pour détecter si l'utilisateur est proche d'une ville de l'app.
  */
 data class AppCity(
     val name: String,
     val lat: Double,
-    val lng: Double
+    val lng: Double,
+    val marketName: String? = null
 )
 
 val appCities: List<AppCity> = listOf(
-    AppCity("Dschang", 5.4440, 10.0533),
-    AppCity("Bafoussam", 5.4482, 10.4171),
-    AppCity("Douala", 4.0511, 9.7679),
-    AppCity("Yaoundé", 3.8480, 11.5021),
-    AppCity("Bamenda", 5.9631, 10.1591)
+    AppCity("Dschang", 5.4440, 10.0533, "TiK-Market"),
+    AppCity("Bafoussam", 5.4482, 10.4171, "Fu'sapMarket"),
+    AppCity("Douala", 4.0511, 9.7679, "DoualaMarket"),
+    AppCity("Yaoundé", 3.8480, 11.5021, "YaoundeMarket"),
+    AppCity("Bamenda", 5.9631, 10.1591, "BamendaMarket"),
+    AppCity("Garoua", 9.3019, 13.3977, "GarouaMarket"),
+    AppCity("Maroua", 10.5973, 14.3157, "MarouaMarket"),
+    AppCity("Ngaoundéré", 7.3276, 13.5847, "AdamaouaMarket"),
+    AppCity("Kribi", 2.9506, 9.9120, "KribiMarket"),
+    AppCity("Limbé", 4.0242, 9.2202, "LimbeMarket"),
+    AppCity("Buea", 4.1541, 9.2311, "BueaMarket"),
+    AppCity("Bertoua", 4.5772, 13.6846, "BertouaMarket"),
+    AppCity("Ebolowa", 2.9234, 11.1554, "EbolowaMarket"),
+    AppCity("Foumban", 5.7276, 10.8901, "FoumbanMarket"),
+    AppCity("Bangangté", 5.1439, 10.5255, "BangangteMarket"),
+    AppCity("Nkongsamba", 4.9547, 9.9367, "NkongsambaMarket"),
+    AppCity("Mbouda", 5.6267, 10.2520, "MboudaMarket"),
+    AppCity("Edéa", 3.8016, 10.1246, "EdeaMarket")
 )
 
 /** Rayon (km) en dessous duquel on considère que l'utilisateur est « dans » la ville de l'app. */
@@ -39,8 +52,7 @@ fun distanceKm(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
 }
 
 /**
- * Retourne la ville de l'app la plus proche de la position donnée,
- * si elle est à moins de [maxRadiusKm] km. Sinon null (lieu hors villes de l'app).
+ * Retourne la ville de l'app la plus proche de la position donnée.
  */
 fun findNearbyAppCity(
     lat: Double,
@@ -60,11 +72,8 @@ fun findNearbyAppCity(
 }
 
 /** Nom du marché affiché pour une ville de l'app (ou "TiK-Market" par défaut). */
-fun marketNameForCity(cityName: String): String = when {
-    cityName.contains("Bafoussam", ignoreCase = true) -> "Fu'sapMarket"
-    cityName.contains("Dschang", ignoreCase = true) -> "TiK-Market"
-    cityName.contains("Douala", ignoreCase = true) -> "DoualaMarket"
-    cityName.contains("Yaoundé", ignoreCase = true) || cityName.contains("Yaounde", ignoreCase = true) -> "YaoundeMarket"
-    cityName.contains("Bamenda", ignoreCase = true) -> "BamendaMarket"
-    else -> "TiK-Market"
+fun marketNameForCity(cityName: String?): String {
+    if (cityName == null) return "TiK-Market"
+    val match = appCities.firstOrNull { it.name.equals(cityName, ignoreCase = true) || cityName.contains(it.name, ignoreCase = true) }
+    return match?.marketName ?: "TiK-Market"
 }
