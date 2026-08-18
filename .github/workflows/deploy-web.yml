@@ -1,4 +1,4 @@
-name: Deploy Web (Fast Mode) to Vercel
+name: Deploy Web (Max Compatibility) to Vercel
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'web/**'
-      - '.github/workflows/deploy-web.yml'
 
 jobs:
   build-and-deploy:
@@ -22,22 +21,25 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # Active le cache Gradle pour gagner du temps
+          cache: 'gradle'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Build Web (WasmJS - FAST & STABLE)
+      - name: Build Web (Universal JS - Robust)
         run: |
           chmod +x gradlew
-          ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+          # We use jsBrowserDistribution for max compatibility
+          ./gradlew :composeApp:jsBrowserDistribution --no-daemon --stacktrace
 
       - name: Prepare Distribution
         run: |
           mkdir -p final_deploy
-          SOURCE_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -type d | head -n 1)
+          # Find the JS production folder
+          SOURCE_DIR=$(find composeApp/build/dist/js -name "productionExecutable" -type d | head -n 1)
+          if [ -z "$SOURCE_DIR" ]; then exit 1; fi
           cp -rv "$SOURCE_DIR"/* final_deploy/
           if [ -d "web" ]; then cp -rv web/* final_deploy/; fi
           cp vercel.json final_deploy/
