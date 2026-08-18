@@ -1,20 +1,38 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- TiK-Market Official Logo -->
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- TiK-Market Official Adaptive Icon - Unified with Web Design -->
+
+    <!-- Bag Handle / Pin -->
+    <path
+        android:strokeColor="#1B5E20"
+        android:strokeWidth="8"
+        android:pathData="M50,30m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+
+    <!-- Pin Dot -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M50,30m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+
+    <!-- Bag Body with rounded bottom -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M24,46h52v34c0,5.5 -4.5,10 -10,10h-32c-5.5,0 -10,-4.5 -10,-10z" />
+
+    <!-- TiK Text in White -->
+    <!-- T -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M30,40 L78,40 L74,75 C73.5,80 70,82 65,82 L43,82 C38,82 34.5,80 34,75 L30,40 Z" />
+        android:pathData="M38,62h10v3h-4v12h-2v-12h-4z" />
+    <!-- i -->
     <path
-        android:fillColor="#FF9800"
-        android:pathData="M40,40 C40,30 45,25 54,25 C63,25 68,30 68,40 L64,40 C64,32 60,29 54,29 C48,29 44,32 44,40 L40,40 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,62h2v2h-2z M51,66h2v11h-2z" />
+    <!-- k -->
     <path
-        android:fillColor="#FF9800"
-        android:pathData="M30,40 L78,40 L78,45 L30,45 Z" />
-    <!-- Center Icon Accent -->
-    <path
-        android:fillColor="#2E7D32"
-        android:pathData="M45,55 L63,55 L63,58 L56,58 L56,75 L52,75 L52,58 L45,58 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M57,62h2v15h-2z M59,70l5,-8h2l-5,8l6,7h-2l-5,-6l-1,1v5h-2z" />
+
 </vector>
