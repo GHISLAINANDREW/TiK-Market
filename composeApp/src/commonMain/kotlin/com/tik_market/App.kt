@@ -366,20 +366,16 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
         Modifier.fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFFF1F8E9), Color(0xFFE8F5E9)) // Light green brand background for Web
+                    listOf(Color(0xFFF1F8E9), Color(0xFFE8F5E9))
                 )
             )
     ) {
-        val screenWidth = maxWidth
-        val isDesktop = screenWidth > 600.dp
-        
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Box(
-                modifier = Modifier
-                    .then(if (isDesktop) Modifier.width(420.dp).fillMaxHeight().padding(vertical = 16.dp).clip(RoundedCornerShape(16.dp)).shadow(12.dp) else Modifier.fillMaxSize())
+                modifier = Modifier.fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 Scaffold(
