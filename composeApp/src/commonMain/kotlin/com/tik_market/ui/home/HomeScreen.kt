@@ -291,7 +291,7 @@ fun HomeScreen(
                                 ) {
                                     Text(tab, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = Color.White)
                                     if (isSelected) {
-                                        Box(Modifier.width(16.dp).height(2.dp).background(Color.White, RoundedCornerShape(1.dp)))
+                                        Box(Modifier.width(16.dp).height(2.dp).background(cityColors.secondary, RoundedCornerShape(1.dp)))
                                     } else {
                                         Spacer(Modifier.height(2.dp))
                                     }
@@ -306,7 +306,7 @@ fun HomeScreen(
             }
         ) { padding ->
             PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = { scope.launch { isRefreshing = true; loadProducts(force = true); loadStories(); isRefreshing = false } }, modifier = Modifier.fillMaxSize().padding(padding)) {
-                LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                LazyColumn(Modifier.fillMaxSize().background(BackgroundViolet)) {
                     item {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                             OutlinedTextField(
@@ -379,10 +379,9 @@ fun HomeScreen(
                     item { if (localHeroItems.isNotEmpty()) DynamicHeroSection(localHeroItems, screenWidth) else AnimatedHeroSection(screenWidth, userLocationName) }
 
                     item {
-                        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(s.favorites, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
-                            Spacer(Modifier.width(8.dp))
-                            Text(s.articlesCount.format(filteredProducts.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(s.favorites, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                            Text(s.articlesCount.format(filteredProducts.size), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                         }
                     }
 
@@ -463,6 +462,14 @@ fun HomeScreen(
                             }
                         }
                     }
+
+                    FlashSalesSection(
+                        products = localProducts,
+                        wishlistIds = localWishlist,
+                        onProductClick = onProductClick,
+                        onAddToCart = onAddToCart,
+                        onToggleFavorite = { toggleFavorite(it) }
+                    )
 
                     if (isLoading) {
                         item { Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = primary) } }

@@ -199,17 +199,6 @@ fun ProductCard(
                     } else {
                         Text(emoji, fontSize = 48.sp)
                     }
-                    
-                    // Alibaba search icon on bottom left of image
-                    Surface(
-                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).size(32.dp),
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.9f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp), tint = Color.Black)
-                        }
-                    }
 
                     // Favorite heart button
                     Box(modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
@@ -220,7 +209,7 @@ fun ProductCard(
                             Icon(
                                 if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                                 "Favori",
-                                tint = if (isFavorite) Color(0xFFE91E63) else Color.White.copy(alpha = 0.8f),
+                                tint = if (isFavorite) Color(0xFFE91E63) else Color.White.copy(alpha = 0.7f),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -228,14 +217,22 @@ fun ProductCard(
 
                     if (product.discountPercent > 0) {
                         Box(modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                DiscountBadge(product.discountPercent)
-                                if (product.discountPercent >= 20) {
-                                    Surface(color = Orange, shape = RoundedCornerShape(4.dp)) {
-                                        Text("VENTE FLASH", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
-                                    }
-                                }
+                            DiscountBadge(product.discountPercent)
+                        }
+                        
+                        if (product.discountPercent >= 20) {
+                            Surface(
+                                modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                                color = Orange,
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    "VENTE FLASH",
+                                    color = Color.White,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }
