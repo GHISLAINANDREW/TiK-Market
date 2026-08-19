@@ -123,20 +123,13 @@ try {
 
             if ($newStatus === 'delivered') {
                 // Mark vendor confirmed
-                $stmt = $db->prepare("UPDATE orders SET vendor_confirmed = 1 WHERE id = ?");
+                $stmt = $db->prepare("UPDATE orders SET vendor_confirmed = 1, status = 'delivered' WHERE id = ?");
                 $stmt->execute([$orderId]);
 
-                // Check if client also confirmed
-                if ((int)$order['client_confirmed'] === 1) {
-                    $stmt = $db->prepare("UPDATE orders SET status = 'delivered' WHERE id = ?");
-                    $stmt->execute([$orderId]);
-                    handleOrderDelivery($db, $orderId);
-                    sendNotification((int)$order['user_id'], "Commande livrée", "La commande #$orderId est maintenant clôturée.", 'order', $orderId);
-                    json(200, ['success' => true, 'message' => 'Commande clôturée avec succès.']);
-                } else {
-                    json(200, ['success' => true, 'message' => 'Vente confirmée. En attente de la réception par le client.']);
-                }
-                exit; // IMPORTANT: Stop execution here for 'delivered' status
+                handleOrderDelivery($db, $orderId);
+                sendNotification((int)$order['user_id'], "Commande livrée", "La commande #$orderId est maintenant clôturée.", 'order', $orderId);
+                json(200, ['success' => true, 'message' => 'Commande clôturée avec succès.']);
+                exit;
             }
 
             // Other statuses

@@ -268,9 +268,12 @@ function handleOrderDelivery(PDO $db, int $orderId): void {
             if (!$stmtCheck->fetch()) {
                 $bonusPct = (float)($wallet['bonus_pct'] ?? 0);
                 $cashbackPct = (float)($wallet['cashback_pct'] ?? 1.0);
-                $basePoints = (int)floor($amount / 100);
+
+                // Calcul plus généreux : 1 point pour 10 FCFA (au lieu de 100)
+                $basePoints = (int)floor($amount / 10);
                 $bonusPoints = (int)floor($basePoints * $bonusPct / 100);
                 $totalBuyerPoints = $basePoints + $bonusPoints;
+
                 $cashbackAmount = (int)round($amount * $cashbackPct / 100);
                 if ($totalBuyerPoints > 0 || $cashbackAmount > 0) {
                     $wasInTransaction = $db->inTransaction();
