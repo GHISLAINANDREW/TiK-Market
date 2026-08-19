@@ -370,8 +370,8 @@
         errDiv.style.display = 'none';
         // Show skeleton
         previewGrid.innerHTML =
-          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(4);
-        fetch('https://dschang-market.onrender.com/products/products.php')
+          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(2);
+        fetch('https://tik-market.onrender.com/api/products/products.php')
           .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
           .then(function(data) {
             var products = data.products || data || [];
