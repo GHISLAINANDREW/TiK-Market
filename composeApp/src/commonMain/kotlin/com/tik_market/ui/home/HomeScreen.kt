@@ -108,6 +108,7 @@ fun HomeScreen(
     var localStories by remember { mutableStateOf<List<StoryItem>>(emptyList()) }
     var localWishlist by remember { mutableStateOf(wishlistProductIds) }
     var viewedStoryIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var showFilters by remember { mutableStateOf(false) }
     var localHeroItems by remember { mutableStateOf<List<com.tik_market.api.ApiHeroItem>>(emptyList()) }
 
     val primary = MaterialTheme.colorScheme.primary
@@ -266,8 +267,40 @@ fun HomeScreen(
                                         Icon(Icons.Default.Notifications, "Notifications", tint = Color.White, modifier = Modifier.size(20.dp))
                                     }
                                 }
+                                BadgedBox(badge = { if (cartCount > 0) Badge { Text("$cartCount", fontSize = 9.sp) } }) {
+                                    IconButton(onClick = onCartClick, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Default.ShoppingCart, "Panier", tint = Color.White, modifier = Modifier.size(20.dp))
+                                    }
+                                }
                             }
                         }
+
+                        Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf(s.products, s.shop).forEach { tab ->
+                                val isSelected = (tab == s.products && selectedShopName == null) || (tab == s.shop && selectedShopName != null)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.clickable {
+                                        if (tab == s.shop) onShopsClick()
+                                        else onClearShopFilter()
+                                    }
+                                ) {
+                                    Text(tab, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = Color.White)
+                                    if (isSelected) {
+                                        Box(Modifier.width(16.dp).height(2.dp).background(Color.White, RoundedCornerShape(1.dp)))
+                                    } else {
+                                        Spacer(Modifier.height(2.dp))
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Icon(Icons.Default.Search, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(Modifier.height(2.dp))
                     }
                 }
             }
@@ -368,11 +401,65 @@ fun HomeScreen(
                     }
 
                     item {
-                        Surface(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), color = CardWhite, shape = RoundedCornerShape(12.dp)) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.FilterList, null, Modifier.size(18.dp), tint = primary)
-                                OutlinedTextField(value = minPrice, onValueChange = { if (it.all { c -> c.isDigit() }) minPrice = it }, placeholder = { Text("Min CFA", fontSize = 10.sp) }, modifier = Modifier.weight(1f).height(42.dp), shape = RoundedCornerShape(8.dp), singleLine = true, textStyle = TextStyle(fontSize = 11.sp), colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = DividerGray))
-                                OutlinedTextField(value = maxPrice, onValueChange = { if (it.all { c -> c.isDigit() }) maxPrice = it }, placeholder = { Text("Max CFA", fontSize = 10.sp) }, modifier = Modifier.weight(1f).height(42.dp), shape = RoundedCornerShape(8.dp), singleLine = true, textStyle = TextStyle(fontSize = 11.sp), colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = DividerGray))
+                        Surface(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), color = CardWhite, shape = RoundedCornerShape(12.dp), tonalElevation = 0.5.dp) {
+                            Column(Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(s.filters, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                                    Spacer(Modifier.weight(1f))
+                                    if (showFilters) {
+                                        TextButton(onClick = { minPrice = ""; maxPrice = ""; sortBy = "newest" }) {
+                                            Text(s.reset, fontSize = 12.sp, color = Orange)
+                                        }
+                                    }
+                                    IconButton(onClick = { showFilters = !showFilters }) {
+                                        Icon(Icons.Outlined.FilterList, null, tint = if (showFilters) Orange else TextSecondary)
+                                    }
+                                }
+                                AnimatedVisibility(visible = showFilters) {
+                                    Column {
+                                        Spacer(Modifier.height(8.dp))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            OutlinedTextField(
+                                                value = minPrice,
+                                                onValueChange = { minPrice = it.filter { c -> c.isDigit() } },
+                                                placeholder = { Text("Min CFA", fontSize = 12.sp) },
+                                                modifier = Modifier.weight(1f).height(52.dp),
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(12.dp),
+                                                textStyle = TextStyle(fontSize = 13.sp),
+                                                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = MaterialTheme.colorScheme.surface, focusedContainerColor = MaterialTheme.colorScheme.surface)
+                                            )
+                                            OutlinedTextField(
+                                                value = maxPrice,
+                                                onValueChange = { maxPrice = it.filter { c -> c.isDigit() } },
+                                                placeholder = { Text("Max CFA", fontSize = 12.sp) },
+                                                modifier = Modifier.weight(1f).height(52.dp),
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(12.dp),
+                                                textStyle = TextStyle(fontSize = 13.sp),
+                                                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = MaterialTheme.colorScheme.surface, focusedContainerColor = MaterialTheme.colorScheme.surface)
+                                            )
+                                        }
+                                        Spacer(Modifier.height(12.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(s.sortBy, fontSize = 12.sp, color = TextSecondary)
+                                            Spacer(Modifier.width(8.dp))
+                                            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                                                listOf("newest" to s.newest, "price_asc" to s.priceAsc, "price_desc" to s.priceDesc).forEach { (key, label) ->
+                                                    FilterChip(
+                                                        selected = sortBy == key,
+                                                        onClick = { sortBy = key },
+                                                        label = { Text(label, fontSize = 11.sp) },
+                                                        shape = RoundedCornerShape(16.dp),
+                                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primary, selectedLabelColor = Color.White, containerColor = MaterialTheme.colorScheme.surface, labelColor = TextSecondary),
+                                                        modifier = Modifier.height(30.dp)
+                                                    )
+                                                    Spacer(Modifier.width(6.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

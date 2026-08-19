@@ -65,4 +65,15 @@ class MainActivity : ComponentActivity() {
         // Handle location permission result
         handleLocationPermissionResult(grantResults)
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 300 && resultCode == RESULT_OK && data != null) {
+            val results = data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+            if (!results.isNullOrEmpty()) {
+                val text = results[0]
+                com.tik_market.ui.chat.handleSpeechResult(text)
+            }
+        }
+    }
 }

@@ -126,6 +126,13 @@ val TextPrimary = Color(0xFF1A1A2E)
 val TextSecondary = Color(0xFF6B7280)
 val TextTertiary = Color(0xFF9CA3AF)
 
+// ── Shapes & Elevations ──
+val CardShapeSmall = 8.dp
+val CardShapeMedium = 12.dp
+val CardShapeLarge = 24.dp
+val CardElevation = 2.dp
+val CardElevationRaised = 8.dp
+
 // ── Dark theme ──
 private val DarkBackground = Color(0xFF0F0F1A)
 private val DarkSurface = Color(0xFF1A1A2E)
