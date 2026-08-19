@@ -39,7 +39,8 @@ fun SettingsScreen(
     onAboutClick: () -> Unit = {},
     onLegalClick: () -> Unit = {},
     onTermsClick: () -> Unit = {},
-    onDownloadApk: () -> Unit = {}
+    onDownloadApk: () -> Unit = {},
+    onInstallPwa: () -> Unit = {}
 ) {
     val s = LocalAppStrings.current
     var showLangDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -175,6 +176,23 @@ fun SettingsScreen(
                     Column(Modifier.weight(1f)) {
                         Text(s.androidApk, fontSize = 15.sp)
                         Text(s.installApk, fontSize = 11.sp, color = Color.Gray)
+                    }
+                    Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
+                }
+            }
+            // Installation PWA (Web uniquement)
+            Surface(
+                onClick = onInstallPwa,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Android, null, Modifier.size(22.dp), tint = Color(0xFF1B5E20))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Installer sur l'écran d'accueil", fontSize = 15.sp)
+                        Text("Accès rapide et mode plein écran", fontSize = 11.sp, color = Color.Gray)
                     }
                     Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = Color.LightGray)
                 }

@@ -107,3 +107,7 @@ actual fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit {
 actual fun downloadFile(url: String, filename: String) {
     // No-op on Android
 }
+
+actual fun installPwa() {
+    // No-op on Android
+}

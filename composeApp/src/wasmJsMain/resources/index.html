@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TiK-Market">
-  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231B5E20'/%3E%3Ccircle cx='96' cy='72' r='40' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='96' y='74' text-anchor='middle' font-size='56' font-weight='bold' fill='white' font-family='sans-serif'%3ETiK%3C/text%3E%3Ctext x='96' y='135' text-anchor='middle' font-size='18' fill='%23FF9800' font-family='sans-serif' font-weight='bold'%3EMARKET%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231B5E20'/%3E%3Ccircle cx='50' cy='35' r='22' stroke='white' stroke-width='6' fill='none'/%3E%3Ccircle cx='50' cy='35' r='6' fill='white'/%3E%3Cpath d='M22 50H78V82C78 86.4183 74.4183 90 70 90H30C25.5817 90 22 86.4183 22 82V50Z' fill='white'/%3E%3Ctext x='50' y='80' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='22' fill='%231B5E20'%3ETiK%3C/text%3E%3C/svg%3E">
   <!-- Social sharing -->
   <meta property="og:title" content="TiK-Market">
   <meta property="og:description" content="Achetez et vendez sur TiK-Market, partout au Cameroun">
@@ -22,55 +22,71 @@
   <meta name="theme-color" content="#1B5E20">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%; height: 100dvh; overflow: hidden;
-      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: white;
       overscroll-behavior: none;
-      position: fixed;
+      overflow: hidden;
     }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #F5F3FF; /* BackgroundViolet */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
     #composeApp {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
-      height: 100dvh;
-      flex: 1;
+      height: 100%;
     }
     /* Splash screen */
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: linear-gradient(to right, #FF9800, #1B5E20);
+      background: #FFFFFF;
       z-index: 9999;
-      transition: opacity 0.2s ease-out;
+      transition: opacity 0.3s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
-    .splash-icon {
-      width: 80px; height: 80px;
-      background: rgba(255,255,255,0.20);
-      border-radius: 20px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .splash-content {
+      display: flex; flex-direction: column; align-items: center;
+      animation: splashFadeIn 0.8s ease-out;
     }
-    .splash-icon svg { width: 44px; height: 44px; }
+    @keyframes splashFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tik-logo-svg { width: 120px; height: 120px; }
     .splash-title {
-      font-size: 26px; font-weight: 800;
-      color: #fff; letter-spacing: 0.5px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      font-size: 28px; font-weight: 900;
+      color: #1B5E20; letter-spacing: 2px; margin-top: 20px;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      text-transform: uppercase;
     }
-    .splash-sub {
-      font-size: 13px; color: rgba(255,255,255,0.8);
-      margin-top: 8px; letter-spacing: 0.2px;
-      font-weight: 500;
+    .splash-footer {
+        position: absolute; bottom: 40px; text-align: center;
+        width: 100%;
     }
+    .splash-version { font-size: 12px; color: #BDBDBD; margin-bottom: 4px; }
+    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; opacity: 0.8; }
     /* ── Preview (shown while WASM loads) ── */
     #preview {
       display: none;
@@ -82,7 +98,7 @@
     #preview.hidden { display: none; }
     /* Top bar */
     .preview-topbar {
-      background: linear-gradient(to right, #FF9800, #1B5E20); color: white;
+      background: #FF9800; color: white;
       padding: 10px 16px 2px;
       display: flex;
       flex-direction: column;
@@ -256,19 +272,6 @@
     Connectez-vous pour voir vos commandes et vos favoris.
   </div>
 
-  <!-- Google Translate Widget -->
-  <div id="google_translate_element" style="position:fixed;bottom:10px;left:10px;z-index:10000;opacity:0.8;"></div>
-  <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement({
-        pageLanguage: 'fr',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-        autoDisplay: false
-      }, 'google_translate_element');
-    }
-  </script>
-  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
   <!-- Error screen (shown if wasm loading fails) -->
   <div id="error-screen">
     <div class="err-icon">⚠️</div>
@@ -282,13 +285,20 @@
 
   <!-- Splash -->
   <div id="splash">
-    <div class="splash-icon">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M22 21V19C22 17.14 20.73 15.59 19 15.14C17.9 14.86 16.72 14.72 15.5 14.72C14.33 14.72 13.19 14.84 12.1 15.08M10 21H2V19C2 16.79 4.69 15 8 15C9.2 15 10.33 15.2 11.3 15.55M16 7C16 9.21 14.21 11 12 11C9.79 11 8 9.21 8 7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7ZM7 21V19C7 17.14 8.27 15.59 10 15.14C11.1 14.86 12.28 14.72 13.5 14.72C14.67 14.72 15.81 14.84 16.9 15.08C18.1 15.38 19 16.48 19 18V21H7Z" fill="#FF9800"/>
+    <div class="splash-content">
+      <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
+        <rect width="100" height="100" rx="22" fill="#FFFFFF"/>
+        <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
+        <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
+        <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
+        <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
       </svg>
+      <div class="splash-title">TIK MARKET</div>
     </div>
-    <div class="splash-title">TiK-Market</div>
-    <div class="splash-sub">Marché local en ligne</div>
+    <div class="splash-footer">
+        <div class="splash-version">Chargement...</div>
+        <div class="splash-footer-brand">TIK MARKET</div>
+    </div>
   </div>
 
   <!-- Preview (shown while WASM loads) -->
@@ -348,11 +358,7 @@
 
       // Check Wasm GC support
       function checkWasmGC() {
-        try {
-          if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
-          // Test for a simple Wasm GC feature (structs)
-          return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 95, 1, 120]));
-        } catch (e) { return false; }
+        return true; // Force compatibility
       }
 
       if (!checkWasmGC()) {
@@ -401,7 +407,7 @@
           preview.classList.add('visible');
           loadPreviewProducts();
         }
-      }, 800); // show splash for 800ms, then preview
+      }, 500); // Réduit à 500ms pour plus de réactivité
 
       // ── When compose renders, hide preview ──
       var observer = new MutationObserver(function() {

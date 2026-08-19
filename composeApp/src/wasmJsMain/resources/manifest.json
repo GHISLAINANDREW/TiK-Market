@@ -3,7 +3,7 @@
   "short_name": "TiK-Market",
   "description": "Achetez et vendez sur TiK-Market, partout au Cameroun",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#1B5E20",
   "theme_color": "#1B5E20",
   "orientation": "portrait-primary",

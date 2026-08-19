@@ -99,3 +99,14 @@ private external fun jsDownloadFile(url: String, filename: String)
 actual fun downloadFile(url: String, filename: String) {
     jsDownloadFile(url, filename)
 }
+
+@JsFun("""() => {
+    if (typeof window.installPWA === 'function') {
+        window.installPWA();
+    }
+}""")
+private external fun jsInstallPwa()
+
+actual fun installPwa() {
+    jsInstallPwa()
+}
