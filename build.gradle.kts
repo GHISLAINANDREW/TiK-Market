@@ -14,6 +14,10 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJ
     }
 }
 
-// REMOVED: KotlinNpmInstallTask with --ignore-scripts
-// This can cause "Build cancelled" if essential Node tools fail to install their binaries.
-// If you encounter issues with Node 22+, the fixed version above (20.15.0) should resolve them.
+// Fix for "Build cancelled" during npm install and development run on Windows
+// This prevents npm from running arbitrary scripts that might hang or fail.
+rootProject.tasks.withType(org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask::class.java).configureEach {
+    args.add("--ignore-scripts")
+    args.add("--no-audit")
+    args.add("--no-fund")
+}

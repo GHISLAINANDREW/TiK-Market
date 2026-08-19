@@ -19,16 +19,18 @@
   <meta property="og:image" content="https://tikmarket-app.vercel.app/favicon.svg">
   <meta name="twitter:card" content="summary">
   <!-- Theme -->
-  <meta name="theme-color" content="#FFFFFF">
+  <meta name="theme-color" content="#1B5E20">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%; height: 100dvh; overflow: hidden;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: none;
-      position: fixed;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
       background: white;
+      overscroll-behavior: none;
+      overflow: hidden;
     }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -37,11 +39,17 @@
       text-rendering: optimizeLegibility;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
     #composeApp {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
-      height: 100dvh;
-      flex: 1;
+      height: 100%;
     }
     /* Splash screen */
     #splash {
@@ -49,23 +57,30 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       background: #FFFFFF;
       z-index: 9999;
-      transition: opacity 0.2s ease-out;
+      transition: opacity 0.3s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
-    .splash-logo-container {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transform: scale(1.2);
+    .splash-content {
+      display: flex; flex-direction: column; align-items: center;
+      animation: splashFadeIn 0.8s ease-out;
     }
-    .tik-logo-svg { width: 100px; height: 100px; }
+    @keyframes splashFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tik-logo-svg { width: 120px; height: 120px; }
     .splash-title {
-      font-size: 24px; font-weight: 800;
-      color: #1B5E20; letter-spacing: 1px; margin-top: 10px;
+      font-size: 28px; font-weight: 900;
+      color: #1B5E20; letter-spacing: 2px; margin-top: 20px;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      text-transform: uppercase;
     }
     .splash-footer {
         position: absolute; bottom: 40px; text-align: center;
+        width: 100%;
     }
-    .splash-version { font-size: 12px; color: #9E9E9E; margin-bottom: 5px; }
-    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 2px; }
+    .splash-version { font-size: 12px; color: #BDBDBD; margin-bottom: 4px; }
+    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; opacity: 0.8; }
 
     /* Error screen */
     #error-screen {
@@ -118,8 +133,9 @@
 
   <!-- Splash -->
   <div id="splash">
-    <div class="splash-logo-container">
+    <div class="splash-content">
       <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
+        <rect width="100" height="100" rx="22" fill="#FFFFFF"/>
         <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
         <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
         <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
@@ -128,7 +144,7 @@
       <div class="splash-title">TIK MARKET</div>
     </div>
     <div class="splash-footer">
-        <div class="splash-version">Version 2.0</div>
+        <div class="splash-version">Chargement...</div>
         <div class="splash-footer-brand">TIK MARKET</div>
     </div>
   </div>
@@ -182,34 +198,21 @@
       updateOnlineStatus();
 
       // ── Google Sign-In Helper ──
-      window.googleSignIn = function(clientId, onResult) {
-        try {
-          google.accounts.id.initialize({
-            client_id: clientId,
-            cancel_on_tap_outside: false,
-            callback: (response) => {
-              if (response.credential) {
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                const payload = JSON.parse(jsonPayload);
+      // ── PWA Install prompt ──
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+      });
 
-                onResult({
-                  idToken: response.credential,
-                  name: payload.name || payload.email,
-                  email: payload.email
-                });
-              } else {
-                onResult(null);
-              }
-            }
+      window.installPWA = function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function(choiceResult) {
+            deferredPrompt = null;
           });
-          google.accounts.id.prompt();
-        } catch (e) {
-          console.error("GSI Error:", e);
-          onResult(null);
+        } else {
+            alert("Pour installer l'application :\n1. Cliquez sur les 3 points en haut à droite (Chrome)\n2. Sélectionnez 'Installer l'application' ou 'Ajouter à l'écran d'accueil'.");
         }
       };
     })();

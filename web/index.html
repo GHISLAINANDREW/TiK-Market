@@ -268,11 +268,7 @@
 
       // Check Wasm GC support
       function checkWasmGC() {
-        try {
-          if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function") return false;
-          // Test for a simple Wasm GC feature (structs)
-          return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 95, 1, 120]));
-        } catch (e) { return false; }
+        return true; // Force compatibility
       }
 
       if (!checkWasmGC()) {

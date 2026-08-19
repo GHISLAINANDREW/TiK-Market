@@ -14,6 +14,25 @@ kotlin {
     wasmJs {
         moduleName = "composeApp"
         browser {
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+            }
+            runTask {
+                devServer = devServer.copy(open = false)
+            }
+        }
+        binaries.executable()
+    }
+
+    js(IR) {
+        moduleName = "composeApp"
+        browser {
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+            }
+            runTask {
+                devServer = devServer.copy(open = false)
+            }
         }
         binaries.executable()
     }

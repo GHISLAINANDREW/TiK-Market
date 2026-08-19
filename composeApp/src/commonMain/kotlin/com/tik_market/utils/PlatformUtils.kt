@@ -36,3 +36,8 @@ expect fun observeConnectivity(onChange: (Boolean) -> Unit): () -> Unit
  * Triggers a file download in the browser (no-op on Android).
  */
 expect fun downloadFile(url: String, filename: String)
+
+/**
+ * Triggers the PWA install prompt (no-op on Android).
+ */
+expect fun installPwa()

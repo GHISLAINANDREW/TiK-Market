@@ -71,3 +71,7 @@ actual fun downloadFile(url: String, filename: String) {
     a.click()
     document.body?.removeChild(a)
 }
+
+actual fun installPwa() {
+    window.asDynamic().installPWA()
+}

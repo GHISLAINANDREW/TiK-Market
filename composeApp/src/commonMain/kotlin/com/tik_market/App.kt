@@ -373,85 +373,66 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
         NavScreen.StoryViewer, NavScreen.AdminDashboard
     )
 
-    BoxWithConstraints(
-        Modifier.fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFFF1F8E9), Color(0xFFE8F5E9))
-                )
-            )
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = Color.Transparent,
-                    snackbarHost = { SnackbarHost(snackbarHostState) },
-                    floatingActionButton = {
-                        val showWhatsAppFab = appState.currentScreen in listOf(NavScreen.Home, NavScreen.Profile, NavScreen.Cart)
-                        if (showWhatsAppFab) {
-                            FloatingActionButton(
-                                onClick = {
-                                    com.tik_market.ui.chat.openUrl("https://wa.me/237690000001?text=Bonjour%20TiK-Market,%20j'ai%20besoin%20d'aide.")
-                                },
-                                containerColor = Color(0xFF25D366),
-                                contentColor = Color.White,
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.padding(bottom = if (hideBottomBar) 0.dp else 16.dp)
-                            ) {
-                                Icon(Icons.Default.SupportAgent, "WhatsApp Support")
-                            }
-                        }
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            val showWhatsAppFab = appState.currentScreen in listOf(NavScreen.Home, NavScreen.Profile, NavScreen.Cart)
+            if (showWhatsAppFab) {
+                FloatingActionButton(
+                    onClick = {
+                        com.tik_market.ui.chat.openUrl("https://wa.me/237690000001?text=Bonjour%20TiK-Market,%20j'ai%20besoin%20d'aide.")
                     },
-                    bottomBar = {
-                        if (!hideBottomBar) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                tonalElevation = 8.dp,
-                                shadowElevation = 16.dp,
-                                color = MaterialTheme.colorScheme.surface
-                            ) {
-                                AppBottomBar(appState, bottomItems)
-                            }
-                        }
-                    }
-                ) { padding ->
-                    Column(Modifier.fillMaxSize()) {
-                        // ── Offline/Online persistent bar ──
-                        AnimatedVisibility(
-                            visible = !isOnline,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Box(
-                                Modifier.fillMaxWidth().background(Color(0xFFD32F2F)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    s.offlineBanner,
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .padding(bottom = padding.calculateBottomPadding())
-                        ) {
-                            AppNavigation(appState, scope, snackbarHostState, userCity)
-                        }
-                    }
+                    containerColor = Color(0xFF25D366),
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(bottom = if (hideBottomBar) 0.dp else 16.dp)
+                ) {
+                    Icon(Icons.Default.SupportAgent, "WhatsApp Support")
                 }
+            }
+        },
+        bottomBar = {
+            if (!hideBottomBar) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 16.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    AppBottomBar(appState, bottomItems)
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // ── Offline/Online persistent bar ──
+            AnimatedVisibility(
+                visible = !isOnline,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Box(
+                    Modifier.fillMaxWidth().background(Color(0xFFD32F2F)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        s.offlineBanner,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+                }
+            }
+
+            Box(Modifier.fillMaxSize()) {
+                AppNavigation(appState, scope, snackbarHostState, userCity)
             }
         }
     }
@@ -1052,7 +1033,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
                 onAboutClick = { appState.navigateTo(NavScreen.About) },
                 onLegalClick = { appState.navigateTo(NavScreen.Legal) },
                 onTermsClick = { appState.navigateTo(NavScreen.Terms) },
-                onDownloadApk = { com.tik_market.utils.downloadFile("https://github.com/GHISLAINANDREW/TiK-Market/releases/download/beta/TiK-Market.apk", "TiK-Market.apk") }
+                onDownloadApk = { com.tik_market.utils.downloadFile("https://github.com/GHISLAINANDREW/TiK-Market/releases/download/beta/TiK-Market.apk", "TiK-Market.apk") },
+                onInstallPwa = { com.tik_market.utils.installPwa() }
             )
             NavScreen.Wishlist -> WishlistScreen(
                 onBack = { appState.goBack() },
