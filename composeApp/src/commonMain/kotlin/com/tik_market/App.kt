@@ -211,6 +211,11 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                     // Restore session in background — does NOT block UI
                     val sessionStrings = com.tik_market.utils.LocalAppStrings.current
                     LaunchedEffect(Unit) {
+                        // Cleanup expired media (stories older than 24h)
+                        try {
+                            com.tik_market.cache.PersistentMediaCache.cleanupExpired()
+                        } catch (_: Exception) {}
+
                         ApiClient.initToken()
                         if (ApiClient.isLoggedIn()) {
                             try {

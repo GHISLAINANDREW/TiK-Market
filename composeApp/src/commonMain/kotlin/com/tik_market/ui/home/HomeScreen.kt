@@ -175,6 +175,12 @@ fun HomeScreen(
                 val cleanPath = apiStory.mediaUrl.trimStart('/', '\\').replace("\\", "/")
                 val finalMediaUrl = if (apiStory.mediaUrl.startsWith("http") || apiStory.mediaType == "text") apiStory.mediaUrl else "$cleanBase/$cleanPath"
 
+                fun cleanUrl(url: String?): String? {
+                    if (url == null || url.isBlank()) return null
+                    if (url.startsWith("http")) return url
+                    return "$cleanBase/${url.trimStart('/', '\\').replace("\\", "/")}"
+                }
+
                 StoryItem(
                     title = apiStory.shopName.ifBlank { apiStory.userName },
                     imageUrl = finalMediaUrl,
@@ -183,8 +189,8 @@ fun HomeScreen(
                     mediaType = apiStory.mediaType,
                     caption = apiStory.caption,
                     userId = apiStory.userId,
-                    userAvatar = apiStory.userAvatar,
-                    shopLogo = apiStory.shopLogo
+                    userAvatar = cleanUrl(apiStory.userAvatar),
+                    shopLogo = cleanUrl(apiStory.shopLogo)
                 )
             }
         } catch (_: Exception) {}

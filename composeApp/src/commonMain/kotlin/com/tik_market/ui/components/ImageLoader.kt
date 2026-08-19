@@ -2,6 +2,11 @@ package com.tik_market.ui.components
 
 import androidx.compose.ui.graphics.ImageBitmap
 
+import com.tik_market.cache.PersistentMediaCache
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 /**
  * Fetches a remote image URL and returns it as a base64 data URL string,
  * or null on failure.
@@ -33,9 +38,28 @@ fun optimizeImageUrl(url: String, width: Int = 400): String {
  * to w_400,q_auto for faster loading.
  */
 suspend fun loadImageFromUrl(url: String): ImageBitmap? {
-    val optimizedUrl = optimizeImageUrl(url)
-    // Check cache first
+    if (url.isBlank()) return null
+    
+    // Auto-fix relative URLs
+    val absoluteUrl = if (!url.startsWith("http") && !url.startsWith("data:")) {
+        val base = com.tik_market.api.ApiClient.baseUrl.trimEnd('/')
+        "$base/${url.trimStart('/')}"
+    } else {
+        url
+    }
+
+    val optimizedUrl = optimizeImageUrl(absoluteUrl)
+
+    // Check memory cache first
     globalImageCache.get(optimizedUrl)?.let { return it }
+
+    // For stories, try to cache locally (especially on Android)
+    if (optimizedUrl.contains("/stories/")) {
+        try {
+            PersistentMediaCache.cacheMedia(optimizedUrl)
+        } catch (_: Exception) {}
+    }
+
     // Fetch and decode
     val dataUrl = fetchImageAsDataUrl(optimizedUrl) ?: return null
     val bitmap = decodeDataUrlToImageBitmap(dataUrl) ?: return null

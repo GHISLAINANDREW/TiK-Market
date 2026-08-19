@@ -270,6 +270,14 @@ fun StoryViewerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar or initial
+                val avatarUrl = currentStory.shopLogo ?: currentStory.userAvatar
+                var avatarBitmap by remember(avatarUrl) { mutableStateOf<ImageBitmap?>(null) }
+                LaunchedEffect(avatarUrl) {
+                    if (!avatarUrl.isNullOrBlank()) {
+                        avatarBitmap = loadImageFromUrl(avatarUrl)
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -277,12 +285,16 @@ fun StoryViewerScreen(
                         .background(Color.White.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        currentStory.title.take(1).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
+                    if (avatarBitmap != null) {
+                        Image(avatarBitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    } else {
+                        Text(
+                            currentStory.title.take(1).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
