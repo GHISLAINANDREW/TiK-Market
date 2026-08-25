@@ -26,9 +26,9 @@ actual fun copyToClipboard(text: String) {
 
 @JsFun("""(count) => {
     if (count > 0) {
-        document.title = "(" + count + ") Dschang Market";
+        document.title = "(" + count + ") TiK-Market";
     } else {
-        document.title = "Dschang Market Place";
+        document.title = "TiK-Market";
     }
 }""")
 private external fun jsUpdateBadge(count: Int)

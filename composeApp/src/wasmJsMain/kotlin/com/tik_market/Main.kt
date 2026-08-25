@@ -43,7 +43,7 @@ fun main() {
                 // Fallback for some browsers that prevent window.close()
                 window.location.href = "about:blank"
             },
-            initialScreen = NavScreen.Home
+            initialScreen = NavScreen.Splash
         )
     }
 }

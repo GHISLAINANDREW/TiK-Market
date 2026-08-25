@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TiK-Market">
-  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231B5E20'/%3E%3Ccircle cx='96' cy='72' r='40' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='96' y='74' text-anchor='middle' font-size='56' font-weight='bold' fill='white' font-family='sans-serif'%3ETiK%3C/text%3E%3Ctext x='96' y='135' text-anchor='middle' font-size='18' fill='%23FF9800' font-family='sans-serif' font-weight='bold'%3EMARKET%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231B5E20'/%3E%3Ccircle cx='50' cy='35' r='22' stroke='white' stroke-width='6' fill='none'/%3E%3Ccircle cx='50' cy='35' r='6' fill='white'/%3E%3Cpath d='M22 50H78V82C78 86.4183 74.4183 90 70 90H30C25.5817 90 22 86.4183 22 82V50Z' fill='white'/%3E%3Ctext x='50' y='80' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='22' fill='%231B5E20'%3ETiK%3C/text%3E%3C/svg%3E">
   <!-- Social sharing -->
   <meta property="og:title" content="TiK-Market">
   <meta property="og:description" content="Achetez et vendez sur TiK-Market, partout au Cameroun">
@@ -22,56 +22,75 @@
   <meta name="theme-color" content="#1B5E20">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%; height: 100dvh; overflow: hidden;
-      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: white;
       overscroll-behavior: none;
-      position: fixed;
+      overflow: hidden;
     }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
     #composeApp {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100%;
-      height: 100dvh;
-      flex: 1;
+      height: 100%;
     }
     /* Splash screen */
     #splash {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: #1B5E20;
+      background: #FFFFFF;
       z-index: 9999;
-      transition: opacity 0.2s ease-out;
+      transition: opacity 0.3s ease-out;
     }
     #splash.hidden { opacity: 0; pointer-events: none; }
-    .splash-icon {
-      width: 72px; height: 72px;
-      background: rgba(255,255,255,0.10);
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px;
+    .splash-content {
+      display: flex; flex-direction: column; align-items: center;
+      animation: splashFadeIn 0.8s ease-out;
     }
-    .splash-icon svg { width: 38px; height: 38px; }
+    @keyframes splashFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tik-logo-svg { width: 120px; height: 120px; }
     .splash-title {
-      font-size: 22px; font-weight: 700;
-      color: #fff; letter-spacing: 0.4px;
+      font-size: 28px; font-weight: 900;
+      color: #1B5E20; letter-spacing: 2px; margin-top: 20px;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      text-transform: uppercase;
     }
-    .splash-sub {
-      font-size: 12px; color: rgba(255,255,255,0.5);
-      margin-top: 8px; letter-spacing: 0.2px;
+    .splash-footer {
+        position: absolute; bottom: 40px; text-align: center;
+        width: 100%;
     }
+    .splash-version { font-size: 12px; color: #BDBDBD; margin-bottom: 4px; }
+    .splash-footer-brand { font-size: 14px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; opacity: 0.8; }
     /* ── Preview (shown while WASM loads) ── */
     #preview {
       display: none;
-      background: #f5f5f5;
+      background: #F5F3FF;
       min-height: 100vh;
       padding-bottom: 80px;
     }
@@ -79,51 +98,95 @@
     #preview.hidden { display: none; }
     /* Top bar */
     .preview-topbar {
-      background: #1B5E20; color: white;
-      padding: 12px 16px;
-      display: flex; align-items: center; justify-content: space-between;
+      background: #FF9800; color: white;
+      padding: 10px 16px 2px;
+      display: flex;
+      flex-direction: column;
       position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .preview-topbar h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
-    .preview-topbar .icons { display: flex; gap: 16px; align-items: center; }
-    .preview-topbar .icons span { font-size: 20px; cursor: default; opacity: 0.9; }
+    .preview-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; margin-bottom: 12px;
+    }
+    .preview-topbar h1 { font-size: 18px; font-weight: 800; letter-spacing: 0.3px; }
+    .preview-topbar .icons { display: flex; gap: 8px; align-items: center; }
+
+    /* Tabs */
+    .preview-tabs {
+      display: flex; gap: 24px; padding: 0 4px 4px;
+    }
+    .preview-tab {
+      font-size: 13px; font-weight: 500; color: white; opacity: 0.8;
+      padding-bottom: 4px; position: relative; cursor: pointer;
+    }
+    .preview-tab.active {
+      opacity: 1; font-weight: 700;
+    }
+    .preview-tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 16px; height: 2px; background: #FF9800; border-radius: 1px;
+    }
+
     /* Download buttons */
     .dl-btn {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; font-weight: 600; padding: 4px 10px;
-      border-radius: 14px; background: rgba(255,255,255,0.15);
+      font-size: 11px; font-weight: 700; padding: 6px 12px;
+      border-radius: 18px; background: rgba(255,255,255,0.2);
       color: white; text-decoration: none; cursor: pointer;
       transition: background 0.2s; white-space: nowrap;
     }
-    .dl-btn:hover { background: rgba(255,255,255,0.25); }
+    .dl-btn:hover { background: rgba(255,255,255,0.3); }
     .dl-btn.ios { opacity: 0.6; cursor: default; }
+
+    /* Search Bar Placeholder */
+    .preview-search {
+      padding: 8px 16px;
+    }
+    .search-mock {
+      background: white; height: 44px; border-radius: 22px;
+      display: flex; align-items: center; padding: 0 16px;
+      color: #9CA3AF; font-size: 13px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
     /* Categories strip */
     .preview-cats {
       display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto;
-      background: white; border-bottom: 1px solid #e0e0e0;
+      background: transparent;
       -webkit-overflow-scrolling: touch;
     }
     .preview-cats .cat {
-      white-space: nowrap; padding: 6px 14px; border-radius: 16px;
-      font-size: 13px; background: #e8f5e9; color: #1B5E20;
-      flex-shrink: 0;
+      white-space: nowrap; padding: 8px 16px; border-radius: 20px;
+      font-size: 13px; background: white; color: #6B7280;
+      flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .preview-cats .cat.active { background: #1B5E20; color: white; font-weight: 600; }
+    .preview-cats .cat.active { background: #2E7D32; color: white; font-weight: 600; }
+
+    /* Section Title */
+    .preview-section-title {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 16px 8px;
+    }
+    .preview-section-title h2 { font-size: 20px; font-weight: 800; color: #1A1A2E; }
+    .preview-section-title span { font-size: 12px; color: #6B7280; }
+
     /* Product grid */
     .preview-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      padding: 12px 12px 100px;
-      max-width: 720px; margin: 0 auto;
+      gap: 12px;
+      padding: 8px 12px 100px;
+      max-width: 800px; margin: 0 auto;
     }
     .preview-card {
-      background: white; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: white; border-radius: 16px; overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      position: relative;
     }
     .preview-card .img-wrap {
       width: 100%; aspect-ratio: 1;
-      background: #f0f0f0; display: flex;
+      background: #E8F5E9; display: flex;
       align-items: center; justify-content: center;
       overflow: hidden;
     }
@@ -131,20 +194,29 @@
       width: 100%; height: 100%; object-fit: cover;
     }
     .preview-card .img-wrap .placeholder {
-      font-size: 32px; color: #bbb;
+      font-size: 40px; color: #bbb;
     }
-    .preview-card .info { padding: 8px 10px 12px; }
+    .preview-card .info { padding: 10px; }
     .preview-card .info .title {
-      font-size: 13px; font-weight: 500; color: #212121;
+      font-size: 13px; font-weight: 600; color: #1A1A2E;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
       overflow: hidden; line-height: 1.3; min-height: 34px;
     }
     .preview-card .info .price {
-      font-size: 15px; font-weight: 700; color: #1B5E20;
-      margin-top: 4px;
+      font-size: 15px; font-weight: 700; color: #2E7D32;
+      margin-top: 6px;
     }
     .preview-card .info .shop {
-      font-size: 11px; color: #757575; margin-top: 2px;
+      font-size: 10px; color: #9CA3AF; margin-top: 2px; text-transform: uppercase;
+    }
+
+    /* Heart Icon Mock */
+    .heart-mock {
+        position: absolute; top: 8px; right: 8px;
+        width: 28px; height: 28px; border-radius: 14px;
+        background: rgba(255,255,255,0.7);
+        display: flex; align-items: center; justify-content: center;
+        color: #E91E63; font-size: 14px;
     }
     /* Loading shimmer */
     .preview-card.skeleton .img-wrap { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
@@ -200,54 +272,72 @@
     Connectez-vous pour voir vos commandes et vos favoris.
   </div>
 
-  <!-- Google Translate Widget -->
-  <div id="google_translate_element" style="position:fixed;bottom:10px;left:10px;z-index:10000;opacity:0.8;"></div>
-  <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement({
-        pageLanguage: 'fr',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-        autoDisplay: false
-      }, 'google_translate_element');
-    }
-  </script>
-  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <!-- Error screen (shown if wasm loading fails) -->
+  <div id="error-screen">
+    <div class="err-icon">⚠️</div>
+    <h2>Chargement interrompu</h2>
+    <p>L'application n'a pas pu se charger complètement.<br>Vérifiez votre connexion et réessayez.</p>
+    <button onclick="location.reload()">Réessayer</button>
+  </div>
 
   <!-- Offline banner -->
   <div id="offline-banner">📡 Connexion perdue — certaines fonctionnalités peuvent être limitées</div>
 
   <!-- Splash -->
   <div id="splash">
-    <div class="splash-icon">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M22 21V19C22 17.14 20.73 15.59 19 15.14C17.9 14.86 16.72 14.72 15.5 14.72C14.33 14.72 13.19 14.84 12.1 15.08M10 21H2V19C2 16.79 4.69 15 8 15C9.2 15 10.33 15.2 11.3 15.55M16 7C16 9.21 14.21 11 12 11C9.79 11 8 9.21 8 7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7ZM7 21V19C7 17.14 8.27 15.59 10 15.14C11.1 14.86 12.28 14.72 13.5 14.72C14.67 14.72 15.81 14.84 16.9 15.08C18.1 15.38 19 16.48 19 18V21H7Z" fill="#FF9800"/>
+    <div class="splash-content">
+      <svg class="tik-logo-svg" viewBox="0 0 100 100" fill="none">
+        <rect width="100" height="100" rx="22" fill="#FFFFFF"/>
+        <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8"/>
+        <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
+        <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
+        <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
       </svg>
+      <div class="splash-title">TIK MARKET</div>
     </div>
-    <div class="splash-title">TiK-Market</div>
-    <div class="splash-sub">Marché local en ligne</div>
+    <div class="splash-footer">
+        <div class="splash-version">Chargement...</div>
+        <div class="splash-footer-brand">TIK MARKET</div>
+    </div>
   </div>
 
   <!-- Preview (shown while WASM loads) -->
   <div id="preview">
     <div class="preview-topbar">
-      <h1>TiK-Market</h1>
-      <div class="icons">
-        <span class="dl-btn" onclick="document.getElementById('composeApp').scrollIntoView({behavior:'smooth'})" title="Télécharger depuis Paramètres">&#128241; APK</span>
-        <span class="dl-btn ios" title="Application iOS bientôt disponible">&#63743; iOS</span>
+      <div class="preview-header-row">
+        <h1>TiK-Market</h1>
+        <div class="icons">
+          <span class="dl-btn" onclick="document.getElementById('composeApp').scrollIntoView({behavior:'smooth'})" title="Télécharger l'APK">&#128241; APK</span>
+          <span class="dl-btn ios" title="Bientôt disponible">&#63743; iOS</span>
+        </div>
+      </div>
+      <div class="preview-tabs">
+        <span class="preview-tab active">Produits</span>
+        <span class="preview-tab">Boutiques</span>
       </div>
     </div>
+
+    <div class="preview-search">
+        <div class="search-mock">
+            <span>&#128269; Rechercher un produit...</span>
+        </div>
+    </div>
+
     <div class="preview-cats" id="preview-cats">
       <span class="cat active">Tous</span>
       <span class="cat">Alimentation</span>
       <span class="cat">Mode</span>
       <span class="cat">Électronique</span>
       <span class="cat">Artisanat</span>
-      <span class="cat">Services</span>
     </div>
+
+    <div class="preview-section-title">
+        <h2>Coups de cœur</h2>
+        <span>20 articles</span>
+    </div>
+
     <div class="preview-grid" id="preview-grid">
       <!-- Skeleton cards -->
-      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
-      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
       <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
       <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
     </div>
@@ -286,8 +376,8 @@
         errDiv.style.display = 'none';
         // Show skeleton
         previewGrid.innerHTML =
-          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(4);
-        fetch('https://tik-market.onrender.com/products/products.php')
+          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(2);
+        fetch('https://tik-market.onrender.com/api/products/products.php')
           .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
           .then(function(data) {
             var products = data.products || data || [];
@@ -302,7 +392,7 @@
                 ? '<img src="' + encodeURI(img) + '" alt="' + title.replace(/"/g,'&quot;') + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<span class=placeholder>&#128247;</span>\'">'
                 : '<span class="placeholder">&#128247;</span>';
               previewGrid.innerHTML +=
-                '<div class="preview-card"><div class="img-wrap">' + imgTag + '</div><div class="info"><div class="title">' + title.replace(/</g,'&lt;') + '</div><div class="price">' + price + '</div><div class="shop">' + shop.replace(/</g,'&lt;') + '</div></div></div>';
+                '<div class="preview-card"><div class="heart-mock">♥</div><div class="img-wrap">' + imgTag + '</div><div class="info"><div class="title">' + title.replace(/</g,'&lt;') + '</div><div class="price">' + price + '</div><div class="shop">' + shop.replace(/</g,'&lt;') + '</div></div></div>';
             });
           })
           .catch(function() {
@@ -317,7 +407,7 @@
           preview.classList.add('visible');
           loadPreviewProducts();
         }
-      }, 800); // show splash for 800ms, then preview
+      }, 500); // Réduit à 500ms pour plus de réactivité
 
       // ── When compose renders, hide preview ──
       var observer = new MutationObserver(function() {
@@ -348,7 +438,7 @@
       // ── Offline detection ──
       var banner = document.getElementById('offline-banner');
       function updateOnlineStatus() {
-        if (banner) banner.classList.toggle('show', !navigator.onLine);
+        banner.classList.toggle('show', !navigator.onLine);
       }
       window.addEventListener('online', updateOnlineStatus);
       window.addEventListener('offline', updateOnlineStatus);
