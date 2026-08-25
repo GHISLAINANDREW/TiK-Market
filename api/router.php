@@ -6,8 +6,19 @@
  * Usage: php -S 0.0.0.0:8081 -t /path/to/api router.php
  */
 
-// ── CORS headers for every response ──
-header('Access-Control-Allow-Origin: *');
+// ── CORS headers for every response (liste blanche d'origines) ──
+$allowedOrigin = null;
+$reqOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($reqOrigin !== '') {
+    $originHost = strtolower(parse_url($reqOrigin, PHP_URL_HOST) ?: '');
+    if (str_ends_with($originHost, '.vercel.app') || $originHost === 'localhost' || $originHost === '127.0.0.1') {
+        $allowedOrigin = $reqOrigin;
+    }
+}
+if ($allowedOrigin !== null) {
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Platform');
 header('Access-Control-Expose-Headers: Content-Type');

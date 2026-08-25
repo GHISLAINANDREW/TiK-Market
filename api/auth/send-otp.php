@@ -68,5 +68,6 @@ try {
 } catch (PDOException $e) {
     json(500, ['error' => 'Erreur serveur']);
 } catch (Exception $e) {
-    json(500, ['error' => 'Erreur d\'envoi SMS : ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }

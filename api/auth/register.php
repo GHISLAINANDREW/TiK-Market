@@ -10,11 +10,13 @@ $name = trim($input['name'] ?? '');
 $email = trim($input['email'] ?? '');
 $phone = trim($input['phone'] ?? '');
 $password = $input['password'] ?? '';
-$role = trim($input['role'] ?? 'buyer');
+$roleInput = trim($input['role'] ?? 'buyer');
 $avatar = trim($input['avatar'] ?? '');
-// Accept both French and English role names, store as English
-$roleMap = ['buyer' => 'buyer', 'acheteur' => 'buyer', 'vendor' => 'vendor', 'vendeur' => 'vendor', 'admin' => 'admin'];
-$role = $roleMap[$role] ?? 'buyer';
+// Accept both French and English role names, store as English.
+// SÉCURITÉ : le rôle 'admin' ne peut JAMAIS être choisi à l'inscription.
+// La promotion vers admin/super_admin se fait exclusivement en base par un super-admin.
+$roleMap = ['buyer' => 'buyer', 'acheteur' => 'buyer', 'vendor' => 'vendor', 'vendeur' => 'vendor'];
+$role = $roleMap[$roleInput] ?? 'buyer';
 $referralCode = trim($input['referral_code'] ?? '');
 
 if ($name === '' || $email === '' || $phone === '' || $password === '') {
@@ -29,9 +31,9 @@ if (strlen($password) < 6) {
     json(400, ['error' => 'Le mot de passe doit contenir au moins 6 caractères']);
 }
 
-$allowedRoles = ['buyer', 'vendor', 'admin'];
+$allowedRoles = ['buyer', 'vendor'];
 if (!in_array($role, $allowedRoles)) {
-    json(400, ['error' => 'Rôle invalide: ' . $role]);
+    json(400, ['error' => 'Rôle invalide']);
 }
 
 try {
@@ -122,7 +124,9 @@ try {
         ]
     ]);
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur BD : ' . $e->getMessage()]);
+    error_log('[TiK-Market] register PDO: ' . $e->getMessage());
+    json(500, ['error' => 'Erreur lors de la création du compte']);
 } catch (\Throwable $e) {
-    json(500, ['error' => $e->getMessage()]);
+    error_log('[TiK-Market] register: ' . $e->getMessage());
+    json(500, ['error' => 'Erreur interne']);
 }

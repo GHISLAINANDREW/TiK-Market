@@ -72,5 +72,6 @@ try {
     ]);
 
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur serveur: ' . $e->getMessage()]);
+    error_log('[TiK-Market] google_login PDO: ' . $e->getMessage());
+    json(500, ['error' => 'Erreur serveur']);
 }

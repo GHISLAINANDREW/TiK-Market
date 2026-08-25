@@ -1,10 +1,30 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Platform');
-
 date_default_timezone_set('Africa/Douala');
+
+/**
+ * CORS : liste blanche d'origines au lieu de "*".
+ * Le client natif (Android) n'envoie pas d'en-tête Origin → aucune contrainte pour lui.
+ * Les navigateurs ne reçoivent l'autorisation que pour les origines connues.
+ */
+function sendCorsHeaders(): void {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '') {
+        $host = strtolower(parse_url($origin, PHP_URL_HOST) ?: '');
+        $allowed =
+            str_ends_with($host, '.vercel.app') ||   // prod + déploiements de prévisualisation
+            $host === 'localhost' ||
+            $host === '127.0.0.1';                    // développement local
+        if ($allowed) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Vary: Origin');
+        }
+    }
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Platform');
+}
+
+header('Content-Type: application/json; charset=utf-8');
+sendCorsHeaders();
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
@@ -42,20 +62,23 @@ function getDB(): PDO {
         $pdo->exec("SET time_zone = '+01:00'");
         return $pdo;
     } catch (PDOException $e) {
-        // If connection fails, and we didn't try WITHOUT SSL yet, some servers might prefer that
+        // Repli : nouvelle tentative SANS SSL (certains serveurs préfèrent ça)
         if (isset($options[PDO::MYSQL_ATTR_SSL_CA])) {
             try {
                 unset($options[PDO::MYSQL_ATTR_SSL_CA]);
                 unset($options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT]);
-                return new PDO($dsn, $user, $pass, $options);
+                $pdo = new PDO($dsn, $user, $pass, $options);
+                $pdo->exec("SET names utf8mb4");
+                $pdo->exec("SET time_zone = '+01:00'");
+                return $pdo;
             } catch (PDOException $e2) {
-                // Return the original SSL error if both fail
-                json(500, ['error' => 'Database connection failed: ' . $e->getMessage()]);
-                exit;
+                error_log('[TiK-Market] DB connection failed (avec et sans SSL): ' . $e2->getMessage());
             }
+        } else {
+            error_log('[TiK-Market] DB connection failed: ' . $e->getMessage());
         }
-
-        json(500, ['error' => 'Database connection failed: ' . $e->getMessage()]);
+        // Détails complets côté logs serveur uniquement — jamais renvoyés au client.
+        json(500, ['error' => 'Service temporairement indisponible']);
         exit;
     }
 }
@@ -94,7 +117,23 @@ function json(int $code, $data): void {
     exit;
 }
 
-define('JWT_SECRET', getenv('JWT_SECRET') ?: 'tik_market_jwt_secret_2026_change_in_production');
+/**
+ * SÉCURITÉ : le secret JWT doit être fourni via la variable d'environnement JWT_SECRET.
+ * - En production (DB_HOST défini, ex: Render + Aiven) : refus explicite si absent,
+ *   sinon quiconque lit le dépôt peut forger des tokens valides.
+ * - En local (XAMPP, DB_HOST absent) : secret de développement isolé.
+ */
+$jwtSecret = getenv('JWT_SECRET');
+if (!$jwtSecret) {
+    if (getenv('DB_HOST')) {
+        error_log('[TiK-Market] FATAL: variable d\'environnement JWT_SECRET manquante en production.');
+        http_response_code(500);
+        echo json_encode(['error' => 'Configuration serveur incomplète']);
+        exit;
+    }
+    $jwtSecret = 'dev_only_tik_market_local_secret_never_in_prod';
+}
+define('JWT_SECRET', $jwtSecret);
 define('JWT_EXPIRY', 86400 * 30); // 30 days
 
 function base64url_encode(string $data): string {

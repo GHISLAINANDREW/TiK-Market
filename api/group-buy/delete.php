@@ -47,5 +47,6 @@ try {
     json(200, ['success' => true, 'message' => 'Achat groupé supprimé définitivement']);
 } catch (Exception $e) {
     $db->rollBack();
-    json(500, ['error' => 'Erreur SQL : ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }

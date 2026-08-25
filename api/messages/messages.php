@@ -277,7 +277,9 @@ try {
 
     json(405, ['error' => 'Méthode non autorisée']);
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur serveur: ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 } catch (Exception $e) {
-    json(500, ['error' => 'Erreur: ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }

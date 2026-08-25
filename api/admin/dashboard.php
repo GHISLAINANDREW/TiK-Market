@@ -295,5 +295,6 @@ try {
         'users_by_role' => (object)$usersByRole
     ]);    
 } catch (Exception $e) {
-    json(500, ['error' => $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }

@@ -31,5 +31,6 @@ try {
 
     json(200, ['success' => true, 'coupons' => $coupons]);
 } catch (PDOException $e) {
-    json(500, ['success' => false, 'error' => 'Erreur serveur: ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['success' => false, 'error' => 'Une erreur interne est survenue']);
 }

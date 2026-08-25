@@ -73,7 +73,8 @@ try {
     $creator = $stmt->fetch();
     $creatorName = $creator ? $creator['name'] : '';
 } catch (Exception $e) {
-    json(500, ['error' => 'Erreur SQL : ' . $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }
 
 json(201, [

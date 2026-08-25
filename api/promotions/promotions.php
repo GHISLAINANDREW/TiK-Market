@@ -148,5 +148,6 @@ try {
 
     json(405, ['error' => 'Method not allowed']);
 } catch (Exception $e) {
-    json(500, ['error' => $e->getMessage()]);
+    error_log('[TiK-Market] API error: ' . $e->getMessage());
+    json(500, ['error' => 'Une erreur interne est survenue']);
 }
