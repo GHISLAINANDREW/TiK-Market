@@ -17,7 +17,7 @@ data class AppCity(
 )
 
 val appCities: List<AppCity> = listOf(
-    AppCity("Dschang", 5.4440, 10.0533, "TiK-Market"),
+    AppCity("Dschang", 5.4440, 10.0533, "DschangMarket"),
     AppCity("Bafoussam", 5.4482, 10.4171, "Fu'sapMarket"),
     AppCity("Douala", 4.0511, 9.7679, "DoualaMarket"),
     AppCity("Yaoundé", 3.8480, 11.5021, "YaoundeMarket"),
