@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
+import com.tik_market.api.*
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
@@ -409,7 +410,7 @@ fun StoryViewerScreen(
                                         if (currentStory.storyId > 0 && currentStory.shopId > 0) {
                                             // Send private message to the vendor (not story reply)
                                             val vendorId = if (currentStory.vendorId > 0) currentStory.vendorId
-                                                else ApiClient.fetchShopById(currentStory.shopId)?.vendorId ?: 0
+                                                else ApiClient.fetchShop(currentStory.shopId)?.vendorId ?: 0
                                             if (vendorId > 0) {
                                                 val msg = "📲 Story: ${currentStory.title}\n$msgText"
                                                 ApiClient.sendMessage(

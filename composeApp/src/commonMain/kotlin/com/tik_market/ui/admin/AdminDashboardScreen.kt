@@ -24,13 +24,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiAdminDashboardResponse
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiOnlineUser
-import com.tik_market.api.ApiOnlineUsersResponse
-import com.tik_market.api.ApiStory
-import com.tik_market.api.ApiPromoCreateBody
-import com.tik_market.api.ApiNotification
+import com.tik_market.api.dto.ApiAdminDashboardResponse
+import com.tik_market.api.*
+import com.tik_market.api.dto.ApiOnlineUser
+import com.tik_market.api.dto.ApiOnlineUsersResponse
+import com.tik_market.api.dto.ApiStory
+import com.tik_market.api.dto.ApiHeroItem
+import com.tik_market.api.dto.ApiCreateHeroBody
+import com.tik_market.api.dto.ApiPromoCreateBody
+import com.tik_market.api.dto.ApiNotification
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.SampleData
 import com.tik_market.data.models.OrderStatus
 import com.tik_market.theme.*
@@ -460,7 +463,7 @@ private fun AdminSubScreen(
                                         if (addUserName.isBlank() || addUserEmail.isBlank() || addUserPhone.isBlank() || addUserPassword.isBlank()) {
                                             setAddUserResult(ts.allFieldsRequired)
                                         } else {
-                                            ApiClient.addUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole, addUserCity.ifBlank { null })
+                                            ApiClient.createUser(addUserName, addUserEmail, addUserPhone, addUserPassword, addUserRole, addUserCity.ifBlank { null })
                                             setAddUserResult(ts.userCreatedSuccess.replace("%s", addUserName))
                                             setAddUserName(""); setAddUserEmail(""); setAddUserPhone(""); setAddUserPassword(""); setAddUserCity("")
                                             loadData()
@@ -1368,7 +1371,7 @@ private fun AdminStoryCard(story: ApiStory, ts: com.tik_market.utils.AppStrings,
 
 @Composable
 fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<AdminShop>, ts: com.tik_market.utils.AppStrings) {
-    var heroItems by remember { mutableStateOf<List<com.tik_market.api.ApiHeroItem>>(emptyList()) }
+    var heroItems by remember { mutableStateOf<List<ApiHeroItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var newTitle by remember { mutableStateOf("") }
@@ -1440,7 +1443,7 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         onClick = {
                             scope.launch {
                                 isSubmitting = true; try {
-                                    ApiClient.createHeroItem(com.tik_market.api.ApiCreateHeroBody(title = newTitle, subtitle = newSubtitle, imageUrl = newImageUrl, shopId = selectedShopId))
+                                    ApiClient.createHeroItem(ApiCreateHeroBody(title = newTitle, subtitle = newSubtitle, imageUrl = newImageUrl, shopId = selectedShopId))
                                     newTitle = ""; newSubtitle = ""; newImageUrl = ""; selectedShopId = null; load()
                                 } catch (e: Exception) { error = e.message }; isSubmitting = false
                             }

@@ -8,9 +8,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.tik_market.api.ApiClient
-import com.tik_market.api.dto.ApiCartItemBody
-import com.tik_market.api.toProduct
+import com.tik_market.api.*
+import com.tik_market.api.dto.ApiShop
+import com.tik_market.api.dto.ApiWishlistItem
+import com.tik_market.api.dto.toProduct
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.CartItem
 import com.tik_market.data.models.Product
 import com.tik_market.navigation.AppState

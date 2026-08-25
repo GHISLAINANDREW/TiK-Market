@@ -28,10 +28,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiProduct
-import com.tik_market.api.ApiStory
-import com.tik_market.api.toProduct
+import com.tik_market.api.*
+import com.tik_market.api.dto.ApiStory
+import com.tik_market.api.dto.ApiHeroItem
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.data.models.SampleData
 import com.tik_market.theme.*
@@ -109,7 +109,7 @@ fun HomeScreen(
     var localWishlist by remember { mutableStateOf(wishlistProductIds) }
     var viewedStoryIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var showFilters by remember { mutableStateOf(false) }
-    var localHeroItems by remember { mutableStateOf<List<com.tik_market.api.ApiHeroItem>>(emptyList()) }
+    var localHeroItems by remember { mutableStateOf<List<ApiHeroItem>>(emptyList()) }
 
     val primary = MaterialTheme.colorScheme.primary
     val cityColors = LocalCityColors.current
@@ -523,7 +523,7 @@ fun ProductGridSection(products: List<Product>, columns: Int, wishlistIds: Set<I
 }
 
 @Composable
-fun DynamicHeroSection(items: List<com.tik_market.api.ApiHeroItem>, screenWidth: Dp) {
+fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
     var index by remember { mutableStateOf(0) }
     val cityColors = LocalCityColors.current
     LaunchedEffect(items) { while(items.isNotEmpty()) { delay(5000); index = (index + 1) % items.size } }

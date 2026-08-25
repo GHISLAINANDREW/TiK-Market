@@ -1,5 +1,8 @@
 package com.tik_market.ui.vendor
 
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
+
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
 import com.tik_market.theme.*
 import com.tik_market.ui.components.rememberImagePickerLauncher
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap

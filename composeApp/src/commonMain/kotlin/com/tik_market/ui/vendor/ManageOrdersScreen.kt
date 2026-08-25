@@ -15,8 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiOrder
+import com.tik_market.api.dto.ApiOrder
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.OrderStatus
 import com.tik_market.ui.components.OrderProgressBar
 import com.tik_market.theme.*

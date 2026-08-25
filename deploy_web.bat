@@ -2,10 +2,10 @@
 setlocal enabledelayedexpansion
 
 echo ===================================================
-echo [BUILD] Compilation de la version Web (JS Universal)...
+echo [BUILD] Compilation de la version Web (Wasm)...
 echo ===================================================
 
-call gradlew :composeApp:jsBrowserDistribution
+call gradlew :composeApp:wasmJsBrowserDistribution
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -14,7 +14,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-set DIST_DIR=composeApp\build\dist\js\productionExecutable
+set DIST_DIR=composeApp\build\dist\wasmJs\productionExecutable
 set WEB_DIST=web_dist
 
 echo.

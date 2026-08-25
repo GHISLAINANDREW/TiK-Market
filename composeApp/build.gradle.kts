@@ -12,26 +12,32 @@ plugins {
 kotlin {
     @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "composeApp"
+        compilerOptions {
+            moduleName.set("composeApp")
+        }
+        // Node.js version and download configuration are handled in gradle.properties
         browser {
             commonWebpackConfig {
                 outputFileName = "composeApp.js"
-            }
-            runTask {
-                devServer = devServer.copy(open = false)
+                devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
+                    open = false
+                )
             }
         }
         binaries.executable()
     }
 
-    js(IR) {
-        moduleName = "composeApp"
+    js {
+        compilerOptions {
+            moduleName.set("composeApp")
+        }
+        // Node.js version and download configuration are handled in gradle.properties
         browser {
             commonWebpackConfig {
                 outputFileName = "composeApp.js"
-            }
-            runTask {
-                devServer = devServer.copy(open = false)
+                devServer = org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer(
+                    open = false
+                )
             }
         }
         binaries.executable()
@@ -103,33 +109,34 @@ android {
 
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/AL2.0"
+            excludes += "META-INF/LGPL2.1"
         }
         // Force l'inclusion des bibliothèques natives pour une meilleure compatibilité
         jniLibs {
             useLegacyPackaging = true
         }
     }
+}
 
-    // Tâche pour incrémenter la version avant le build
-    tasks.register("incrementVersion") {
-        doLast {
-            val vProps = Properties()
-            val vFile = project.rootProject.file("version.properties")
-            if (vFile.exists()) {
-                vFile.inputStream().use { vProps.load(it) }
-            }
-            val currentCode = (vProps.getProperty("VERSION_CODE") ?: "0").toInt()
-            val nextCode = currentCode + 1
-            
-            // On incrémente le code et on met à jour le nom (ex: 1.0.0 -> 1.0.1)
-            // Pour simplifier, on garde le préfixe 1.0. et on ajoute le code
-            val nextName = "1.0.$nextCode"
-            
-            vProps.setProperty("VERSION_CODE", nextCode.toString())
-            vProps.setProperty("VERSION_NAME", nextName)
-            vFile.outputStream().use { vProps.store(it, null) }
-            println("Version mise à jour : $nextName (Code: $nextCode)")
+// Tâche pour incrémenter la version avant le build
+tasks.register("incrementVersion") {
+    doLast {
+        val vProps = Properties()
+        val vFile = project.rootProject.file("version.properties")
+        if (vFile.exists()) {
+            vFile.inputStream().use { vProps.load(it) }
         }
+        val currentCode = (vProps.getProperty("VERSION_CODE") ?: "0").toInt()
+        val nextCode = currentCode + 1
+        
+        // On incrémente le code et on met à jour le nom (ex: 1.0.0 -> 1.0.1)
+        // Pour simplifier, on garde le préfixe 1.0. et on ajoute le code
+        val nextName = "1.0.$nextCode"
+        
+        vProps.setProperty("VERSION_CODE", nextCode.toString())
+        vProps.setProperty("VERSION_NAME", nextName)
+        vFile.outputStream().use { vProps.store(it, null) }
+        println("Version mise à jour : $nextName (Code: $nextCode)")
     }
 }

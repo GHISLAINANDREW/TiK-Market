@@ -20,9 +20,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiGroupBuy
-import com.tik_market.api.ApiGroupBuyParticipant
-import com.tik_market.api.ApiProduct
+import com.tik_market.api.*
+import com.tik_market.api.dto.ApiGroupBuy
+import com.tik_market.api.dto.ApiGroupBuyParticipant
+import com.tik_market.api.dto.ApiProduct
 import com.tik_market.theme.*
 import com.tik_market.utils.FormatUtils
 import com.tik_market.utils.LocalAppStrings

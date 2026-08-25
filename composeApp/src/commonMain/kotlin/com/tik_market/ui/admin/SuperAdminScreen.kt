@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.TiKCard
 import com.tik_market.ui.components.TiKCardElevation

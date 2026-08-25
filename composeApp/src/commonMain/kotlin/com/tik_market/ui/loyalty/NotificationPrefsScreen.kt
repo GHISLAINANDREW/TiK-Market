@@ -17,8 +17,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiNotificationPreferences
+import com.tik_market.api.dto.ApiNotificationPreferences
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch

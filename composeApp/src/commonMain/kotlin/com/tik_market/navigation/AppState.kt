@@ -2,7 +2,8 @@ package com.tik_market.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.tik_market.api.ApiOrder
+import com.tik_market.api.dto.ApiOrder
+import com.tik_market.api.dto.ApiUser
 import com.tik_market.data.models.CartItem
 import com.tik_market.data.models.Product
 import com.tik_market.ui.story.StoryItem
@@ -32,7 +33,7 @@ class AppState(
     var isLoggedIn by mutableStateOf(isLoggedInInitial)
     var userName by mutableStateOf(userNameInitial)
     var userRole by mutableStateOf(userRoleInitial)
-    var currentUser by mutableStateOf<com.tik_market.api.ApiUser?>(null)
+    var currentUser by mutableStateOf<ApiUser?>(null)
     var userToken by mutableStateOf(userTokenInitial)
     var vendorShopName by mutableStateOf(vendorShopNameInitial)
     var refreshSignal by mutableStateOf(0)

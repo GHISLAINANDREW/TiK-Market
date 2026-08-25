@@ -18,8 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiNotification
+import com.tik_market.api.dto.ApiNotification
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.theme.Green
 import com.tik_market.theme.Orange

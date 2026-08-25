@@ -49,6 +49,34 @@ data class ApiProduct(
 )
 
 @Serializable
+data class ApiWishlistItem(
+    val id: Int = 0,
+    @SerialName("product_id") val productId: Int = 0,
+    val title: String = "",
+    val price: Double = 0.0,
+    @SerialName("compare_price") val comparePrice: Double? = null,
+    @SerialName("image_url") val imageUrl: String = "",
+    val stock: Int = 0,
+    @SerialName("shop_name") val shopName: String = ""
+)
+
+@Serializable
+data class ApiWishlistResponse(val items: List<ApiWishlistItem>)
+
+@Serializable
+data class ApiCartItem(
+    val id: Int = 0,
+    @SerialName("product_id") val productId: Int = 0,
+    val quantity: Int = 0,
+    val title: String = "",
+    val price: Double = 0.0,
+    @SerialName("compare_price") val comparePrice: Double? = null,
+    @SerialName("image_url") val imageUrl: String = "",
+    val stock: Int = 0,
+    @SerialName("shop_name") val shopName: String = ""
+)
+
+@Serializable
 data class ApiShopResponse(val shop: ApiShop)
 
 @Serializable

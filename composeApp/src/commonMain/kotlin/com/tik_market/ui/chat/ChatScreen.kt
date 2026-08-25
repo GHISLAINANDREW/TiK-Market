@@ -29,8 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiMessageReaction
+import com.tik_market.api.dto.ApiMessageReaction
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.rememberImagePickerLauncher
 import com.tik_market.ui.components.rememberTakePhotoLauncher

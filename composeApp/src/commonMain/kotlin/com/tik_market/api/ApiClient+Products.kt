@@ -19,7 +19,7 @@ suspend fun ApiClient.fetchProducts(
     location: String? = null,
     includeInactive: Boolean = false
 ): List<ApiProduct> {
-    val path = buildUrl(Endpoints.PRODUCTS, mapOf(
+    val path = buildUrl(ApiClient.Endpoints.PRODUCTS, mapOf(
         "category" to category,
         "search" to search,
         "min_price" to minPrice,
@@ -33,7 +33,7 @@ suspend fun ApiClient.fetchProducts(
 }
 
 suspend fun ApiClient.fetchProduct(id: Int): ApiProduct {
-    return safeRequest<ApiProduct>("GET", "${Endpoints.PRODUCTS}?id=$id")
+    return safeRequest<ApiProduct>("GET", "${ApiClient.Endpoints.PRODUCTS}?id=$id")
 }
 
 suspend fun ApiClient.submitReview(productId: Int, rating: Int, comment: String, imageUrl: String = "") {
@@ -43,23 +43,23 @@ suspend fun ApiClient.submitReview(productId: Int, rating: Int, comment: String,
         put("comment", comment)
         if (imageUrl.isNotBlank()) put("image_url", imageUrl)
     }.toString()
-    post(Endpoints.REVIEWS, body)
+    post(ApiClient.Endpoints.REVIEWS, body)
 }
 
 suspend fun ApiClient.fetchProductReviews(productId: Int): ApiReviewResponse? {
     return try {
-        safeRequest<ApiReviewResponse>("GET", "${Endpoints.REVIEWS}?product_id=$productId")
+        safeRequest<ApiReviewResponse>("GET", "${ApiClient.Endpoints.REVIEWS}?product_id=$productId")
     } catch (_: Exception) { null }
 }
 
 suspend fun ApiClient.markReviewUseful(reviewId: Int) {
-    try { post("${Endpoints.REVIEWS}?useful=$reviewId", "") } catch (_: Exception) { }
+    try { post("${ApiClient.Endpoints.REVIEWS}?useful=$reviewId", "") } catch (_: Exception) { }
 }
 
 suspend fun ApiClient.replyToReview(reviewId: Int, reply: String) {
     try {
         val body = buildJsonObject { put("reply", reply) }.toString()
-        put("${Endpoints.REVIEWS}?reply=$reviewId", body)
+        put("${ApiClient.Endpoints.REVIEWS}?reply=$reviewId", body)
     } catch (_: Exception) { }
 }
 
@@ -78,7 +78,7 @@ suspend fun ApiClient.createProduct(
     val body = json.encodeToString(
         ApiCreateProductBody(shopId, title, description, price, comparePrice, category, stock, unit, imageUrl, isStory)
     )
-    return safeRequest<ApiProduct>("POST", Endpoints.PRODUCTS, body)
+    return safeRequest<ApiProduct>("POST", ApiClient.Endpoints.PRODUCTS, body)
 }
 
 suspend fun ApiClient.fetchCategories(): List<String> {
@@ -89,20 +89,20 @@ suspend fun ApiClient.fetchCategories(): List<String> {
 }
 
 suspend fun ApiClient.fetchWishlist(): List<ApiWishlistItem> {
-    return safeRequest<ApiWishlistResponse>("GET", Endpoints.WISHLIST).items
+    return safeRequest<ApiWishlistResponse>("GET", ApiClient.Endpoints.WISHLIST).items
 }
 
 suspend fun ApiClient.addToWishlist(productId: Int) {
-    post(Endpoints.WISHLIST, """{"product_id":$productId}""")
+    post(ApiClient.Endpoints.WISHLIST, """{"product_id":$productId}""")
 }
 
 suspend fun ApiClient.removeFromWishlist(productId: Int) {
-    delete("${Endpoints.WISHLIST}?product_id=$productId")
+    delete("${ApiClient.Endpoints.WISHLIST}?product_id=$productId")
 }
 
 suspend fun ApiClient.fetchFavoriteShops(): List<ApiFavoriteShop> {
     return try {
-        safeRequest<ApiFavoriteShopsResponse>("GET", Endpoints.FAVORITE_SHOPS).favorites
+        safeRequest<ApiFavoriteShopsResponse>("GET", ApiClient.Endpoints.FAVORITE_SHOPS).favorites
     } catch (_: Exception) {
         emptyList()
     }
@@ -110,16 +110,16 @@ suspend fun ApiClient.fetchFavoriteShops(): List<ApiFavoriteShop> {
 
 suspend fun ApiClient.addFavoriteShop(shopId: Int) {
     val body = buildJsonObject { put("shop_id", shopId) }.toString()
-    post(Endpoints.FAVORITE_SHOPS, body)
+    post(ApiClient.Endpoints.FAVORITE_SHOPS, body)
 }
 
 suspend fun ApiClient.removeFavoriteShop(shopId: Int) {
-    delete("${Endpoints.FAVORITE_SHOPS}?shop_id=$shopId")
+    delete("${ApiClient.Endpoints.FAVORITE_SHOPS}?shop_id=$shopId")
 }
 
 suspend fun ApiClient.validatePromoCode(code: String, amount: Double): ApiPromoValidationResponse {
     return try {
-        val path = buildUrl(Endpoints.PROMOTIONS, mapOf("code" to code, "amount" to amount))
+        val path = buildUrl(ApiClient.Endpoints.PROMOTIONS, mapOf("code" to code, "amount" to amount))
         safeRequest<ApiPromoValidationResponse>("GET", path)
     } catch (_: Exception) {
         ApiPromoValidationResponse(valid = false, error = "Erreur de validation")
@@ -128,23 +128,23 @@ suspend fun ApiClient.validatePromoCode(code: String, amount: Double): ApiPromoV
 
 suspend fun ApiClient.fetchShopPromotions(shopId: Int): List<ApiPromotion> {
     return try {
-        safeRequest<ApiPromotionsResponse>("GET", "${Endpoints.PROMOTIONS}?shop_id=$shopId").promotions
+        safeRequest<ApiPromotionsResponse>("GET", "${ApiClient.Endpoints.PROMOTIONS}?shop_id=$shopId").promotions
     } catch (_: Exception) {
         emptyList()
     }
 }
 
 suspend fun ApiClient.createPromotion(body: ApiPromoCreateBody) {
-    post(Endpoints.PROMOTIONS, json.encodeToString(body))
+    post(ApiClient.Endpoints.PROMOTIONS, json.encodeToString(body))
 }
 
 suspend fun ApiClient.deletePromotion(id: Int) {
-    delete("${Endpoints.PROMOTIONS}?id=$id")
+    delete("${ApiClient.Endpoints.PROMOTIONS}?id=$id")
 }
 
 suspend fun ApiClient.fetchShops(location: String? = null): List<ApiShop> {
     return try {
-        val path = buildUrl(Endpoints.SHOPS, mapOf("location" to location))
+        val path = buildUrl(ApiClient.Endpoints.SHOPS, mapOf("location" to location))
         safeRequest<List<ApiShop>>("GET", path)
     } catch (e: Exception) {
         emptyList()
@@ -153,7 +153,7 @@ suspend fun ApiClient.fetchShops(location: String? = null): List<ApiShop> {
 
 suspend fun ApiClient.fetchShop(shopId: Int): ApiShop? {
     return try {
-        safeRequest<ApiShopResponse>("GET", "${Endpoints.SHOPS}?id=$shopId").shop
+        safeRequest<ApiShopResponse>("GET", "${ApiClient.Endpoints.SHOPS}?id=$shopId").shop
     } catch (_: Exception) {
         null
     }
@@ -168,7 +168,29 @@ suspend fun ApiClient.createShop(
     imageUrl: String? = null
 ): ApiShop {
     val body = json.encodeToString(ApiCreateShopBody(name, description, phone, location, category, imageUrl))
-    return safeRequest<ApiShopResponse>("POST", Endpoints.SHOPS, body).shop
+    return safeRequest<ApiShopResponse>("POST", ApiClient.Endpoints.SHOPS, body).shop
+}
+
+suspend fun ApiClient.updateShop(
+    shopId: Int,
+    name: String? = null,
+    description: String? = null,
+    phone: String? = null,
+    location: String? = null,
+    category: String? = null,
+    imageUrl: String? = null
+) {
+    val body = buildJsonObject {
+        name?.let { put("name", it) }
+        description?.let { put("description", it) }
+        phone?.let { put("phone", it) }
+        location?.let { put("location", it) }
+        category?.let { put("category", it) }
+        imageUrl?.let { put("image_url", it) }
+    }.toString()
+
+    if (body == "{}") return
+    put("${ApiClient.Endpoints.SHOPS}?id=$shopId", body)
 }
 
 suspend fun ApiClient.updateProduct(
@@ -196,11 +218,11 @@ suspend fun ApiClient.updateProduct(
     }.toString()
 
     if (body == "{}") return
-    put("${Endpoints.PRODUCTS}?id=$productId", body)
+    put("${ApiClient.Endpoints.PRODUCTS}?id=$productId", body)
 }
 
 suspend fun ApiClient.deleteProduct(productId: Int) {
-    delete("${Endpoints.PRODUCTS}?id=$productId")
+    delete("${ApiClient.Endpoints.PRODUCTS}?id=$productId")
 }
 
 suspend fun ApiClient.fetchVendorProducts(shopId: Int): List<ApiProduct> {

@@ -1,5 +1,8 @@
 package com.tik_market.ui.profile
 
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
+
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiFavoriteShop
 import com.tik_market.theme.*
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.format

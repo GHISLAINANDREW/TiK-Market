@@ -18,8 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiShop
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.BrandTopBarColor
 import com.tik_market.theme.Green
 import com.tik_market.ui.components.loadImageFromUrl
@@ -44,7 +44,7 @@ fun ShopsListScreen(
     LaunchedEffect(city) {
         try {
             // Filtre strict par ville (résident connecté) : uniquement les boutiques de sa ville.
-            val apiShops = ApiClient.fetchAllShops(location = city)
+            val apiShops = ApiClient.fetchShops(location = city)
             if (apiShops.isNotEmpty()) {
                 shops = apiShops
             } else if (city == null) {

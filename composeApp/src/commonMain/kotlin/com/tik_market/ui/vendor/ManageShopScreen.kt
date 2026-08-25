@@ -17,10 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiProduct
-import com.tik_market.api.ApiVendorInteractionsResponse
-import com.tik_market.api.ApiInteractionUser
-import com.tik_market.api.ApiProductReview
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.ui.components.rememberImagePickerLauncher

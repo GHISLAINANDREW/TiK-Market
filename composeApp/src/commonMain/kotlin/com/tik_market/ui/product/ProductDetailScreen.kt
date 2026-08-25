@@ -18,7 +18,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.data.models.Review
 import com.tik_market.data.models.SampleData
@@ -30,8 +31,6 @@ import com.tik_market.utils.format
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch
-import com.tik_market.api.ApiProduct
-import com.tik_market.api.toProduct
 
 import com.tik_market.utils.FormatUtils
 import com.tik_market.data.Resource
@@ -325,7 +324,7 @@ fun ProductDetailScreen(
                     try {
                         val shopId = product.shopId.toIntOrNull() ?: 0
                         if (shopId > 0) {
-                            val apiShop = ApiClient.fetchShopById(shopId)
+                            val apiShop = ApiClient.fetchShop(shopId)
                             if (apiShop?.logo?.isNotBlank() == true) {
                                 shopLogoBitmap = loadImageFromUrl(apiShop.logo)
                             }

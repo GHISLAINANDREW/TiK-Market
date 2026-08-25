@@ -31,7 +31,7 @@ suspend fun ApiClient.fetchAdminShops(): List<ApiAdminShop> {
     }
 }
 
-suspend fun ApiClient.addUser(name: String, email: String, phone: String, password: String, role: String = "buyer", managedCity: String? = null) {
+suspend fun ApiClient.createUser(name: String, email: String, phone: String, password: String, role: String = "buyer", managedCity: String? = null) {
     val body = buildJsonObject {
         put("name", name)
         put("email", email)
@@ -45,6 +45,10 @@ suspend fun ApiClient.addUser(name: String, email: String, phone: String, passwo
 
 suspend fun ApiClient.deleteUser(userId: Int) {
     delete("${ApiClient.Endpoints.ADMIN_USERS}?id=$userId")
+}
+
+suspend fun ApiClient.updateUserRole(userId: Int, role: String) {
+    put("${ApiClient.Endpoints.ADMIN_USERS}?id=$userId&role=$role", "")
 }
 
 suspend fun ApiClient.banUser(userId: Int, status: String = "banned") {

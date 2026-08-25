@@ -20,7 +20,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
+import com.tik_market.api.dto.ApiUser
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.ui.components.loadImageFromUrl
@@ -32,7 +34,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (com.tik_market.api.ApiUser) -> Unit) {
+fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (ApiUser) -> Unit) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val ts = LocalAppStrings.current

@@ -10,6 +10,8 @@ import kotlinx.serialization.json.put
  * Extension functions for ApiClient related to Cart, Orders, Payments and Wallet.
  */
 
+// ── Cart ──
+
 suspend fun ApiClient.fetchCart(): List<ApiCartItem> {
     return safeRequest("GET", ApiClient.Endpoints.CART)
 }
@@ -28,11 +30,16 @@ suspend fun ApiClient.removeFromCart(productId: Int) {
     delete("${ApiClient.Endpoints.CART}?product_id=$productId")
 }
 
+// ── Orders ──
+
 suspend fun ApiClient.fetchOrders(): List<ApiOrder> {
     val resp = safeRequest<ApiOrdersResponse>("GET", ApiClient.Endpoints.ORDERS)
     return resp.orders
 }
 
+/**
+ * Fetch a single order by ID.
+ */
 suspend fun ApiClient.fetchOrder(orderId: Int): ApiOrder {
     return safeRequest<ApiOrderResponse>("GET", "${ApiClient.Endpoints.ORDERS}?id=$orderId").order
 }
@@ -49,9 +56,15 @@ suspend fun ApiClient.createOrder(
     return safeRequest<ApiOrderResponse>("POST", ApiClient.Endpoints.ORDERS, body).order
 }
 
+suspend fun ApiClient.deleteOrder(orderId: Int) {
+    delete("${ApiClient.Endpoints.ORDERS}?id=$orderId")
+}
+
 suspend fun ApiClient.updateOrderStatus(orderId: Int, status: String) {
     put("${ApiClient.Endpoints.ORDERS_VENDOR}?id=$orderId&status=$status", "")
 }
+
+// ── Vendor Orders ──
 
 suspend fun ApiClient.fetchVendorOrders(): List<ApiOrder> {
     val resp = safeRequest<ApiOrdersResponse>("GET", ApiClient.Endpoints.ORDERS_VENDOR)
@@ -62,28 +75,32 @@ suspend fun ApiClient.updateVendorOrderStatus(orderId: Int, status: String) {
     updateOrderStatus(orderId, status)
 }
 
-suspend fun ApiClient.fetchOrderTimeline(orderId: Int): List<ApiOrderTimelineStep> {
-    return try {
-        safeRequest<List<ApiOrderTimelineStep>>("GET", "${ApiClient.Endpoints.ORDERS}?timeline=1&id=$orderId")
-    } catch (_: Exception) {
-        emptyList()
-    }
-}
-
 suspend fun ApiClient.confirmVendorDelivery(orderId: Int) {
-    // According to PHP, vendor marks status as 'delivered' to confirm delivery
     updateVendorOrderStatus(orderId, "delivered")
 }
 
 suspend fun ApiClient.confirmClientDelivery(orderId: Int) {
-    // According to PHP, action 'confirm_received' on vendor endpoint is for client confirmation
+    confirmOrderReceived(orderId)
+}
+
+suspend fun ApiClient.confirmOrderReceived(orderId: Int) {
     put("${ApiClient.Endpoints.ORDERS_VENDOR}?id=$orderId&action=confirm_received", "")
 }
+
+// ── Payments ──
 
 suspend fun ApiClient.initiatePayment(orderId: Int, provider: String, phone: String): ApiPayment {
     val body = json.encodeToString(ApiInitiatePaymentBody(orderId, provider, phone))
     return safeRequest<ApiPaymentResponse>("POST", ApiClient.Endpoints.PAYMENTS, body).payment
 }
+
+suspend fun ApiClient.getPaymentStatus(orderId: Int): ApiPayment? {
+    return try {
+        safeRequest<ApiPayment>("GET", "${ApiClient.Endpoints.PAYMENTS}?order_id=$orderId")
+    } catch (_: Exception) { null }
+}
+
+// ── Wallet / Fidélité ──
 
 suspend fun ApiClient.fetchWallet(): ApiWallet? {
     return try {

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.chat.openUrl
@@ -52,7 +53,7 @@ fun ShopPageScreen(
     LaunchedEffect(shopId) {
         isLoading = true
         try {
-            val s = ApiClient.fetchShopById(shopId)
+            val s = ApiClient.fetchShop(shopId)
             shop = s
             if (s != null && s.logo.isNotBlank()) {
                 val cleanBase = ApiClient.baseUrl.trimEnd('/')

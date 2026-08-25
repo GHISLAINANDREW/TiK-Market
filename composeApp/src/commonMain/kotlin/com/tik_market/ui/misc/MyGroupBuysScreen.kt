@@ -19,9 +19,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tik_market.api.ApiClient
-import com.tik_market.api.ApiGroupBuy
-import com.tik_market.api.ApiGroupBuyDetail
+import com.tik_market.api.dto.ApiGroupBuy
+import com.tik_market.api.dto.ApiGroupBuyDetail
+import com.tik_market.api.*
+import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.utils.FormatUtils
 import com.tik_market.utils.LocalAppStrings

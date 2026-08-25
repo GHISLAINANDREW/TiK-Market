@@ -2,6 +2,9 @@ package com.tik_market.ui.components
 
 import androidx.compose.runtime.*
 import com.tik_market.api.ApiClient
+import com.tik_market.api.fetchUnreadCount
+import com.tik_market.api.fetchWallet
+import com.tik_market.api.fetchNotifications
 import com.tik_market.navigation.AppState
 import com.tik_market.navigation.NavScreen
 import com.tik_market.utils.NotificationUtils

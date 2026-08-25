@@ -8,44 +8,48 @@ import kotlinx.serialization.encodeToString
  */
 
 suspend fun ApiClient.fetchStories(replies: Boolean = false): List<ApiStory> {
-    val path = buildUrl(Endpoints.STORIES, mapOf("replies" to if (replies) "1" else "0"))
+    val path = buildUrl(ApiClient.Endpoints.STORIES, mapOf("replies" to if (replies) "1" else "0"))
     return safeRequest<ApiStoriesResponse>("GET", path).stories
 }
 
 suspend fun ApiClient.fetchShopStories(shopId: Int, replies: Boolean = false): List<ApiStory> {
-    val path = buildUrl(Endpoints.STORIES, mapOf(
+    val path = buildUrl(ApiClient.Endpoints.STORIES, mapOf(
         "shop_id" to shopId.toString(),
         "replies" to if (replies) "1" else "0"
     ))
     return safeRequest<ApiStoriesResponse>("GET", path).stories
 }
 
+suspend fun ApiClient.fetchStoryById(storyId: Int): ApiStory {
+    return safeRequest("GET", "${ApiClient.Endpoints.STORIES}?id=$storyId")
+}
+
 suspend fun ApiClient.createStory(shopId: Int, mediaUrl: String, mediaType: String = "image", caption: String? = null, duration: Int = 0): ApiStory {
     val body = json.encodeToString(ApiCreateStoryBody(shopId, mediaUrl, mediaType, caption, duration))
-    return safeRequest("POST", Endpoints.STORIES, body)
+    return safeRequest("POST", ApiClient.Endpoints.STORIES, body)
 }
 
 suspend fun ApiClient.deleteStory(storyId: Int) {
-    delete("${Endpoints.STORIES}?id=$storyId")
+    delete("${ApiClient.Endpoints.STORIES}?id=$storyId")
 }
 
 suspend fun ApiClient.replyToStory(storyId: Int, text: String): ApiStoryReplyResponse {
     val body = json.encodeToString(ApiStoryReplyBody(text))
-    return safeRequest("POST", "${Endpoints.STORIES}?reply=$storyId", body)
+    return safeRequest("POST", "${ApiClient.Endpoints.STORIES}?reply=$storyId", body)
 }
 
 suspend fun ApiClient.fetchHeroItems(): List<ApiHeroItem> {
     return try {
-        safeRequest<List<ApiHeroItem>>("GET", Endpoints.HERO)
+        safeRequest<List<ApiHeroItem>>("GET", ApiClient.Endpoints.HERO)
     } catch (_: Exception) {
         emptyList()
     }
 }
 
 suspend fun ApiClient.createHeroItem(body: ApiCreateHeroBody): ApiHeroItem {
-    return safeRequest("POST", Endpoints.HERO, json.encodeToString(body))
+    return safeRequest("POST", ApiClient.Endpoints.HERO, json.encodeToString(body))
 }
 
 suspend fun ApiClient.deleteHeroItem(id: Int) {
-    delete("${Endpoints.HERO}?id=$id")
+    delete("${ApiClient.Endpoints.HERO}?id=$id")
 }
