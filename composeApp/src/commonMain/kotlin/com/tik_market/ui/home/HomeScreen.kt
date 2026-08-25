@@ -239,7 +239,7 @@ fun HomeScreen(
         (searchQuery.isBlank() || p.title.contains(searchQuery, ignoreCase = true) || p.shopName.contains(searchQuery, ignoreCase = true))
     }
 
-    val searchPlaceholders = listOf("Poulet frais...", "Rechercher un produit...", "Pagne Wax élégant...", "Smartphone Samsung...", "Boutique de Will...")
+    val searchPlaceholders = listOf("HG shop le meilleur...", "Rechercher un produit...", "Pagne Wax élégant...", "Smartphone Samsung...", "Boutique de Will...")
     var placeholderIndex by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while(true) { delay(3500); placeholderIndex = (placeholderIndex + 1) % searchPlaceholders.size } }
 

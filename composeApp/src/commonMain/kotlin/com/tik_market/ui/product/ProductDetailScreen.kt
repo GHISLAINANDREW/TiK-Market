@@ -125,7 +125,7 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareUrl = "https://dschang-marke.vercel.app/?p=${product.id}"
+                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
                         val shareText = "🚀 Découvre ${product.title} sur TiK-Market\nPrix : ${FormatUtils.formatPrice(product.price)}\n\nLien : $shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }

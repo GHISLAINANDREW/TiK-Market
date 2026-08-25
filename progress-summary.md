@@ -20,7 +20,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - **API Render opérationnelle** – Login, produits, boutiques, commandes fonctionnent
 - **Aiven connecté avec SSL** – Host `mysql-32d32cc7-tik-market.k.aivencloud.com:10180`
 - **SQL ANSI_QUOTES corrigé** – Tous les identifiants SQL utilisent `'`
-- **Cloudinary configuré** – `cloud_name=***REMOVED***`, `api_key=***REMOVED***`, `api_secret=***REMOVED***`
+- **Cloudinary configuré** – `cloud_name=***REDACTED***`, `api_key=***REDACTED***`, `api_secret=***REDACTED***`
 - **APK Android buildé** – `TiK-Market_v1.0.6.apk` (URL API : `https://tik-market.onrender.com`)
 - **Web Universel (JS IR) buildé et déployé** – `https://tik-market-app.vercel.app` (Compatibilité maximale).
 - **GitHub Actions workflow optimisé** – Déploiement automatique fonctionnel en mode compatibilité.
@@ -51,7 +51,7 @@ Déployer l'infrastructure complète et développer les fonctionnalités métier
 - `cahier-de-charge.docx` – Cahier de charge (88,6 Ko)
 
 ## Blocked
-- **Secret `VERCEL_TOKEN` non ajouté** – Token `***REMOVED******` doit être ajouté comme secret GitHub
+- **Secret `VERCEL_TOKEN` non ajouté** – Token doit être ajouté comme secret GitHub
 
 ## Key Decisions
 - Render remplace InfinityFree

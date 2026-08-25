@@ -51,6 +51,9 @@ package.json
 dev-server.log
 php_server.log
 
+# Contains secrets - never commit
+progress-summary.md
+
 # OS
 .DS_Store
 Thumbs.db
