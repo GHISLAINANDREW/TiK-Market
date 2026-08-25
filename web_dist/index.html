@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TiK-Market</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <!-- Apple PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TiK-Market">
+  <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231B5E20'/%3E%3Ccircle cx='96' cy='72' r='40' fill='rgba(255,255,255,0.12)'/%3E%3Ctext x='96' y='74' text-anchor='middle' font-size='56' font-weight='bold' fill='white' font-family='sans-serif'%3ETiK%3C/text%3E%3Ctext x='96' y='135' text-anchor='middle' font-size='18' fill='%23FF9800' font-family='sans-serif' font-weight='bold'%3EMARKET%3C/text%3E%3C/svg%3E">
+  <!-- Social sharing -->
+  <meta property="og:title" content="TiK-Market">
+  <meta property="og:description" content="Achetez et vendez sur TiK-Market, partout au Cameroun">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tikmarket-app.vercel.app">
+  <meta property="og:image" content="https://tikmarket-app.vercel.app/favicon.svg">
+  <meta name="twitter:card" content="summary">
+  <!-- Theme -->
+  <meta name="theme-color" content="#1B5E20">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100dvh; overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+      position: fixed;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      display: flex;
+      flex-direction: column;
+    }
+    #composeApp {
+      width: 100%;
+      height: 100dvh;
+      flex: 1;
+    }
+    /* Splash screen */
+    #splash {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #1B5E20;
+      z-index: 9999;
+      transition: opacity 0.2s ease-out;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    .splash-icon {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.10);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .splash-icon svg { width: 38px; height: 38px; }
+    .splash-title {
+      font-size: 22px; font-weight: 700;
+      color: #fff; letter-spacing: 0.4px;
+    }
+    .splash-sub {
+      font-size: 12px; color: rgba(255,255,255,0.5);
+      margin-top: 8px; letter-spacing: 0.2px;
+    }
+    /* ── Preview (shown while WASM loads) ── */
+    #preview {
+      display: none;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    #preview.visible { display: block; }
+    #preview.hidden { display: none; }
+    /* Top bar */
+    .preview-topbar {
+      background: #1B5E20; color: white;
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .preview-topbar h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+    .preview-topbar .icons { display: flex; gap: 16px; align-items: center; }
+    .preview-topbar .icons span { font-size: 20px; cursor: default; opacity: 0.9; }
+    /* Download buttons */
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 4px 10px;
+      border-radius: 14px; background: rgba(255,255,255,0.15);
+      color: white; text-decoration: none; cursor: pointer;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .dl-btn:hover { background: rgba(255,255,255,0.25); }
+    .dl-btn.ios { opacity: 0.6; cursor: default; }
+    /* Categories strip */
+    .preview-cats {
+      display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto;
+      background: white; border-bottom: 1px solid #e0e0e0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .preview-cats .cat {
+      white-space: nowrap; padding: 6px 14px; border-radius: 16px;
+      font-size: 13px; background: #e8f5e9; color: #1B5E20;
+      flex-shrink: 0;
+    }
+    .preview-cats .cat.active { background: #1B5E20; color: white; font-weight: 600; }
+    /* Product grid */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 12px 12px 100px;
+      max-width: 720px; margin: 0 auto;
+    }
+    .preview-card {
+      background: white; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .preview-card .img-wrap {
+      width: 100%; aspect-ratio: 1;
+      background: #f0f0f0; display: flex;
+      align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .preview-card .img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .preview-card .img-wrap .placeholder {
+      font-size: 32px; color: #bbb;
+    }
+    .preview-card .info { padding: 8px 10px 12px; }
+    .preview-card .info .title {
+      font-size: 13px; font-weight: 500; color: #212121;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.3; min-height: 34px;
+    }
+    .preview-card .info .price {
+      font-size: 15px; font-weight: 700; color: #1B5E20;
+      margin-top: 4px;
+    }
+    .preview-card .info .shop {
+      font-size: 11px; color: #757575; margin-top: 2px;
+    }
+    /* Loading shimmer */
+    .preview-card.skeleton .img-wrap { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .preview-card.skeleton .info .title { background: #e0e0e0; height: 14px; border-radius: 4px; min-height: auto; margin-bottom: 6px; width: 80%; }
+    .preview-card.skeleton .info .price { background: #e0e0e0; height: 16px; border-radius: 4px; width: 50%; }
+    .preview-card.skeleton .info .shop { background: #e0e0e0; height: 11px; border-radius: 4px; width: 60%; }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    /* Error/retry inside preview */
+    #preview-error {
+      text-align: center; padding: 40px 20px; color: #757575;
+    }
+    #preview-error button {
+      margin-top: 12px; background: #1B5E20; color: white;
+      border: none; padding: 8px 24px; border-radius: 20px; font-size: 14px; cursor: pointer;
+    }
+    /* Offline banner */
+    #offline-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #D32F2F; color: white;
+      text-align: center; padding: 6px 16px;
+      font-size: 13px; font-weight: 500;
+      z-index: 10000;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+    #offline-banner.show { transform: translateY(0); }
+    /* Error state if wasm fails to load */
+    #error-screen {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #1B5E20; z-index: 10001;
+      color: white; text-align: center; padding: 32px;
+    }
+    #error-screen.visible { display: flex; }
+    #error-screen .err-icon { font-size: 48px; margin-bottom: 16px; }
+    #error-screen h2 { font-size: 18px; margin-bottom: 8px; }
+    #error-screen p { font-size: 13px; opacity: 0.8; margin-bottom: 20px; }
+    #error-screen button {
+      background: #FF9800; color: white; border: none;
+      padding: 10px 28px; border-radius: 24px; font-size: 14px;
+      cursor: pointer; font-weight: 600;
+    }
+    #error-screen button:hover { background: #F57C00; }
+  </style>
+</head>
+<body>
+  <div id="composeApp"></div>
+
+  <!-- Google Translate visibility helper -->
+  <div id="translate-helper" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+    TiK-Market: Boutique en ligne, achats groupés, fidélité et promotions.
+    Connectez-vous pour voir vos commandes et vos favoris.
+  </div>
+
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;bottom:10px;left:10px;z-index:10000;opacity:0.8;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'fr',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <!-- Offline banner -->
+  <div id="offline-banner">📡 Connexion perdue — certaines fonctionnalités peuvent être limitées</div>
+
+  <!-- Splash -->
+  <div id="splash">
+    <div class="splash-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22 21V19C22 17.14 20.73 15.59 19 15.14C17.9 14.86 16.72 14.72 15.5 14.72C14.33 14.72 13.19 14.84 12.1 15.08M10 21H2V19C2 16.79 4.69 15 8 15C9.2 15 10.33 15.2 11.3 15.55M16 7C16 9.21 14.21 11 12 11C9.79 11 8 9.21 8 7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7ZM7 21V19C7 17.14 8.27 15.59 10 15.14C11.1 14.86 12.28 14.72 13.5 14.72C14.67 14.72 15.81 14.84 16.9 15.08C18.1 15.38 19 16.48 19 18V21H7Z" fill="#FF9800"/>
+      </svg>
+    </div>
+    <div class="splash-title">TiK-Market</div>
+    <div class="splash-sub">Marché local en ligne</div>
+  </div>
+
+  <!-- Preview (shown while WASM loads) -->
+  <div id="preview">
+    <div class="preview-topbar">
+      <h1>TiK-Market</h1>
+      <div class="icons">
+        <span class="dl-btn" onclick="document.getElementById('composeApp').scrollIntoView({behavior:'smooth'})" title="Télécharger depuis Paramètres">&#128241; APK</span>
+        <span class="dl-btn ios" title="Application iOS bientôt disponible">&#63743; iOS</span>
+      </div>
+    </div>
+    <div class="preview-cats" id="preview-cats">
+      <span class="cat active">Tous</span>
+      <span class="cat">Alimentation</span>
+      <span class="cat">Mode</span>
+      <span class="cat">Électronique</span>
+      <span class="cat">Artisanat</span>
+      <span class="cat">Services</span>
+    </div>
+    <div class="preview-grid" id="preview-grid">
+      <!-- Skeleton cards -->
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+      <div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>
+    </div>
+    <div id="preview-error" style="display:none">
+      <p>Impossible de charger les produits</p>
+      <button onclick="loadPreviewProducts()">Réessayer</button>
+    </div>
+  </div>
+
+  <script src="composeApp.js"></script>
+  <script>
+    (function() {
+      var splash = document.getElementById('splash');
+      var appEl = document.getElementById('composeApp');
+      var errorScreen = document.getElementById('error-screen');
+      var preview = document.getElementById('preview');
+      var previewGrid = document.getElementById('preview-grid');
+
+      // Check Wasm GC support
+      function checkWasmGC() {
+        return true; // Force compatibility
+      }
+
+      if (!checkWasmGC()) {
+        console.error("Wasm GC not supported by this browser.");
+        setTimeout(function() {
+            splash.classList.add('hidden');
+            errorScreen.classList.add('visible');
+            errorScreen.querySelector('p').innerHTML = "Votre navigateur est trop ancien pour cette application.<br>Veuillez mettre à jour Chrome (v119+) ou Firefox (v120+).";
+        }, 1000);
+      }
+
+      // ── Load preview products ──
+      window.loadPreviewProducts = function() {
+        var errDiv = document.getElementById('preview-error');
+        errDiv.style.display = 'none';
+        // Show skeleton
+        previewGrid.innerHTML =
+          '<div class="preview-card skeleton"><div class="img-wrap"></div><div class="info"><div class="title"></div><div class="price"></div><div class="shop"></div></div></div>'.repeat(4);
+        fetch('https://tik-market.onrender.com/products/products.php')
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .then(function(data) {
+            var products = data.products || data || [];
+            if (!Array.isArray(products) || products.length === 0) throw new Error('No products');
+            previewGrid.innerHTML = '';
+            products.slice(0, 20).forEach(function(p) {
+              var title = p.title || 'Produit';
+              var price = (p.price != null) ? p.price.toLocaleString('fr-FR') + ' FCFA' : '—';
+              var shop = p.shop_name || p.seller_name || '';
+              var img = p.image_url || p.images || '';
+              var imgTag = img
+                ? '<img src="' + encodeURI(img) + '" alt="' + title.replace(/"/g,'&quot;') + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<span class=placeholder>&#128247;</span>\'">'
+                : '<span class="placeholder">&#128247;</span>';
+              previewGrid.innerHTML +=
+                '<div class="preview-card"><div class="img-wrap">' + imgTag + '</div><div class="info"><div class="title">' + title.replace(/</g,'&lt;') + '</div><div class="price">' + price + '</div><div class="shop">' + shop.replace(/</g,'&lt;') + '</div></div></div>';
+            });
+          })
+          .catch(function() {
+            errDiv.style.display = 'block';
+          });
+      };
+
+      // ── Splash → Preview transition ──
+      var splashTimer = setTimeout(function() {
+        if (appEl.children.length === 0) {
+          splash.classList.add('hidden');
+          preview.classList.add('visible');
+          loadPreviewProducts();
+        }
+      }, 800); // show splash for 800ms, then preview
+
+      // ── When compose renders, hide preview ──
+      var observer = new MutationObserver(function() {
+        if (appEl.children.length > 0) {
+          splash.classList.add('hidden');
+          preview.classList.add('hidden');
+          observer.disconnect();
+          clearTimeout(splashTimer);
+          clearTimeout(failTimer);
+        }
+      });
+      observer.observe(appEl, { childList: true, subtree: true });
+
+      // Show error if wasm fails to load after 30s
+      var failTimer = setTimeout(function() {
+        if (appEl.children.length === 0) {
+          splash.classList.add('hidden');
+          errorScreen.classList.add('visible');
+        }
+      }, 30000);
+
+      // Also hide splash on error
+      window.addEventListener('error', function() {
+        splash.classList.add('hidden');
+        clearTimeout(failTimer);
+      });
+
+      // ── Offline detection ──
+      var banner = document.getElementById('offline-banner');
+      function updateOnlineStatus() {
+        if (banner) banner.classList.toggle('show', !navigator.onLine);
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+
+      // ── Auto-refresh when tab regains focus ──
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && typeof appStateRefresh === 'function') {
+          appStateRefresh();
+        }
+      });
+
+      // ── Google Sign-In Helper ──
+      window.googleSignIn = function(clientId, onResult) {
+        try {
+          google.accounts.id.initialize({
+            client_id: clientId,
+            cancel_on_tap_outside: false,
+            callback: (response) => {
+              if (response.credential) {
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const payload = JSON.parse(jsonPayload);
+
+                onResult({
+                  idToken: response.credential,
+                  name: payload.name || payload.email,
+                  email: payload.email
+                });
+              } else {
+                onResult(null);
+              }
+            }
+          });
+          google.accounts.id.prompt();
+        } catch (e) {
+          console.error("GSI Error:", e);
+          onResult(null);
+        }
+      };
+
+      // ── PWA Install prompt (disabled to avoid unwanted popups) ──
+      /*
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        setTimeout(function() {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function() {
+              deferredPrompt = null;
+            });
+          }
+        }, 60000);
+      });
+      */
+
+      // ── Service Worker (disabled to avoid background caching downloads) ──
+      /*
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js').catch(function() {});
+      }
+      */
+    })();
+  </script>
+</body>
+</html>
