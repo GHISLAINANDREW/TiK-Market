@@ -20,6 +20,9 @@
   <meta name="twitter:card" content="summary">
   <!-- Theme -->
   <meta name="theme-color" content="#1B5E20">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
@@ -39,7 +42,7 @@
       overflow: hidden;
     }
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Roboto', system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
@@ -98,7 +101,7 @@
     #preview.hidden { display: none; }
     /* Top bar */
     .preview-topbar {
-      background: #FF9800; color: white;
+      background: #1B5E20; color: white;
       padding: 10px 16px 2px;
       display: flex;
       flex-direction: column;
@@ -125,7 +128,7 @@
     }
     .preview-tab.active::after {
       content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 16px; height: 2px; background: #FF9800; border-radius: 1px;
+      width: 16px; height: 2px; background: #FFFFFF; border-radius: 1px;
     }
 
     /* Download buttons */

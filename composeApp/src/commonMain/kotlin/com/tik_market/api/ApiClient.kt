@@ -76,8 +76,8 @@ object ApiClient {
      * automatiquement les URLs de secours (domaine personnalisé / proxy Cloudflare).
      */
     private var _baseUrls: List<String> = listOf(
-        "https://tik-market.onrender.com",
-        "https://tik-market-proxy.gtankou.workers.dev"
+        "https://tik-market.onrender.com/api",
+        "https://tik-market-proxy.gtankou.workers.dev/api"
     )
     private var _activeBaseUrlIndex = 0
 
