@@ -1,9 +1,7 @@
 <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- Bag Handle / Pin -->
-  <circle cx="50" cy="28" r="22" stroke="#1B5E20" stroke-width="8" fill="none"/>
-  <circle cx="50" cy="28" r="6" fill="#1B5E20"/>
-  <!-- Bag Body -->
-  <path d="M20 45H80V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V45Z" fill="#1B5E20"/>
-  <!-- TiK Text on Bag -->
-  <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="24" fill="white">TiK</text>
+  <rect width="100" height="100" rx="20" fill="#1B5E20"/>
+  <circle cx="50" cy="30" r="20" stroke="white" stroke-width="6" fill="none"/>
+  <circle cx="50" cy="30" r="5" fill="white"/>
+  <path d="M22 48H78V80C78 84.4183 74.4183 88 70 88H30C25.5817 88 22 84.4183 22 80V48Z" fill="white"/>
+  <text x="50" y="78" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="22" fill="#1B5E20">TiK</text>
 </svg>

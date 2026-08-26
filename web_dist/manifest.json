@@ -1,17 +1,29 @@
 {
   "name": "TiK-Market",
   "short_name": "TiK-Market",
-  "description": "La plus grande place de marché du Cameroun en ligne.",
+  "description": "Achetez et vendez sur TiK-Market, partout au Cameroun",
   "start_url": "/",
-  "display": "standalone",
-  "background_color": "#FFFFFF",
+  "display": "fullscreen",
+  "background_color": "#1B5E20",
   "theme_color": "#1B5E20",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "marketplace"],
+  "lang": "fr",
+  "dir": "ltr",
   "icons": [
     {
       "src": "favicon.svg",
-      "sizes": "48x48 72x72 96x96 128x128 256x256 512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Accueil",
+      "short_name": "Accueil",
+      "url": "/"
     }
   ]
 }
