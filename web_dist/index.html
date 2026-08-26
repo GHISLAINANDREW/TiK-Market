@@ -350,29 +350,7 @@
     </div>
   </div>
 
-  <!-- Fetch interceptor: redirect absolute API URLs to local proxy -->
-  <script>
-  (function() {
-    var _origFetch = window.fetch;
-    var API_DOMAINS = [
-      'https://tik-market.onrender.com/api',
-      'https://tik-market-proxy.gtankou.workers.dev/api'
-    ];
-    window.fetch = function(url, init) {
-      if (typeof url === 'string') {
-        for (var i = 0; i < API_DOMAINS.length; i++) {
-          if (url.startsWith(API_DOMAINS[i])) {
-            var path = url.substring(API_DOMAINS[i].length);
-            url = '/api' + path;
-            break;
-          }
-        }
-      }
-      return _origFetch.call(window, url, init);
-    };
-  })();
-  </script>
-  <script src="composeApp.js?v=3"></script>
+  <script src="composeApp.js?v=2"></script>
   <script>
     (function() {
       var splash = document.getElementById('splash');
