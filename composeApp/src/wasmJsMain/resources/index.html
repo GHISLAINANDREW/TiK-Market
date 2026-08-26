@@ -6,55 +6,62 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <title>TiK-Market</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body,#splash,#app{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-body{background:#f0f2f5}
-#splash{position:fixed;top:0;left:0;z-index:9999;background:linear-gradient(135deg,#1a5e20 0%,#2e7d32 40%,#f9a825 75%,#ff6f00 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease}
+html,body,#splash,#composeApp{width:100%;height:100%;overflow:hidden}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff}
+#splash{position:fixed;top:0;left:0;z-index:9999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s ease}
 #splash.hidden{opacity:0;pointer-events:none}
-.splash-logo{width:120px;height:120px;background:#fff;border-radius:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(0,0,0,.3);margin-bottom:24px;animation:pulse 1.5s ease-in-out infinite}
-.splash-logo svg{width:80px;height:80px}
-.splash-title{color:#fff;font-size:32px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 8px rgba(0,0,0,.3);margin-bottom:8px}
-.splash-sub{color:rgba(255,255,255,.85);font-size:14px;font-weight:400;margin-bottom:32px}
-.splash-bar{width:200px;height:4px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
-.splash-bar-fill{height:100%;background:#fff;border-radius:2px;animation:load 8s ease-in-out forwards}
-.splash-credits{position:absolute;bottom:20px;color:rgba(255,255,255,.5);font-size:11px}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-@keyframes load{0%{width:0}30%{width:60%}70%{width:85%}100%{width:100%}}
+.splash-icon{width:100px;height:100px;margin-bottom:20px}
+.splash-text{color:#1B5E20;font-size:22px;font-weight:700;margin-bottom:6px}
+.splash-sub{color:#666;font-size:13px;margin-bottom:40px}
+.splash-spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1B5E20;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
+<!-- SPLASH SCREEN — Facebook style: white bg, icon centered, spinner -->
 <div id="splash">
-  <div class="splash-logo">
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" rx="20" fill="#1a5e20"/>
-      <path d="M25 70V30l25 20-25 20z" fill="#f9a825"/>
-      <path d="M50 70V30l25 20-25 20z" fill="#fff" opacity=".7"/>
-      <circle cx="62" cy="50" r="18" fill="#ff6f00" opacity=".9"/>
-      <text x="50" y="56" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">T</text>
-    </svg>
-  </div>
-  <div class="splash-title">TiK-Market</div>
+  <svg class="splash-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Bag handle (arc) -->
+    <path d="M54,28m-22,0a22,22 0,1,1 44,0a22,22 0,1,1 -44,0" fill="none" stroke="#1B5E20" stroke-width="8"/>
+    <!-- Handle dot -->
+    <circle cx="54" cy="28" r="6" fill="#1B5E20"/>
+    <!-- Bag body -->
+    <path d="M24,45h60v40c0,5.5-4.5,10-10,10H34c-5.5,0-10-4.5-10-10z" fill="#1B5E20"/>
+    <!-- T -->
+    <path d="M42,62h10v3h-4v12h-2v-12h-4z" fill="#fff"/>
+    <!-- i -->
+    <rect x="55" y="62" width="2" height="2" fill="#fff"/>
+    <rect x="55" y="66" width="2" height="11" fill="#fff"/>
+    <!-- k -->
+    <rect x="61" y="62" width="2" height="15" fill="#fff"/>
+    <path d="M63,70l5,-8h2l-5,8l6,7h-2l-5,-6l-1,1v5h-2z" fill="#fff"/>
+  </svg>
+  <div class="splash-text">TiK-Market</div>
   <div class="splash-sub">La marketplace camerounaise</div>
-  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
-  <div class="splash-credits">Dschang &bull; Bafoussam &bull; Douala &bull; Yaound&eacute;</div>
+  <div class="splash-spinner"></div>
 </div>
-<div id="app"></div>
+
+<!-- COMPOSE WASM CONTAINER — id must match viewportContainerId="composeApp" -->
+<div id="composeApp"></div>
+
 <script>
 // ═══════════════════════════════════════════
-// FETCH INTERCEPTOR — proxy Render URLs
+// FETCH INTERCEPTOR — proxy Render URLs to /api/
 // ═══════════════════════════════════════════
 (function(){
-  var API = ['tik-market.onrender.com','tik-market-proxy.gtankou.workers.dev','tik-market-api.gtankou.workers.dev'];
-  var owf = window.fetch;
-  window.fetch = function(){
-    var url = arguments[0];
-    if(typeof url === 'string'){
+  var API=['tik-market.onrender.com','tik-market-proxy.gtankou.workers.dev','tik-market-api.gtankou.workers.dev'];
+  var owf=window.fetch;
+  window.fetch=function(){
+    var url=arguments[0];
+    if(typeof url==='string'){
       for(var i=0;i<API.length;i++){
         if(url.indexOf(API[i])!==-1){
-          var rest = url.substring(url.indexOf(API[i])+API[i].length);
-          if(rest.indexOf('/api/')===0) rest=rest.substring(4);
-          if(rest[0]!=='/') rest='/'+rest;
+          var rest=url.substring(url.indexOf(API[i])+API[i].length);
+          if(rest.indexOf('/api/')===0)rest=rest.substring(4);
+          if(rest[0]!=='/')rest='/'+rest;
           url='/api'+rest;
           arguments[0]=url;
           break;
@@ -65,7 +72,7 @@ body{background:#f0f2f5}
   };
 })();
 // ═══════════════════════════════════════════
-// BACK BUTTON — prevent closing app
+// BACK BUTTON — prevent closing web app
 // ═══════════════════════════════════════════
 (function(){
   history.pushState({},"","#");
@@ -76,19 +83,19 @@ body{background:#f0f2f5}
 })();
 </script>
 <script>
-// Hide splash when WASM loads or after 15s safety timeout
+// ═══════════════════════════════════════════
+// LOAD COMPOSE APP — with progress tracking
+// ═══════════════════════════════════════════
 (function(){
-  function hide(){var s=document.getElementById('splash');if(s)s.classList.add('hidden')}
-  setTimeout(hide,15000);
-  window.addEventListener('load',function(){setTimeout(hide,500)});
+  var script=document.createElement('script');
+  script.src='composeApp.js?'+Date.now();
+  script.onload=function(){console.log('[Splash] composeApp.js loaded')}
+  script.onerror=function(){
+    console.error('[Splash] Failed to load composeApp.js, retrying...');
+    setTimeout(function(){script.src='composeApp.js?'+Date.now()},3000);
+  };
+  document.head.appendChild(script);
 })();
-</script>
-<script>
-var ver = 'v'+Date.now();
-var s = document.createElement('script');
-s.src='composeApp.js?'+ver;
-s.onerror=function(){setTimeout(function(){s.src='composeApp.js?'+ver},3000)};
-document.head.appendChild(s);
 </script>
 </body>
 </html>
