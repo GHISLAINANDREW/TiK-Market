@@ -177,6 +177,16 @@ private val AppTypography = Typography(
     labelMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp)
 )
 
+fun Color.lightenForDark(factor: Float = 0.2f): Color {
+    // Une version simple pour éclaircir les couleurs primaires en mode sombre
+    return Color(
+        red = (red + (1f - red) * factor).coerceIn(0f, 1f),
+        green = (green + (1f - green) * factor).coerceIn(0f, 1f),
+        blue = (blue + (1f - blue) * factor).coerceIn(0f, 1f),
+        alpha = alpha
+    )
+}
+
 @Composable
 fun TiKMarketTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -210,9 +220,15 @@ fun TiKMarketTheme(
     }
 
     val colorScheme = if (darkTheme) {
-        DarkColors.copy(primary = cityColors.primary, secondary = cityColors.secondary)
+        DarkColors.copy(
+            primary = cityColors.primary.lightenForDark(0.3f), 
+            secondary = cityColors.secondary.lightenForDark(0.3f)
+        )
     } else {
-        LightColors.copy(primary = cityColors.primary, secondary = cityColors.secondary)
+        LightColors.copy(
+            primary = cityColors.primary, 
+            secondary = cityColors.secondary
+        )
     }
 
     CompositionLocalProvider(LocalCityColors provides cityColors) {

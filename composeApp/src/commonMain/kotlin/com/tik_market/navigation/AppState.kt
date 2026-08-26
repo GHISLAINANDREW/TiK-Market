@@ -121,4 +121,12 @@ class AppState(
         language = lang
         setSavedLanguage(lang)
     }
+
+    fun refreshWallet() {
+        if (!isLoggedIn) return
+        // On lance dans un scope si nécessaire, mais ici on peut juste déclencher un signal
+        // ou appeler l'API directement si on est dans un composable via LaunchedEffect.
+        // Pour AppState, on va ajouter une méthode suspend ou utiliser un signal.
+        refreshSignal++
+    }
 }

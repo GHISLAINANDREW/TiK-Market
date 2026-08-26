@@ -1,0 +1,67 @@
+CREATE TABLE ProductEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    shopId TEXT NOT NULL,
+    shopName TEXT NOT NULL,
+    shopLocation TEXT NOT NULL,
+    vendorId TEXT NOT NULL,
+    vendorPhone TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    price REAL NOT NULL,
+    comparePrice REAL,
+    category TEXT NOT NULL,
+    images TEXT NOT NULL, -- Serialized JSON array
+    stock INTEGER NOT NULL,
+    unit TEXT NOT NULL,
+    rating REAL NOT NULL,
+    totalReviews INTEGER NOT NULL,
+    totalSales INTEGER NOT NULL,
+    isVerified INTEGER AS Boolean NOT NULL DEFAULT 0,
+    isStory INTEGER AS Boolean NOT NULL DEFAULT 0,
+    userPurchaseCount INTEGER NOT NULL DEFAULT 0,
+    cachedAt INTEGER NOT NULL
+);
+
+CREATE TABLE CategoryEntity (
+    name TEXT NOT NULL PRIMARY KEY,
+    cachedAt INTEGER NOT NULL
+);
+
+CREATE TABLE ConversationEntity (
+    contactId INTEGER NOT NULL PRIMARY KEY,
+    contactName TEXT NOT NULL,
+    contactAvatar TEXT,
+    lastMessage TEXT NOT NULL,
+    lastMessageTime TEXT NOT NULL,
+    unreadCount INTEGER NOT NULL DEFAULT 0,
+    isOnline INTEGER AS Boolean NOT NULL DEFAULT 0,
+    cachedAt INTEGER NOT NULL
+);
+
+-- Queries
+insertProduct:
+INSERT OR REPLACE INTO ProductEntity VALUES ?;
+
+selectAllProducts:
+SELECT * FROM ProductEntity ORDER BY cachedAt DESC;
+
+deleteProducts:
+DELETE FROM ProductEntity;
+
+insertCategory:
+INSERT OR REPLACE INTO CategoryEntity VALUES ?;
+
+selectAllCategories:
+SELECT * FROM CategoryEntity;
+
+deleteCategories:
+DELETE FROM CategoryEntity;
+
+insertConversation:
+INSERT OR REPLACE INTO ConversationEntity VALUES ?;
+
+selectAllConversations:
+SELECT * FROM ConversationEntity ORDER BY lastMessageTime DESC;
+
+deleteConversations:
+DELETE FROM ConversationEntity;

@@ -522,13 +522,46 @@ fun ProductDetailScreen(
 
                             Spacer(Modifier.height(8.dp))
 
+                            // Photo upload for review
+                            var reviewImageUrl by remember { mutableStateOf<String?>(null) }
+                            var reviewImageDataUrl by remember { mutableStateOf<String?>(null) }
+                            var reviewImageFileName by remember { mutableStateOf<String?>(null) }
+                            
+                            val pickReviewPhoto = rememberMediaPickerLauncher(allowVideo = false) { result ->
+                                if (result != null) {
+                                    reviewImageDataUrl = result.dataUrl
+                                    reviewImageFileName = result.fileName
+                                }
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(onClick = { pickReviewPhoto() }) {
+                                    Icon(Icons.Default.PhotoCamera, null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(if (reviewImageFileName != null) s.changePhoto else s.addPhoto, fontSize = 12.sp)
+                                }
+                                if (reviewImageFileName != null) {
+                                    Text(reviewImageFileName!!, fontSize = 11.sp, color = Green, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                    IconButton(onClick = { reviewImageDataUrl = null; reviewImageFileName = null }) {
+                                        Icon(Icons.Default.Close, null, Modifier.size(16.dp), tint = Color.Red)
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
                             Button(
                                 onClick = {
                                     if (myRating > 0) {
                                         submittingReview = true
                                         scope.launch {
                                             try {
-                                                ApiClient.submitReview(productId, myRating, myComment)
+                                                var finalImageUrl = ""
+                                                if (reviewImageDataUrl != null && reviewImageFileName != null) {
+                                                    finalImageUrl = ApiClient.uploadImage(reviewImageDataUrl!!, reviewImageFileName!!)
+                                                }
+                                                
+                                                ApiClient.submitReview(productId, myRating, myComment, finalImageUrl)
                                                 if (productId > 0) {
                                                     val apiProduct = ApiClient.fetchProduct(productId)
                                                     val reviews = (apiProduct.reviews ?: emptyList()).map { r ->
@@ -538,13 +571,16 @@ fun ProductDetailScreen(
                                                             userName = r.userName,
                                                             rating = r.rating,
                                                             comment = r.comment,
-                                                            date = r.createdAt
+                                                            date = r.createdAt,
+                                                            imageUrl = r.imageUrl
                                                         )
                                                     }
                                                     reviewResource = Resource.Success(reviews)
                                                 }
                                                 myRating = 0
                                                 myComment = ""
+                                                reviewImageDataUrl = null
+                                                reviewImageFileName = null
                                             } catch (_: Exception) { }
                                             submittingReview = false
                                         }

@@ -119,6 +119,33 @@ fun ChatScreen(
         userScrolledUp = totalItems > 0 && lastVisible < totalItems - 3
     }
 
+    // Real-time updates via WebSockets
+    LaunchedEffect(vendorId) {
+        com.tik_market.api.ChatWebSocketClient.incomingMessages.collect { msg ->
+            if (msg.senderId == vendorId || msg.receiverId == vendorId) {
+                // Check if already in list
+                if (messages.none { it.id == msg.id }) {
+                    val chatMsg = ChatMessage(
+                        id = msg.id, senderId = msg.senderId, senderName = msg.senderName,
+                        text = msg.text, audioUrl = msg.audioUrl, duration = msg.duration,
+                        timestamp = msg.createdAt, isRead = msg.isRead,
+                        productId = msg.productId, productTitle = msg.productTitle,
+                        productImageUrl = msg.productImageUrl,
+                        repliedToId = msg.repliedToId, repliedText = msg.repliedText,
+                        reactions = msg.reactions
+                    )
+                    messages = messages + chatMsg
+                    if (msg.id > maxMessageId) maxMessageId = msg.id
+                    
+                    // Auto-scroll if at bottom
+                    if (!userScrolledUp) {
+                        listState.animateScrollToItem(messages.size - 1)
+                    }
+                }
+            }
+        }
+    }
+
     // Optimized: fetch only new messages since maxMessageId
     fun refreshMessages() {
         if (isRefreshing) return

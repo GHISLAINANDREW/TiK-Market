@@ -69,6 +69,14 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
     // N'empêche pas l'utilisateur de consulter les produits de sa ville détectée
     var detectedLocationName by remember { mutableStateOf<String?>(null) }
 
+    LaunchedEffect(appState.isLoggedIn) {
+        if (appState.isLoggedIn) {
+            com.tik_market.api.ChatWebSocketClient.connect()
+        } else {
+            com.tik_market.api.ChatWebSocketClient.disconnect()
+        }
+    }
+    
     // Détermine la ville active :
     // - Non connecté : pas de filtre ville, branding par défaut (TiK-Market).
     // - Connecté : ville du profil si elle correspond à une ville connue, sinon détection GPS.

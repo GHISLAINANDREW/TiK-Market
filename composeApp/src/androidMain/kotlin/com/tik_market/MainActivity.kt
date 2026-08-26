@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         
         TokenStorage.init(this)
         NotificationUtils.init(this)
+        com.tik_market.db.DatabaseDriverFactory.init(this)
         
         // Request notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

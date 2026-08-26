@@ -50,7 +50,8 @@ data class ProductActionStrings(
     val report: String, val reportProduct: String, val category: String, val allCategories: String, val priceRange: String,
     val min: String, val max: String, val clear: String, val noProducts: String, val noReviews: String,
     val giveReview: String, val publishReview: String, val yourComment: String, val verifiedVendor: String,
-    val whatsapp: String, val call: String, val reviews: String, val searchProducts: String
+    val whatsapp: String, val call: String, val reviews: String, val searchProducts: String,
+    val addPhoto: String, val changePhoto: String
 )
 
 data class StatusStrings(
@@ -1053,15 +1054,19 @@ private fun getProductActionStrings(lang: String) = if (lang == "en") ProductAct
     report = "Report", reportProduct = "Report this product", category = "Category", allCategories = "All", priceRange = "Price",
     min = "Min", max = "Max", clear = "Clear", noProducts = "No products found", noReviews = "No reviews yet",
     giveReview = "Give a review", publishReview = "Publish review", yourComment = "Your comment (optional)...",
-    verifiedVendor = "Verified seller", whatsapp = "WhatsApp", call = "Call", reviews = "Reviews & Ratings",
-    searchProducts = "Search products..."
+    verifiedVendor = "Verified seller", whatsapp = "WhatsApp", call = "Call", reviews = "Reviews \u0026 Ratings",
+    searchProducts = "Search products...",
+    addPhoto = "Add Photo",
+    changePhoto = "Change Photo"
 ) else ProductActionStrings(
     productDetail = "Détails Produit", addToCart = "Ajouter au panier", buyNow = "Acheter", chat = "Chat", share = "Partager",
     report = "Signaler", reportProduct = "Signaler ce produit", category = "Catégorie", allCategories = "Tout", priceRange = "Prix",
     min = "Min", max = "Max", clear = "Effacer", noProducts = "Aucun produit trouvé", noReviews = "Aucun avis pour le moment",
     giveReview = "Donner mon avis", publishReview = "Publier mon avis", yourComment = "Votre commentaire (optionnel)...",
-    verifiedVendor = "Vendeur vérifié", whatsapp = "WhatsApp", call = "Call", reviews = "Avis & Notes",
-    searchProducts = "Rechercher un produit..."
+    verifiedVendor = "Vendeur vérifié", whatsapp = "WhatsApp", call = "Call", reviews = "Avis \u0026 Notes",
+    searchProducts = "Rechercher un produit...",
+    addPhoto = "Ajouter une photo",
+    changePhoto = "Modifier la photo"
 )
 
 private fun getStatusStrings(lang: String) = if (lang == "en") StatusStrings(
