@@ -56,7 +56,8 @@ function serveIndex(res) {
 
 // Proxy /api/* to the real backend (same as Vercel rewrites)
 function proxyAPI(req, res) {
-  const apiPath = req.url; // e.g. /api/products/products.php
+  // Strip /api/ prefix like Vercel rewrites do: /api/X → /X
+  const apiPath = req.url.replace(/^\/api/, '');
   const targetUrl = API_BACKEND + apiPath;
 
   const headers = { ...req.headers };

@@ -6,11 +6,17 @@ import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
+import com.tik_market.api.ApiClient
 import com.tik_market.navigation.NavScreen
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     println("[Main] Wasm entry point started")
+
+    // On web, use relative /api path so the server proxy (Vercel/webpack) forwards
+    // requests to the real backend. Absolute URLs bypass the proxy entirely.
+    ApiClient.baseUrl = "/api"
+    println("[Main] ApiClient.baseUrl = ${ApiClient.baseUrl}")
     
     // Safety fallback: hide loading screen after 10s even if Compose fails
     window.setTimeout({
