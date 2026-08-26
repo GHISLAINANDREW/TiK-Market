@@ -350,6 +350,19 @@
     </div>
   </div>
 
+  <!-- Back button fix: prevent browser from leaving the SPA on back press -->
+  <script>
+  (function() {
+    // Push an initial history entry so the first back press triggers popstate
+    // instead of navigating away from the app.
+    history.pushState(null, '', location.href);
+
+    window.addEventListener('popstate', function(e) {
+      // Re-push so the user stays in the app
+      history.pushState(null, '', location.href);
+    });
+  })();
+  </script>
   <!-- Fetch interceptor: redirect absolute API URLs to local proxy -->
   <script>
   (function() {
