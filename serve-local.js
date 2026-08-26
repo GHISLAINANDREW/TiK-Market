@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DIST = path.join(__dirname, 'web_dist');
-const PORT = 3000;
+const PORT = 8080;
 const API_BACKEND = 'https://tik-market.onrender.com';
 
 const MIME = {
