@@ -116,7 +116,8 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
             if (showWhatsAppFab) {
                 FloatingActionButton(
                     onClick = {
-                        openUrl("https://wa.me/237690000001?text=Bonjour%20TiK-Market,%20j'ai%20besoin%20d'aide.")
+                        val phone = com.tik_market.utils.Constants.ASSISTANCE_PHONE_FULL
+                        openUrl("https://wa.me/$phone?text=Bonjour%20TiK-Market,%20j'ai%20besoin%20d'aide.")
                     },
                     containerColor = Color(0xFF25D366),
                     contentColor = Color.White,

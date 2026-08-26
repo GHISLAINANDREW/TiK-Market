@@ -74,6 +74,7 @@ kotlin {
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
             implementation(libs.sqldelight.android.driver)
+            implementation(libs.ktor.client.okhttp)
         }
         wasmJsMain.dependencies {
             implementation(libs.sqldelight.web.worker.driver)
@@ -91,7 +92,7 @@ sqldelight {
 
 android {
     namespace = "com.tik_market"
-    compileSdk = 34
+    compileSdk = 35
 
     val versionProps = Properties()
     val versionFile = project.rootProject.file("version.properties")
@@ -105,8 +106,8 @@ android {
 
     defaultConfig {
         applicationId = "com.tik_market.app"
-        minSdk = 21
-        targetSdk = 34
+        minSdk = 23
+        targetSdk = 35
         versionCode = verCode
         versionName = verName
 

@@ -318,6 +318,8 @@ data class AppStrings(
     val call get() = productS.call
     val reviews get() = productS.reviews
     val searchProducts get() = productS.searchProducts
+    val addPhoto get() = productS.addPhoto
+    val changePhoto get() = productS.changePhoto
 
     val orderStatusPending get() = statusS.orderStatusPending
     val orderStatusPaid get() = statusS.orderStatusPaid

@@ -1,8 +1,6 @@
 package com.tik_market.db
 
 import com.tik_market.data.models.Product
-import com.tik_market.data.models.toProduct
-import com.tik_market.api.dto.ApiProduct
 import com.tik_market.api.dto.ApiConversation
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
@@ -36,8 +34,8 @@ object LocalCache {
                         rating = p.rating.toDouble(),
                         totalReviews = p.totalReviews.toLong(),
                         totalSales = p.totalSales.toLong(),
-                        isVerified = p.shopVerified,
-                        isStory = p.isStory,
+                        isVerified = if (p.shopVerified) 1L else 0L,
+                        isStory = if (p.isStory) 1L else 0L,
                         userPurchaseCount = p.userPurchaseCount.toLong(),
                         cachedAt = Clock.System.now().toEpochMilliseconds()
                     )
@@ -66,8 +64,8 @@ object LocalCache {
                 rating = entity.rating.toFloat(),
                 totalReviews = entity.totalReviews.toInt(),
                 totalSales = entity.totalSales.toInt(),
-                shopVerified = entity.isVerified,
-                isStory = entity.isStory,
+                shopVerified = entity.isVerified == 1L,
+                isStory = entity.isStory == 1L,
                 userPurchaseCount = entity.userPurchaseCount.toInt()
             )
         }
@@ -89,5 +87,25 @@ object LocalCache {
 
     fun getCategories(): List<String> {
         return queries.selectAllCategories().executeAsList().map { it.name }
+    }
+
+    fun saveConversations(conversations: List<ApiConversation>) {
+        queries.transaction {
+            queries.deleteConversations()
+            conversations.forEach { c ->
+                queries.insertConversation(
+                    ConversationEntity(
+                        contactId = c.userId.toLong(),
+                        contactName = c.userName,
+                        contactAvatar = c.avatar,
+                        lastMessage = c.lastMessage,
+                        lastMessageTime = c.lastMessageAt,
+                        unreadCount = c.unreadCount.toLong(),
+                        isOnline = if (c.isOnline) 1L else 0L,
+                        cachedAt = Clock.System.now().toEpochMilliseconds()
+                    )
+                )
+            }
+        }
     }
 }

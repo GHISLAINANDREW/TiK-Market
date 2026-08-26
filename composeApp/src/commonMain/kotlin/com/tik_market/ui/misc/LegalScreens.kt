@@ -206,7 +206,8 @@ fun AboutScreen(onBack: () -> Unit) {
             
             Spacer(Modifier.height(24.dp))
             Text(ts.contactSupport, fontWeight = FontWeight.Bold)
-            Text("AdminAutenTiK@gmail.com", color = BrandTopBarColor)
+            Text(com.tik_market.utils.Constants.SUPPORT_EMAIL, color = BrandTopBarColor)
+            Text("Tel/WhatsApp : ${com.tik_market.utils.Constants.ASSISTANCE_PHONE}", color = BrandTopBarColor)
             
             Spacer(Modifier.weight(1f))
             Text(

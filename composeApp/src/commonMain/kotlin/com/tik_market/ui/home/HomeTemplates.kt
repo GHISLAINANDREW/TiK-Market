@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
+import com.tik_market.ui.home.components.HomeProductGrid
 
 @Composable
 fun CityMarketBadge(text: String, color: Color = Orange) {
@@ -135,7 +136,7 @@ fun LazyListScope.DschangLayout(
     }
 
     item {
-        ProductGridSection(
+        HomeProductGrid(
             products = products,
             columns = columns,
             wishlistIds = wishlistIds,
@@ -181,7 +182,7 @@ fun LazyListScope.FuSapLayout(
     }
 
     item {
-        ProductGridSection(
+        HomeProductGrid(
             products = products,
             columns = columns,
             wishlistIds = wishlistIds,
@@ -210,7 +211,7 @@ fun LazyListScope.DoualaLayout(
     }
 
     item {
-        ProductGridSection(
+        HomeProductGrid(
             products = products,
             columns = columns,
             wishlistIds = wishlistIds,
@@ -254,7 +255,7 @@ fun LazyListScope.YaoundeLayout(
     }
 
     item {
-        ProductGridSection(
+        HomeProductGrid(
             products = products,
             columns = columns,
             wishlistIds = wishlistIds,

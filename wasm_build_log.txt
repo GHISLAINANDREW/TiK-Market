@@ -1,0 +1,261 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :composeApp
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+Add android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE to the gradle.properties file to suppress this warning.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+Add android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE to the gradle.properties file to suppress this warning.
+WARNING: The option setting 'android.enableJetifier=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+Add android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE to the gradle.properties file to suppress this warning.
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+Add android.sync.suppressAgpWarnings=DEPRECATED_DSL to the gradle.properties file to suppress this warning.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+Add android.sync.suppressAgpWarnings=DEPRECATED_DSL to the gradle.properties file to suppress this warning.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+Add android.sync.suppressAgpWarnings=DEPRECATED_DSL to the gradle.properties file to suppress this warning.
+w: The 'org.jetbrains.kotlin.multiplatform' plugin deprecated compatibility with Android Gradle plugin: 'com.android.application'
+The 'org.jetbrains.kotlin.multiplatform' plugin is not compatible with 'com.android.application' starting with Android Gradle Plugin 9.0.0.
+
+Please change the structure of the your project and move the usage of 'com.android.application' into a separate subproject. The new subproject should add a dependency on this KMP subproject.
+
+Read more: https://kotl.in/kmp-project-structure-migration
+Solution: Please change the structure of your project and move the usage of 'com.android.application' into a separate subproject.
+See https://kotl.in/gradle/agp-new-kmp for more details.
+
+Configuration 'wasmJsNpmAggregated' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+Configuration 'wasmJsTestNpmAggregated' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+
+> Task :kotlinWasmKotlinNpmCachesSetup
+> Task :kotlinWasmNodeJsSetup UP-TO-DATE
+> Task :kotlinWasmRestoreYarnLock
+> Task :kotlinWasmYarnSetup UP-TO-DATE
+> Task :composeApp:wasmJsPackageJson
+> Task :composeApp:wasmJsTestPackageJson
+> Task :composeApp:wasmJsPublicPackageJson UP-TO-DATE
+> Task :composeApp:wasmJsTestPublicPackageJson UP-TO-DATE
+> Task :kotlinWasmPackageJsonUmbrella
+> Task :wasmRootPackageJson
+
+> Task :kotlinWasmNpmInstall
+(node:15540) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+warning Ignored scripts due to flag.
+
+> Task :kotlinWasmStoreYarnLock UP-TO-DATE
+> Task :kotlinWasmToolingSetup UP-TO-DATE
+> Task :composeApp:wasmJsResolveResourcesFromDependencies UP-TO-DATE
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWasmJsMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWebMain NO-SOURCE
+> Task :composeApp:assembleWasmJsMainResources
+> Task :composeApp:wasmJsResolveSelfResourcesCopyHierarchicalMultiplatformResources UP-TO-DATE
+> Task :composeApp:wasmJsAggregateResources UP-TO-DATE
+> Task :composeApp:wasmJsProcessResources UP-TO-DATE
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:generateResourceAccessorsForCommonMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForWasmJsMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForWebMain NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForWasmJsMain
+> Task :composeApp:generateCommonMainTikMarketDatabaseInterface UP-TO-DATE
+> Task :composeApp:generateComposeResClass UP-TO-DATE
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain UP-TO-DATE
+> Task :composeApp:kotlinWasmBinaryenSetup UP-TO-DATE
+> Task :composeApp:unpackSkikoWasmRuntime
+> Task :composeApp:processSkikoRuntimeForKWasm
+> Task :composeApp:compileKotlinWasmJs
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/api/HttpEngine.kt:8:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/api/TokenStorage.kt:8:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/cache/PersistentMediaCache.kt:8:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/db/DatabaseDriverFactory.kt:5:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/db/LocalCache.kt:25:53 Elvis operator (?:) always returns the left operand of non-nullable type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/navigation/AppNavigation.kt:98:62 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/navigation/AppNavigation.kt:98:81 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/navigation/AppNavigation.kt:211:13 'when' is exhaustive so 'else' is redundant here.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:370:74 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminShop'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:374:50 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:374:78 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:399:108 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminShop'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:400:116 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminShop'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:400:309 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminShop'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:425:51 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:425:80 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:429:50 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:489:79 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminUser'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:493:53 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:493:84 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:507:102 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AdminUser'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/admin/AdminDashboardScreen.kt:1360:71 Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/components/CommonUI.kt:127:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/components/CommonUI.kt:129:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/components/GroupBuySection.kt:144:13 'fun LinearProgressIndicator(progress: Float, modifier: Modifier = ..., color: Color = ..., trackColor: Color = ..., strokeCap: StrokeCap = ...): Unit' is deprecated. Use the overload that takes `progress` as a lambda.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/home/HomeScreen.kt:162:53 'val Icons.Filled.CompareArrows: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.CompareArrows.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/home/HomeScreen.kt:619:44 'val Icons.Filled.TextSnippet: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.TextSnippet.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/home/HomeTemplates.kt:71:85 Unnecessary non-null assertion (!!) on a non-null receiver of type 'Double'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/loyalty/LoyaltyScreen.kt:304:36 'val Icons.Filled.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.TrendingUp.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/loyalty/LoyaltyScreen.kt:309:13 'fun LinearProgressIndicator(progress: Float, modifier: Modifier = ..., color: Color = ..., trackColor: Color = ..., strokeCap: StrokeCap = ...): Unit' is deprecated. Use the overload that takes `progress` as a lambda.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/loyalty/LoyaltyScreen.kt:333:31 'val Icons.Filled.ListAlt: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ListAlt.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/loyalty/NotificationPrefsScreen.kt:84:93 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/misc/MyGroupBuysScreen.kt:207:17 'fun LinearProgressIndicator(progress: Float, modifier: Modifier = ..., color: Color = ..., trackColor: Color = ..., strokeCap: StrokeCap = ...): Unit' is deprecated. Use the overload that takes `progress` as a lambda.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/onboarding/OnboardingManager.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/onboarding/OnboardingScreen.kt:93:52 Redundant call of conversion method.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/onboarding/OnboardingScreen.kt:163:89 Redundant call of conversion method.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/orders/OrdersScreen.kt:250:45 Unnecessary non-null assertion (!!) on a non-null receiver of type 'List<ApiVendorInfo>'.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/orders/OrdersScreen.kt:371:44 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/profile/ProfileScreen.kt:233:63 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/shop/ShopPageScreen.kt:165:61 'val Icons.Filled.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/shop/ShopPageScreen.kt:235:64 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/shop/ShopPageScreen.kt:463:68 'val Icons.Filled.Reply: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Reply.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/shop/ShopPageScreen.kt:483:44 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/story/StoryViewerScreen.kt:440:43 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/vendor/VendorDashboardScreen.kt:82:80 'val Icons.Filled.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.TrendingUp.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/vendor/VendorDashboardScreen.kt:295:64 'val Icons.Filled.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.TrendingUp.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/vendor/VendorGroupBuysScreen.kt:431:17 'fun LinearProgressIndicator(progress: Float, modifier: Modifier = ..., color: Color = ..., trackColor: Color = ..., strokeCap: StrokeCap = ...): Unit' is deprecated. Use the overload that takes `progress` as a lambda.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/vendor/VendorGroupBuysScreen.kt:521:52 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/ui/vendor/VendorGroupBuysScreen.kt:580:45 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/utils/GoogleAuthManager.kt:12:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/utils/MediaPicker.kt:7:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/commonMain/kotlin/com/tik_market/utils/NotificationUtils.kt:6:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/Main.kt:22:12 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/Platform.wasm.kt:5:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/api/HttpEngine.kt:13:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/api/HttpEngine.kt:73:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/api/TokenStorage.kt:5:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/cache/LocalCache.kt:5:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/cache/PersistentMediaCache.wasm.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/db/DatabaseDriverFactory.kt:7:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:36:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:39:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:98:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:109:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:137:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:161:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:179:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:198:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:229:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/chat/ChatUtils.kt:240:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/ImagePicker.kt:19:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/ImagePicker.kt:75:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/ImagePicker.kt:78:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/ImagePicker.kt:166:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/ImagePicker.kt:224:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/VideoPlayer.wasm.kt:50:19 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/VideoPlayer.wasm.kt:50:26 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/VideoPlayer.wasm.kt:52:23 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/VideoPlayer.wasm.kt:55:45 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/components/VideoPlayer.wasm.kt:72:29 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/ui/onboarding/OnboardingManager.wasmJs.kt:5:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:15:24 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:17:25 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:17:26 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:18:28 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:22:45 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/BackPressHandler.wasm.kt:27:52 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/GoogleAuthManager.wasmJs.kt:8:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/GoogleAuthManager.wasmJs.kt:38:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/GoogleAuthManager.wasmJs.kt:41:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/GoogleAuthManager.wasmJs.kt:44:47 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/LocationUtils.wasm.kt:33:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/LocationUtils.wasm.kt:46:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/MediaPicker.kt:8:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/MediaPicker.kt:19:41 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/MediaPicker.kt:21:30 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/MediaPicker.kt:9:5 Annotation `@ParameterName(name = "dataUrl")` is missing on actual declaration.
+All annotations from expect `com.tik_market.utils.MediaPicker.pickImageOrVideo` must be present with the same arguments on actual `com.tik_market.utils.MediaPicker.pickImageOrVideo`, otherwise they might behave incorrectly.
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/NotificationUtils.wasmJs.kt:10:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/NotificationUtils.wasmJs.kt:19:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/NotificationUtils.wasmJs.kt:27:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/NotificationUtils.wasmJs.kt:37:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:24:32 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:27:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:40:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:50:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:59:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:70:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:89:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/PlatformUtils.kt:103:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+w: file:///D:/aaaaaaaaa/workspace/Tik-Market/composeApp/src/wasmJsMain/kotlin/com/tik_market/utils/ShareUtils.wasm.kt:7:2 This declaration needs opt-in. Its usage should be marked with '@kotlin.js.ExperimentalWasmJsInterop' or '@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)'
+
+> Task :composeApp:wasmJsMainClasses
+> Task :composeApp:compileProductionExecutableKotlinWasmJs
+> Task :composeApp:compileProductionExecutableKotlinWasmJsOptimize
+> Task :composeApp:wasmJsProductionExecutableCompileSync
+
+> Task :composeApp:wasmJsBrowserProductionWebpack
+asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  composeApp.js (555 KiB)
+  54ff460377adfac43ac8.wasm (7.33 MiB)
+  dd568dbcd078c0adf7cf.wasm (7.91 MiB)
+entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (555 KiB)
+      composeApp.js
+webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+assets by status 7.91 MiB [cached] 1 asset
+asset 54ff460377adfac43ac8.wasm 7.33 MiB [emitted] [immutable] [from: kotlin/TiK-Market-composeApp.wasm] [big] (auxiliary name: main)
+asset composeApp.js 555 KiB [emitted] [minimized] [big] (name: main) 2 related assets
+runtime modules 4.38 KiB 7 modules
+cacheable modules 902 KiB (javascript) 15.2 MiB (asset)
+  javascript modules 902 KiB
+    modules with warnings 59.9 KiB [true warnings]
+      ./kotlin/TiK-Market-composeApp.mjs 2.79 KiB [built] [code generated] [4 warnings]
+      ./kotlin/TiK-Market-composeApp.import-object.mjs 57.1 KiB [built] [code generated] [1 warning]
+    ./kotlin/skiko.mjs 448 KiB [built] [code generated]
+    ../../node_modules/@js-joda/core/dist/js-joda.esm.js 392 KiB [built] [code generated]
+    ./kotlin/TiK-Market-composeApp.js-builtins.mjs 2.05 KiB [built] [code generated]
+  asset modules 15.2 MiB (asset) 84 bytes (javascript)
+    ./kotlin/TiK-Market-composeApp.wasm 7.33 MiB (asset) 42 bytes (javascript) [built] [code generated]
+    ./kotlin/skiko.wasm 7.91 MiB (asset) 42 bytes (javascript) [built] [code generated]
+webpack 5.101.3 compiled with 3 warnings in 12476 ms
+
+> Task :composeApp:wasmJsBrowserDistribution
+
+[Incubating] Problems report is available at: file:///D:/aaaaaaaaa/workspace/Tik-Market/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 49m 17s
+31 actionable tasks: 17 executed, 14 up-to-date
+EXIT_CODE=0 
