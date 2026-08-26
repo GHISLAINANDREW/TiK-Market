@@ -361,7 +361,9 @@
 
       // Check Wasm GC support
       function checkWasmGC() {
-        return true; // Force compatibility
+        try {
+          return typeof WebAssembly === 'object' && typeof WebAssembly.validate === 'function';
+        } catch (e) { return false; }
       }
 
       if (!checkWasmGC()) {
@@ -424,13 +426,13 @@
       });
       observer.observe(appEl, { childList: true, subtree: true });
 
-      // Show error if wasm fails to load after 30s
+      // Show error if wasm fails to load after 120s (15MB of Wasm can be slow)
       var failTimer = setTimeout(function() {
         if (appEl.children.length === 0) {
           splash.classList.add('hidden');
           errorScreen.classList.add('visible');
         }
-      }, 30000);
+      }, 120000);
 
       // Also hide splash on error
       window.addEventListener('error', function() {
