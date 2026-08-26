@@ -248,8 +248,8 @@ actual suspend fun fetchImageAsDataUrl(url: String): String? {
     return withContext(Dispatchers.IO) {
         try {
             // Force HTTPS and use proxy if URL points to the blocked Render domain
-            val renderBase = "https://dschang-market.onrender.com"
-            val proxyBase = "https://dschang-market-proxy.gtankou.workers.dev"
+            val renderBase = "https://tik-market.onrender.com"
+            val proxyBase = "https://tik-market-proxy.gtankou.workers.dev"
             
             var safeUrl = if (url.startsWith("http://") && (url.contains("loca.lt") || url.contains("ngrok") || url.contains("cloudflare"))) {
                 url.replace("http://", "https://")

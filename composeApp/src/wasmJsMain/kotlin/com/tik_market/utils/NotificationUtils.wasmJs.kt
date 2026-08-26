@@ -27,9 +27,9 @@ private external fun jsShowNotification(title: String, body: String)
 @JsFun("""(count) => {
     // Update page title with badge
     if (count > 0) {
-        document.title = "(" + count + ") Dschang Market";
+        document.title = "(" + count + ") TiK-Market";
     } else {
-        document.title = "Dschang Market Place";
+        document.title = "TiK-Market";
     }
 }""")
 private external fun jsUpdateBadge(count: Int)

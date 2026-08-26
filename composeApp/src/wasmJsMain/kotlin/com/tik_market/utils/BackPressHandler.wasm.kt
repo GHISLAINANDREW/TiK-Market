@@ -3,6 +3,7 @@ package com.tik_market.utils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.browser.window
+import kotlinx.coroutines.awaitCancellation
 
 @Composable
 actual fun BackPressHandler(enabled: Boolean, onBack: () -> Unit) {
@@ -13,9 +14,7 @@ actual fun BackPressHandler(enabled: Boolean, onBack: () -> Unit) {
         // instead of navigating away from the app.
         window.history.pushState(null, "")
 
-        val onPopState: (dynamic) -> Unit = { event ->
-            event.preventDefault()
-            // Re-push so the user stays in the app
+        val onPopState: (JsAny) -> Unit = { _ ->
             window.history.pushState(null, "")
             onBack()
         }
