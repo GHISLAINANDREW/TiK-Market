@@ -1,5 +1,8 @@
 package com.tik_market.data.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Product(
     val id: String = "",
     val shopId: String = "",

@@ -101,7 +101,7 @@ fun ProfileScreen(
                 actions = {
                     if (isLoggedIn) IconButton(onClick = onSettingsClick) { Icon(Icons.Default.Settings, null, tint = Color.White) }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LocalCityColors.current.topBar)
             )
         }
     ) { padding ->
@@ -110,7 +110,7 @@ fun ProfileScreen(
                 // Header profil connecté avec Photo de Couverture
                 Box(Modifier.fillMaxWidth().height(220.dp)) {
                     // Photo de couverture
-                    Box(Modifier.fillMaxWidth().height(160.dp).background(Green)) {
+                    Box(Modifier.fillMaxWidth().height(160.dp).background(MaterialTheme.colorScheme.primary)) {
                         if (coverBitmap != null) {
                             Image(coverBitmap!!, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         }
@@ -278,8 +278,8 @@ fun ProfileScreen(
                 // Utilisateur non connecté
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                        Box(Modifier.size(80.dp).clip(CircleShape).background(GreenSurface), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Person, null, Modifier.size(48.dp), tint = Green)
+                        Box(Modifier.size(80.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Person, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                         Spacer(Modifier.height(16.dp))
                         Text(s.connect, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -290,7 +290,7 @@ fun ProfileScreen(
                             onClick = onLoginClick,
                             modifier = Modifier.fillMaxWidth(0.7f).height(50.dp),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Green)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(s.loginBtn, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
@@ -311,7 +311,7 @@ private fun RowScope.PointsCard(value: String, label: String, onClick: () -> Uni
         shadowElevation = 2.dp
     ) {
         Column(Modifier.padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value, color = Green, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(value, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(label, color = Color.Gray, fontSize = 10.sp)
         }
     }
@@ -359,9 +359,10 @@ private fun RowScope.ServiceGridItem(icon: ImageVector, label: String, color: Co
 
 @Composable
 private fun ProfileMenuItem(icon: ImageVector, title: String, subtitle: String, tint: Color = Color.Unspecified, onClick: () -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
     Surface(onClick = onClick, color = Color.Transparent) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, Modifier.size(22.dp), tint = if (tint != Color.Unspecified) tint else Green)
+            Icon(icon, null, Modifier.size(22.dp), tint = if (tint != Color.Unspecified) tint else primary)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (tint != Color.Unspecified) tint else Color.Unspecified)

@@ -40,10 +40,11 @@ fun optimizeImageUrl(url: String, width: Int = 400): String {
 suspend fun loadImageFromUrl(url: String): ImageBitmap? {
     if (url.isBlank()) return null
     
-    // Auto-fix relative URLs
+    // Auto-fix relative URLs and cleaning
     val absoluteUrl = if (!url.startsWith("http") && !url.startsWith("data:")) {
         val base = com.tik_market.api.ApiClient.baseUrl.trimEnd('/')
-        "$base/${url.trimStart('/')}"
+        val cleanPath = url.trimStart('/', '\\').replace("\\", "/")
+        "$base/$cleanPath"
     } else {
         url
     }
@@ -52,6 +53,18 @@ suspend fun loadImageFromUrl(url: String): ImageBitmap? {
 
     // Check memory cache first
     globalImageCache.get(optimizedUrl)?.let { return it }
+
+    // Check persistent cache
+    PersistentMediaCache.getCachedPath(optimizedUrl)?.let { cachedUrl ->
+        val dataUrl = fetchImageAsDataUrl(cachedUrl)
+        if (dataUrl != null) {
+            val bitmap = decodeDataUrlToImageBitmap(dataUrl)
+            if (bitmap != null) {
+                globalImageCache.put(optimizedUrl, bitmap)
+                return bitmap
+            }
+        }
+    }
 
     // For stories, try to cache locally (especially on Android)
     if (optimizedUrl.contains("/stories/")) {

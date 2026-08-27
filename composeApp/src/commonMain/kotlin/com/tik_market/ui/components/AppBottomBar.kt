@@ -41,7 +41,9 @@ fun AppBottomBar(appState: AppState, items: List<BottomNavItem>) {
                 },
                 label = { Text(item.label, fontSize = 11.sp) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Orange, selectedTextColor = Orange, indicatorColor = Color(0xFFFFF3E0)
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 )
             )
         }

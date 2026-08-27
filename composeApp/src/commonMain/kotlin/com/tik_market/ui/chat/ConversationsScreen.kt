@@ -49,7 +49,8 @@ data class Conversation(
 fun ConversationsScreen(
     onBack: () -> Unit,
     onConversationClick: (vendorName: String, productTitle: String?, vendorUserId: Int, isOnline: Boolean) -> Unit,
-    showBack: Boolean = true
+    showBack: Boolean = true,
+    snackbarHostState: SnackbarHostState? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var conversations by remember { mutableStateOf<List<Conversation>>(emptyList()) }
@@ -173,7 +174,41 @@ fun ConversationsScreen(
                 }
             }
 
+            // ── Menu de conversation (Archive / Supprimer) ──
+            var showContextMenu by remember { mutableStateOf(false) }
+            var selectedConvForMenu by remember { mutableStateOf<Conversation?>(null) }
+
+            if (showContextMenu && selectedConvForMenu != null) {
+                AlertDialog(
+                    onDismissRequest = { showContextMenu = false; selectedConvForMenu = null },
+                    title = { Text(selectedConvForMenu!!.name) },
+                    text = {
+                        Column {
+                            ListItem(
+                                headlineContent = { Text("Archiver") },
+                                leadingContent = { Icon(Icons.Default.Archive, null) },
+                                modifier = Modifier.clickable { 
+                                    showContextMenu = false
+                                    scope.launch { snackbarHostState?.showSnackbar("Conversation archivée") }
+                                }
+                            )
+                            ListItem(
+                                headlineContent = { Text(s.delete, color = Color.Red) },
+                                leadingContent = { Icon(Icons.Default.Delete, null, tint = Color.Red) },
+                                modifier = Modifier.clickable { 
+                                    showContextMenu = false
+                                    deleteTargetConv = selectedConvForMenu
+                                    showDeleteConfirm = true
+                                }
+                            )
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { showContextMenu = false }) { Text(s.cancel) } }
+                )
+            }
+
             // ── Delete conversation confirmation ──
+
             if (showDeleteConfirm && deleteTargetConv != null) {
                 AlertDialog(
                     onDismissRequest = { showDeleteConfirm = false; deleteTargetConv = null },
@@ -241,12 +276,19 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: () -> Unit = {}) {
+private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: () -> Unit = {}, onLongClick: () -> Unit = {}) {
     val s = LocalAppStrings.current
-    Surface(onClick = onClick, color = Color.White) {
+    Surface(
+        modifier = Modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        ),
+        color = Color.White
+    ) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar with verified badge potential
@@ -301,15 +343,6 @@ private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: 
                         }
                     }
                 }
-            }
-            // Delete button
-            IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = s.deleteConversation,
-                    tint = Color(0xFFD32F2F),
-                    modifier = Modifier.size(20.dp)
-                )
             }
         }
     }

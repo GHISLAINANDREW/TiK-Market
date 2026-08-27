@@ -42,7 +42,8 @@ data class AppBaseStrings(
     val account: String, val pressBackToExit: String, val language: String, val french: String, val english: String,
     val darkMode: String, val unknown: String, val myPosition: String, val openInMaps: String,
     val payment: String, val recap: String, val chooseOperator: String, val phoneNumber: String,
-    val offlineBanner: String, val connectionRestored: String, val connectionLost: String, val sessionExpired: String
+    val offlineBanner: String, val connectionRestored: String, val connectionLost: String, val sessionExpired: String,
+    val archive: String
 )
 
 data class ProductActionStrings(
@@ -290,6 +291,7 @@ data class AppStrings(
     val connectionRestored get() = baseS.connectionRestored
     val connectionLost get() = baseS.connectionLost
     val sessionExpired get() = baseS.sessionExpired
+    val archive get() = baseS.archive
     val payment get() = baseS.payment
     val recap get() = baseS.recap
     val chooseOperator get() = baseS.chooseOperator
@@ -1037,7 +1039,8 @@ private fun getAppBaseStrings(lang: String) = if (lang == "en") AppBaseStrings(
     english = "English", darkMode = "Dark mode", unknown = "Unknown", myPosition = "My location", openInMaps = "Open in Maps",
     payment = "Payment", recap = "Summary", chooseOperator = "Choose your operator", phoneNumber = "Mobile Money Number",
     offlineBanner = "🔴 Connection lost — some features may be limited", connectionRestored = "✅ Connection restored",
-    connectionLost = "🔴 Connection lost", sessionExpired = "Session expired"
+    connectionLost = "🔴 Connection lost", sessionExpired = "Session expired",
+    archive = "Archive"
 ) else AppBaseStrings(
     appName = "TiK-Market", home = "Accueil", search = "Rechercher", cart = "Panier", profile = "Mon Compte",
     messages = "Messages", notifications = "Notifications", settings = "Paramètres", orders = "Commandes", wishlist = "Favoris",
@@ -1048,7 +1051,8 @@ private fun getAppBaseStrings(lang: String) = if (lang == "en") AppBaseStrings(
     english = "English", darkMode = "Mode sombre", unknown = "Inconnu", myPosition = "Ma position", openInMaps = "Ouvrir sur Maps",
     payment = "Paiement", recap = "Récapitulatif", chooseOperator = "Choisir l'opérateur", phoneNumber = "Numéro Mobile Money",
     offlineBanner = "🔴 Connexion perdue — certaines fonctions sont limitées", connectionRestored = "✅ Connexion rétablie",
-    connectionLost = "🔴 Connexion perdue", sessionExpired = "Session expirée"
+    connectionLost = "🔴 Connexion perdue", sessionExpired = "Session expirée",
+    archive = "Archiver"
 )
 
 private fun getProductActionStrings(lang: String) = if (lang == "en") ProductActionStrings(

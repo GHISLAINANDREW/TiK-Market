@@ -35,10 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.data.models.Product
 import com.tik_market.data.models.SampleData
 import com.tik_market.data.models.OrderStatus
-import com.tik_market.theme.Green
-import com.tik_market.theme.GreenAccent
-import com.tik_market.theme.GreenAccentSurface
-import com.tik_market.theme.GreenSurface
+import com.tik_market.theme.LocalCityColors
 import com.tik_market.theme.Orange
 import com.tik_market.theme.RedAccent
 
@@ -165,9 +162,11 @@ fun ProductCard(
                 }
 
                 val emoji = SampleData.productEmojis[product.id] ?: "📦"
+                val cityColors = LocalCityColors.current
+                val primary = MaterialTheme.colorScheme.primary
                 val gradient = SampleData.categoryGradients[product.category]
                 val productBg = if (gradient != null) Brush.verticalGradient(listOf(Color(gradient.first), Color(gradient.second)))
-                               else Brush.verticalGradient(listOf(GreenSurface, GreenSurface))
+                               else Brush.verticalGradient(listOf(cityColors.primary.copy(alpha = 0.1f), cityColors.primary.copy(alpha = 0.05f)))
 
                 // ── Animation: Image Zoom on Hover/Press ──
                 val imageScale by animateFloatAsState(
@@ -193,8 +192,8 @@ fun ProductCard(
                             contentScale = ContentScale.Crop
                         )
                     } else if (imageLoading) {
-                        Box(modifier = Modifier.fillMaxSize().background(GreenSurface), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Green.copy(alpha = 0.5f), modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        Box(modifier = Modifier.fillMaxSize().background(cityColors.primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = primary.copy(alpha = 0.5f), modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                         }
                     } else {
                         Text(emoji, fontSize = 48.sp)
@@ -284,9 +283,9 @@ fun ProductCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (product.shopVerified) {
+                    if (product.shopVerified) {
                             Surface(
-                                color = GreenSurface,
+                                color = primary.copy(alpha = 0.1f),
                                 shape = RoundedCornerShape(4.dp)
                             ) {
                                 Row(
@@ -294,8 +293,8 @@ fun ProductCard(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 ) {
-                                    Icon(Icons.Default.Verified, null, Modifier.size(10.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text("Vérifié", fontWeight = FontWeight.Bold, fontSize = 8.sp, color = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.Default.Verified, null, Modifier.size(10.dp), tint = primary)
+                                    Text("Vérifié", fontWeight = FontWeight.Bold, fontSize = 8.sp, color = primary)
                                 }
                             }
                         } else {

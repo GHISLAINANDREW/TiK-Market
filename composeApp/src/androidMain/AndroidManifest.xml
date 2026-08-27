@@ -23,7 +23,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:largeHeap="true"
-        android:hardwareAccelerated="true">
+        android:hardwareAccelerated="true"
+        android:testOnly="false"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name="com.tik_market.MainActivity"
             android:exported="true"

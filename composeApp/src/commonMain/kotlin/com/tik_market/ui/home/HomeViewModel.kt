@@ -6,6 +6,7 @@ import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.ui.story.StoryItem
+import com.tik_market.cache.AppCache
 import com.tik_market.utils.safeApiCall
 import kotlinx.coroutines.*
 
@@ -72,8 +73,8 @@ class HomeViewModel(
     fun loadAll(isLoggedIn: Boolean, force: Boolean = false) {
         scope.launch {
             // 1. Chargement immédiat du cache
-            val cachedProducts = com.tik_market.db.LocalCache.getProducts()
-            val cachedCategories = com.tik_market.db.LocalCache.getCategories()
+            val cachedProducts = AppCache.getProducts()
+            val cachedCategories = AppCache.getCategories()
             
             if (cachedProducts.isNotEmpty() || cachedCategories.isNotEmpty()) {
                 state = state.copy(
@@ -94,7 +95,7 @@ class HomeViewModel(
                 try { 
                     val cats = ApiClient.fetchCategories()
                     state = state.copy(categories = cats)
-                    com.tik_market.db.LocalCache.saveCategories(cats)
+                    AppCache.saveCategories(cats)
                     onCacheData(state.products, state.categories, state.wishlistIds)
                 } catch (_: Exception) {}
             }
@@ -126,7 +127,7 @@ class HomeViewModel(
             
             // Sauvegarder dans le cache local
             if (searchQuery.isBlank() && selectedCategory == null) {
-                com.tik_market.db.LocalCache.saveProducts(products)
+                AppCache.saveProducts(products)
             }
             
             onCacheData(state.products, state.categories, state.wishlistIds)

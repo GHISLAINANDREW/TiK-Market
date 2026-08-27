@@ -114,9 +114,11 @@ fun StoryViewerScreen(
         // Story image content
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (currentStory.mediaType == "text") {
+                val primary = MaterialTheme.colorScheme.primary
+                val secondary = MaterialTheme.colorScheme.secondary
                 val bgColor = when (currentStory.imageUrl) {
-                    "#4CAF50" -> Green
-                    "#FF9800" -> Orange
+                    "#4CAF50" -> primary
+                    "#FF9800" -> secondary
                     "#2196F3" -> BlueAccent
                     "#F44336" -> RedAccent
                     else -> Color(0xFF333333)
@@ -166,7 +168,7 @@ fun StoryViewerScreen(
                     )
                 } else {
                     Box(
-                        Modifier.fillMaxSize().background(Green),
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -179,7 +181,7 @@ fun StoryViewerScreen(
                 }
             } else {
                 Box(
-                    Modifier.fillMaxSize().background(GreenDark),
+                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -439,7 +441,7 @@ fun StoryViewerScreen(
                         Icon(
                             Icons.Default.Send,
                             null,
-                            tint = if (replyText.isNotBlank()) Orange else Color.White.copy(alpha = 0.3f),
+                            tint = if (replyText.isNotBlank()) MaterialTheme.colorScheme.secondary else Color.White.copy(alpha = 0.3f),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -469,7 +471,7 @@ fun StoryViewerScreen(
                             )
                             Text(
                                 "${currentStory.product.price.toInt()} FCFA",
-                                color = Orange,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
@@ -477,7 +479,7 @@ fun StoryViewerScreen(
                         Icon(
                             Icons.Default.ShoppingCart,
                             null,
-                            tint = Orange,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(28.dp)
                         )
                     }

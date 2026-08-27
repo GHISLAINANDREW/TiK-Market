@@ -340,7 +340,7 @@ fun ChatScreen(
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = CircleShape,
-                                color = GreenSurface
+                                color = MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     var avatarBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -355,7 +355,7 @@ fun ChatScreen(
                                     if (avatarBitmap != null) {
                                         Image(avatarBitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                     } else {
-                                        Text(vendorName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = Green, fontSize = 18.sp)
+                                        Text(vendorName.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
                                     }
                                 }
                             }
@@ -379,7 +379,7 @@ fun ChatScreen(
                         IconButton(onClick = {}) { Icon(Icons.Outlined.MoreVert, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF075E54),
+                        containerColor = LocalCityColors.current.topBar,
                         titleContentColor = Color.White
                     )
                 )
@@ -450,7 +450,7 @@ fun ChatScreen(
                             Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(Modifier.width(3.dp).height(28.dp).background(Color(0xFF075E54), RoundedCornerShape(2.dp)))
+                            Box(Modifier.width(3.dp).height(28.dp).background(LocalCityColors.current.topBar, RoundedCornerShape(2.dp)))
                             Spacer(Modifier.width(8.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
@@ -610,7 +610,7 @@ fun ChatScreen(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(if (isRecording) Color(0xFFE53935) else Color(0xFF075E54))
+                                    .background(if (isRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
                                     .pointerInput(messageText) {
                                         if (messageText.isBlank()) {
                                             detectDragGesturesAfterLongPress(
@@ -744,10 +744,10 @@ private fun ChatBubble(
             Surface(
                 modifier = Modifier.size(30.dp),
                 shape = CircleShape,
-                color = GreenSurface
+                color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(msg.senderName.take(1).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Green)
+                    Text(msg.senderName.take(1).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }
             Spacer(Modifier.width(6.dp))
@@ -783,7 +783,7 @@ private fun ChatBubble(
                             color = if (isMe) Color(0xFF075E54).copy(alpha = 0.1f) else Color(0xFFE8E8E8)
                         ) {
                             Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.width(3.dp).height(24.dp).background(Color(0xFF25D366), RoundedCornerShape(2.dp)))
+                                Box(Modifier.width(3.dp).height(24.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
                                 Spacer(Modifier.width(6.dp))
                                 Column {
                                     Text(s.you /*will be fixed*/, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
@@ -1007,8 +1007,8 @@ private fun VoiceMessageLayout(audioUrl: String, duration: Int, isMe: Boolean) {
     var isDownloading by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
     val scope = rememberCoroutineScope()
-    val fgColor = if (isMe) Color(0xFF1C1C1C) else Color(0xFF075E54)
-    val accentColor = Color(0xFF075E54)
+    val fgColor = if (isMe) Color(0xFF1C1C1C) else LocalCityColors.current.topBar
+    val accentColor = LocalCityColors.current.topBar
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1163,7 +1163,7 @@ private fun ChatMessageImage(url: String, onClick: () -> Unit = {}) {
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(Modifier.size(24.dp), color = Color(0xFF075E54))
+            CircularProgressIndicator(Modifier.size(24.dp), color = LocalCityColors.current.topBar)
         }
     }
 }

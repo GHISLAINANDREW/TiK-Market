@@ -108,7 +108,7 @@ fun AuthScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandTopBarColor
+                    containerColor = LocalCityColors.current.topBar
                 )
             )
         }
@@ -135,7 +135,7 @@ fun AuthScreen(
                     Text(
                         "Tik Market",
                         style = if (isCompact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(4.dp))
@@ -215,7 +215,7 @@ fun AuthScreen(
                                     Text(
                                         if (isLogin) s.noAccountSignup
                                         else s.alreadyAccountLogin,
-                                        color = Green,
+                                        color = MaterialTheme.colorScheme.primary,
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -399,7 +399,7 @@ private fun EmailAuthStep(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, null, tint = if (form.location.isBlank()) RedAccent else Green, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.LocationOn, null, tint = if (form.location.isBlank()) RedAccent else MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = if (form.location.isBlank()) "${s.chooseYourCity} *" else "${s.cityLabel} : ${form.location}",
@@ -494,19 +494,19 @@ private fun EmailAuthStep(
                 Checkbox(
                     checked = form.termsAccepted,
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
-                    colors = CheckboxDefaults.colors(checkedColor = Green)
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
                         text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -581,19 +581,19 @@ private fun PhoneStep(
                 Checkbox(
                     checked = form.termsAccepted,
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
-                    colors = CheckboxDefaults.colors(checkedColor = Green)
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
                         text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -699,19 +699,19 @@ private fun OtpStep(
                 Checkbox(
                     checked = form.termsAccepted,
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
-                    colors = CheckboxDefaults.colors(checkedColor = Green)
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
                 Column(Modifier.clickable { onTermsClick() }) {
                     Text(
                         text = s.acceptTerms,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = s.andPrivacy,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Green,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
                 }

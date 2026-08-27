@@ -15,7 +15,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,6 +92,31 @@ fun <T> ResourceBox(
         is Resource.Success -> content(resource.data)
         else -> Unit
     }
+}
+
+@Composable
+fun RotatingRefreshIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    isRefreshing: Boolean = true
+) {
+    val transition = rememberInfiniteTransition(label = "refresh")
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+
+    Icon(
+        imageVector = Icons.Default.Refresh,
+        contentDescription = "Refreshing",
+        modifier = modifier.graphicsLayer { rotationZ = if (isRefreshing) rotation else 0f },
+        tint = tint
+    )
 }
 
 /**

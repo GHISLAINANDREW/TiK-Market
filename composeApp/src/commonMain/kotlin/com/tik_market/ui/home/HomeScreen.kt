@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +86,7 @@ fun HomeScreen(
     val s = LocalAppStrings.current
     val cityColors = LocalCityColors.current
     val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
 
     var isSearchFocused by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
@@ -96,7 +100,7 @@ fun HomeScreen(
     var storyCaption by remember { mutableStateOf("") }
     var showTextStoryDialog by remember { mutableStateOf(false) }
     var textStoryContent by remember { mutableStateOf("") }
-    var textStoryColor by remember { mutableStateOf(Green) }
+    var textStoryColor by remember { mutableStateOf(primary) }
 
     val pickPhoto = rememberMediaPickerLauncher(allowVideo = false) { result ->
         if (result != null) {
@@ -161,7 +165,7 @@ fun HomeScreen(
                         onClick = onCompareClick,
                         icon = { Icon(Icons.Default.CompareArrows, null) },
                         text = { Text(s.compareCta.format(comparisonCount)) },
-                        containerColor = Orange,
+                        containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = Color.White
                     )
                 }
@@ -183,10 +187,26 @@ fun HomeScreen(
                 )
             }
         ) { padding ->
+            val pullRefreshState = rememberPullToRefreshState()
             PullToRefreshBox(
                 isRefreshing = state.isRefreshing,
                 onRefresh = { viewModel.refresh(isLoggedIn) },
-                modifier = Modifier.fillMaxSize().padding(padding)
+                state = pullRefreshState,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                indicator = {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 4.dp
+                    ) {
+                        RotatingRefreshIcon(
+                            modifier = Modifier.padding(8.dp).size(24.dp),
+                            isRefreshing = state.isRefreshing,
+                            tint = primary
+                        )
+                    }
+                }
             ) {
                 LazyColumn(Modifier.fillMaxSize().background(BackgroundViolet)) {
                     item {
@@ -316,7 +336,7 @@ fun HomeScreen(
             onPublishTextStory = {
                 showTextStoryDialog = false
                 val colorHex = when(textStoryColor) { 
-                    Green -> "#4CAF50"; Orange -> "#FF9800"; BlueAccent -> "#2196F3"; RedAccent -> "#F44336"; else -> "#333333" 
+                    primary -> "#4CAF50"; secondary -> "#FF9800"; BlueAccent -> "#2196F3"; RedAccent -> "#F44336"; else -> "#333333" 
                 }
                 onAddStory(colorHex, "text", textStoryContent)
                 textStoryContent = ""
@@ -500,11 +520,11 @@ private fun FiltersSection(
                 Spacer(Modifier.weight(1f))
                 if (showFilters) {
                     TextButton(onClick = onReset) {
-                        Text(s.reset, fontSize = 12.sp, color = Orange)
+                        Text(s.reset, fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
                     }
                 }
                 IconButton(onClick = onToggleFilters) {
-                    Icon(Icons.Outlined.FilterList, null, tint = if (showFilters) Orange else TextSecondary)
+                    Icon(Icons.Outlined.FilterList, null, tint = if (showFilters) MaterialTheme.colorScheme.secondary else TextSecondary)
                 }
             }
             AnimatedVisibility(visible = showFilters) {
@@ -674,7 +694,8 @@ private fun HomeDialogs(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        listOf(Green, Orange, BlueAccent, RedAccent, Color.DarkGray).forEach { color ->
+                        val secondary = MaterialTheme.colorScheme.secondary
+                        listOf(primary, secondary, BlueAccent, RedAccent, Color.DarkGray).forEach { color ->
                             Box(
                                 Modifier.size(32.dp)
                                     .clip(RoundedCornerShape(16.dp))

@@ -247,6 +247,16 @@ actual fun rememberImagePickerLauncher(
 actual suspend fun fetchImageAsDataUrl(url: String): String? {
     return withContext(Dispatchers.IO) {
         try {
+            if (url.startsWith("file://")) {
+                val path = url.substringAfter("file://")
+                val file = java.io.File(path)
+                if (!file.exists()) return@withContext null
+                val bytes = file.readBytes()
+                val contentType = "image/jpeg" // Fallback
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                return@withContext "data:$contentType;base64,$base64"
+            }
+
             // Force HTTPS and use proxy if URL points to the blocked Render domain
             val renderBase = "https://tik-market.onrender.com"
             val proxyBase = "https://tik-market-proxy.gtankou.workers.dev"

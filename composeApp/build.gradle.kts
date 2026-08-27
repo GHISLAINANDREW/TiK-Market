@@ -110,8 +110,9 @@ android {
         targetSdk = 35
         versionCode = verCode
         versionName = verName
+        multiDexEnabled = true
 
-        // Supporte absolument toutes les architectures mobiles
+        // Supporte absolument toutes les architectures mobiles (ARM 32/64 et x86)
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
         }
@@ -119,9 +120,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -138,6 +147,10 @@ android {
             useLegacyPackaging = true
         }
     }
+}
+
+dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk)
 }
 
 // Tâche pour incrémenter la version avant le build

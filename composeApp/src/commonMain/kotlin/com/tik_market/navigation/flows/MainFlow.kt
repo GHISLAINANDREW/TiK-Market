@@ -232,7 +232,8 @@ fun MainFlow(
                 appState.chatVendorIsOnline = online
                 appState.navigateTo(NavScreen.Chat)
             },
-            showBack = appState.previousScreens.isNotEmpty()
+            showBack = appState.previousScreens.isNotEmpty(),
+            snackbarHostState = snackbarHostState
         )
         NavScreen.Orders -> OrdersScreen(
             onBack = { appState.goBack() },

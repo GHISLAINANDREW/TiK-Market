@@ -68,7 +68,7 @@ fun CartScreen(
             TopAppBar(
                 title = { Text("${s.cartTitle} (${items.size})", fontWeight = FontWeight.SemiBold, color = Color.White) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandTopBarColor)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LocalCityColors.current.topBar)
             )
         },
         bottomBar = {
@@ -77,10 +77,10 @@ fun CartScreen(
                     Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(s.total, fontSize = if (isCompact) 11.sp else 13.sp, color = Color.Gray)
-                            Text("${items.sumOf { it.subtotal }.toInt()} FCFA", fontSize = if (isCompact) 18.sp else 22.sp, fontWeight = FontWeight.Bold, color = Green)
+                            Text("${items.sumOf { it.subtotal }.toInt()} FCFA", fontSize = if (isCompact) 18.sp else 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Button(onClick = onCheckout, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Green)) {
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
                             Text(s.buyNow, fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
                         }
                     }
@@ -135,7 +135,7 @@ private fun CartItemCard(item: CartItem, isCompact: Boolean = false, onIncrease:
                 )
             } else {
                 val cartEmoji = SampleData.productEmojis[item.product.id] ?: "📦"
-                Box(Modifier.size(imgSize).clip(RoundedCornerShape(8.dp)).background(GreenSurface), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(imgSize).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                     Text(cartEmoji, fontSize = if (isCompact) 22.sp else 28.sp)
                 }
             }
@@ -154,7 +154,7 @@ private fun CartItemCard(item: CartItem, isCompact: Boolean = false, onIncrease:
                         Icon(Icons.Default.Add, null, Modifier.size(16.dp))
                     }
                     Spacer(Modifier.weight(1f))
-                    Text("= ${item.subtotal.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
+                    Text("= ${item.subtotal.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                 }
             }
             IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {

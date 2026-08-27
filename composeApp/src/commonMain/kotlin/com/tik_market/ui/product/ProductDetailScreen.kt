@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+//import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,8 +30,8 @@ import com.tik_market.ui.components.*
 import com.tik_market.utils.shareText
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.format
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
+//import androidx.compose.ui.draw.scale
+//import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch
 
 import com.tik_market.utils.FormatUtils
@@ -144,7 +144,7 @@ fun ProductDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandTopBarColor,
+                    containerColor = LocalCityColors.current.topBar,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
@@ -193,7 +193,7 @@ fun ProductDetailScreen(
                                 if (imgBitmap != null) {
                                     Image(bitmap = imgBitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(2.dp)))
                                 } else {
-                                    Box(Modifier.fillMaxSize().background(GreenSurface), contentAlignment = Alignment.Center) {
+                                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                                         Text(SampleData.productEmojis[product.id] ?: "📦", fontSize = 24.sp)
                                     }
                                 }
@@ -277,7 +277,7 @@ fun ProductDetailScreen(
                     Text(s.soldCount.format(product.totalSales), fontSize = 13.sp, color = Color.Gray)
                     if (product.userPurchaseCount > 0) {
                         Text("|", color = Color.LightGray)
-                        Text(s.alreadyBought.format(product.userPurchaseCount), fontSize = 13.sp, color = Green, fontWeight = FontWeight.Bold)
+                        Text(s.alreadyBought.format(product.userPurchaseCount), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                     if (product.stock in 1..5) {
                         Spacer(Modifier.width(8.dp))
@@ -308,7 +308,7 @@ fun ProductDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     repeat(3) { i ->
                         Box(
-                            Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).background(if (i==0) GreenSurface else Color(0xFFF0F0F0)).border(1.dp, if (i==0) Green else Color.Transparent, RoundedCornerShape(4.dp)),
+                            Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)).background(if (i==0) MaterialTheme.colorScheme.primaryContainer else Color(0xFFF0F0F0)).border(1.dp, if (i==0) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(4.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(SampleData.productEmojis[product.id] ?: "📦", fontSize = 20.sp)
@@ -345,7 +345,7 @@ fun ProductDetailScreen(
                                 if (shopLogoBitmap != null) {
                                     Image(bitmap = shopLogoBitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape))
                                 } else {
-                                    Icon(Icons.Default.Store, null, tint = Green, modifier = Modifier.size(24.dp))
+                                    Icon(Icons.Default.Store, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                                 }
                             }
                             Spacer(Modifier.width(12.dp))
@@ -692,11 +692,11 @@ fun ProductDetailScreen(
                             onClick = { onChat(product) },
                             modifier = Modifier.size(46.dp),
                             shape = CircleShape,
-                            color = Green.copy(alpha = 0.1f),
-                            border = BorderStroke(1.dp, Green)
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Handshake, s.negotiate, tint = Green, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.Handshake, s.negotiate, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
                         }
                     }

@@ -6,8 +6,10 @@ kotlinx-serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
 sqldelight = "2.3.2"
 ktor = "3.0.1"
+android-desugarjdk = "2.1.5"
 
 [libraries]
+desugar-jdk = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugarjdk" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }

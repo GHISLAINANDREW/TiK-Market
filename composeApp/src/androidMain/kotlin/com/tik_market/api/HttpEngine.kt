@@ -63,7 +63,10 @@ actual object HttpEngine {
                 val errorObj = json.decodeFromString<Map<String, String>>(response)
                 throw Exception(errorObj["error"] ?: "HTTP $responseCode")
             } catch (_: Exception) {
-                if (response.isNotBlank()) throw Exception(response)
+                if (response.contains("<!doctype html>", ignoreCase = true) || response.contains("<html>", ignoreCase = true)) {
+                    throw Exception("Service temporairement indisponible (Erreur $responseCode)")
+                }
+                if (response.isNotBlank()) throw Exception(response.take(100))
                 else throw Exception("HTTP $responseCode")
             }
         }
