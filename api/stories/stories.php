@@ -56,6 +56,11 @@ try {
         $db->exec("ALTER TABLE stories ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0 AFTER duration");
     } catch (Exception $e) { /* column already exists */ }
 
+    // Auto-migration: add city column to stories if missing (NULL = global / super admin)
+    try {
+        $db->exec("ALTER TABLE stories ADD COLUMN city VARCHAR(100) DEFAULT NULL AFTER is_admin");
+    } catch (Exception $e) { /* column already exists */ }
+
     // ── AUTO-CLEANUP: permanently delete stories older than 24h ──
     $deleted = 0;
     try {
@@ -69,11 +74,13 @@ try {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
         $getReplies = isset($_GET['replies']) ? (int)$_GET['replies'] : 0;
+        $city = isset($_GET['city']) ? trim($_GET['city']) : '';
 
         // Single story with replies
         if ($id > 0) {
             $stmt = $db->prepare("
                 SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
+                       u.role AS user_role, u.managed_city AS user_managed_city,
                        sh.name AS shop_name, sh.logo AS shop_logo
                 FROM stories s
                 JOIN users u ON s.user_id = u.id
@@ -115,6 +122,7 @@ try {
         if ($shopId > 0) {
             $stmt = $db->prepare("
                 SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
+                       u.role AS user_role, u.managed_city AS user_managed_city,
                        sh.name AS shop_name, sh.logo AS shop_logo
                 FROM stories s
                 JOIN users u ON s.user_id = u.id
@@ -125,17 +133,35 @@ try {
             $stmt->execute([$shopId]);
             $stories = $stmt->fetchAll();
         } else {
-            // All active stories grouped by shop
-            $stmt = $db->prepare("
-                SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
-                       sh.name AS shop_name, sh.logo AS shop_logo
-                FROM stories s
-                JOIN users u ON s.user_id = u.id
-                JOIN shops sh ON s.shop_id = sh.id
-                WHERE s.created_at >= NOW() - INTERVAL 24 HOUR
-                ORDER BY s.created_at DESC
-            ");
-            $stmt->execute();
+            // All active stories grouped by shop.
+            // Si un filtre ville est fourni, on renvoie les stories de cette ville
+            // PLUS les stories globales (super admin, city IS NULL).
+            if ($city !== '') {
+                $stmt = $db->prepare("
+                    SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
+                           u.role AS user_role, u.managed_city AS user_managed_city,
+                           sh.name AS shop_name, sh.logo AS shop_logo
+                    FROM stories s
+                    JOIN users u ON s.user_id = u.id
+                    JOIN shops sh ON s.shop_id = sh.id
+                    WHERE s.created_at >= NOW() - INTERVAL 24 HOUR
+                      AND (s.city LIKE ? OR s.city IS NULL)
+                    ORDER BY s.created_at DESC
+                ");
+                $stmt->execute(["%$city%"]);
+            } else {
+                $stmt = $db->prepare("
+                    SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
+                           u.role AS user_role, u.managed_city AS user_managed_city,
+                           sh.name AS shop_name, sh.logo AS shop_logo
+                    FROM stories s
+                    JOIN users u ON s.user_id = u.id
+                    JOIN shops sh ON s.shop_id = sh.id
+                    WHERE s.created_at >= NOW() - INTERVAL 24 HOUR
+                    ORDER BY s.created_at DESC
+                ");
+                $stmt->execute();
+            }
             $stories = $stmt->fetchAll();
         }
 
@@ -222,10 +248,16 @@ try {
 
         // Verify vendor owns the shop (skip for admins)
         $isAdmin = false;
-        $stmt = $db->prepare("SELECT role FROM users WHERE id = ?");
+        $userRole = 'buyer';
+        $managedCity = null;
+        $stmt = $db->prepare("SELECT role, managed_city FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $userRow = $stmt->fetch();
-        if ($userRow && in_array($userRow['role'], ['admin', 'super_admin'])) {
+        if ($userRow) {
+            $userRole = $userRow['role'];
+            $managedCity = $userRow['managed_city'];
+        }
+        if (in_array($userRole, ['admin', 'super_admin'])) {
             $isAdmin = true;
         } else {
             $stmt = $db->prepare("SELECT id FROM shops WHERE id = ? AND vendor_id = ?");
@@ -238,13 +270,30 @@ try {
             $mediaType = 'image';
         }
 
-        $stmt = $db->prepare("INSERT INTO stories (user_id, shop_id, media_url, media_type, caption, duration, is_admin) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$userId, $shopId, $mediaUrl, $mediaType, $caption ?: null, $duration, $isAdmin ? 1 : 0]);
+        // Déterminer la ville de la story :
+        //  - super_admin → NULL (story globale, visible partout)
+        //  - admin (ville) → managed_city
+        //  - vendor → ville de sa boutique (shops.location)
+        $storyCity = null;
+        if ($userRole === 'super_admin') {
+            $storyCity = null;
+        } elseif ($userRole === 'admin') {
+            $storyCity = $managedCity ?: null;
+        } else {
+            $stmtCity = $db->prepare("SELECT location FROM shops WHERE id = ?");
+            $stmtCity->execute([$shopId]);
+            $shopLoc = $stmtCity->fetchColumn();
+            $storyCity = $shopLoc ?: null;
+        }
+
+        $stmt = $db->prepare("INSERT INTO stories (user_id, shop_id, media_url, media_type, caption, duration, is_admin, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $shopId, $mediaUrl, $mediaType, $caption ?: null, $duration, $isAdmin ? 1 : 0, $storyCity]);
         $storyId = (int)$db->lastInsertId();
 
         // Return the created story
         $stmt = $db->prepare("
             SELECT s.*, u.name AS user_name, u.avatar AS user_avatar,
+                   u.role AS user_role, u.managed_city AS user_managed_city,
                    sh.name AS shop_name, sh.logo AS shop_logo
             FROM stories s
             JOIN users u ON s.user_id = u.id
