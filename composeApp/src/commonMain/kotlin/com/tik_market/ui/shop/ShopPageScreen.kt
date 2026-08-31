@@ -56,10 +56,7 @@ fun ShopPageScreen(
             val s = ApiClient.fetchShop(shopId)
             shop = s
             if (s != null && s.logo.isNotBlank()) {
-                val cleanBase = ApiClient.baseUrl.trimEnd('/')
-                val cleanPath = s.logo.trimStart('/', '\\').replace("\\", "/")
-                val finalUrl = if (s.logo.startsWith("http")) s.logo else "$cleanBase/$cleanPath"
-                shopLogoBitmap = loadImageFromUrl(finalUrl)
+                shopLogoBitmap = loadImageFromUrl(s.logo)
             }
             if (s != null) {
                 // Load reviews for this shop's products
@@ -75,32 +72,7 @@ fun ShopPageScreen(
                     .filter { it.totalSales > 0 || it.rating >= 4.0 }
                     .sortedByDescending { it.totalSales }
                     .take(4)
-                featuredProducts = prods.map { apiProduct ->
-                    Product(
-                        id = apiProduct.id.toString(),
-                        shopId = s.id.toString(),
-                        shopName = s.name,
-                        shopLocation = s.location,
-                        vendorId = s.vendorId.toString(),
-                        vendorPhone = s.phone,
-                        title = apiProduct.title,
-                        description = apiProduct.description,
-                        price = apiProduct.price.toDouble(),
-                        comparePrice = apiProduct.comparePrice?.toDouble(),
-                        category = apiProduct.category,
-                        images = if (apiProduct.imageUrl.isNotBlank()) {
-                            val cleanBase = ApiClient.baseUrl.trimEnd('/')
-                            val cleanPath = apiProduct.imageUrl.trimStart('/', '\\').replace("\\", "/")
-                            listOf(if (apiProduct.imageUrl.startsWith("http")) apiProduct.imageUrl else "$cleanBase/$cleanPath")
-                        } else emptyList(),
-                        stock = apiProduct.stock,
-                        unit = apiProduct.unit,
-                        rating = apiProduct.rating,
-                        totalReviews = apiProduct.totalReviews,
-                        totalSales = apiProduct.totalSales,
-                        shopVerified = s.isVerified
-                    )
-                }
+                featuredProducts = prods.map { it.toProduct() }
             }
         } catch (_: Exception) { }
         isLoading = false
@@ -108,32 +80,7 @@ fun ShopPageScreen(
 
     val s = shop
     val displayProducts = remember(s) {
-        s?.products?.map { apiProduct ->
-            Product(
-                id = apiProduct.id.toString(),
-                shopId = s.id.toString(),
-                shopName = s.name,
-                shopLocation = s.location,
-                vendorId = s.vendorId.toString(),
-                vendorPhone = s.phone,
-                title = apiProduct.title,
-                description = apiProduct.description,
-                price = apiProduct.price.toDouble(),
-                comparePrice = apiProduct.comparePrice?.toDouble(),
-                category = apiProduct.category,
-                images = if (apiProduct.imageUrl.isNotBlank()) {
-                    val cleanBase = ApiClient.baseUrl.trimEnd('/')
-                    val cleanPath = apiProduct.imageUrl.trimStart('/', '\\').replace("\\", "/")
-                    listOf(if (apiProduct.imageUrl.startsWith("http")) apiProduct.imageUrl else "$cleanBase/$cleanPath")
-                } else emptyList(),
-                stock = apiProduct.stock,
-                unit = apiProduct.unit,
-                rating = apiProduct.rating,
-                totalReviews = apiProduct.totalReviews,
-                totalSales = apiProduct.totalSales,
-                shopVerified = s.isVerified
-            )
-        } ?: emptyList()
+        s?.products?.map { it.toProduct() } ?: emptyList()
     }
 
     var useGrid by remember { mutableStateOf(true) }

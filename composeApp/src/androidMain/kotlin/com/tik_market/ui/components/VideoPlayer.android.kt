@@ -5,6 +5,7 @@ import android.widget.VideoView
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.tik_market.utils.UrlUtils
 
 @Composable
 actual fun VideoPlayer(
@@ -13,12 +14,13 @@ actual fun VideoPlayer(
     isPlaying: Boolean,
     onEnded: () -> Unit
 ) {
-    var lastUrl by remember { mutableStateOf(url) }
+    val safeUrl = remember(url) { UrlUtils.resolveSafeUrl(url) }
+    var lastUrl by remember { mutableStateOf(safeUrl) }
 
     AndroidView(
         factory = { ctx ->
             VideoView(ctx).apply {
-                setVideoURI(Uri.parse(url))
+                setVideoURI(Uri.parse(safeUrl))
                 // Start only once the video is actually prepared, otherwise
                 // start() is a no-op and the story appears stuck.
                 setOnPreparedListener { mp ->
@@ -35,9 +37,9 @@ actual fun VideoPlayer(
         },
         modifier = modifier,
         update = { vv ->
-            if (url != lastUrl) {
-                lastUrl = url
-                vv.setVideoURI(Uri.parse(url))
+            if (safeUrl != lastUrl) {
+                lastUrl = safeUrl
+                vv.setVideoURI(Uri.parse(safeUrl))
             }
             if (isPlaying) {
                 if (!vv.isPlaying) vv.start()

@@ -1,7 +1,9 @@
 package com.tik_market.cache
 
 import com.tik_market.AndroidChatContext
+import com.tik_market.utils.UrlUtils
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
@@ -20,13 +22,36 @@ actual object PersistentMediaCache {
         }
 
         try {
-            URL(url).openStream().use { input ->
-                file.outputStream().use { output ->
-                    input.copyTo(output)
+            val safeUrl = UrlUtils.resolveSafeUrl(url)
+            val connection = URL(safeUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+            
+            if (connection.responseCode == 200) {
+                connection.inputStream.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
+            } else {
+                println("[Cache] HTTP ${connection.responseCode} for $safeUrl")
             }
+            connection.disconnect()
         } catch (e: Exception) {
             println("[Cache] Failed to cache $url: ${e.message}")
+        }
+    }
+
+    actual fun saveMediaBytes(url: String, bytes: ByteArray) {
+        val dir = cacheDir ?: return
+        if (!dir.exists()) dir.mkdirs()
+        
+        try {
+            val file = File(dir, url.hashCode().toString())
+            file.writeBytes(bytes)
+        } catch (e: Exception) {
+            println("[Cache] Failed to save bytes for $url: ${e.message}")
         }
     }
 
@@ -50,5 +75,11 @@ actual object PersistentMediaCache {
                 file.delete()
             }
         }
+    }
+
+    actual fun clearAll() {
+        val dir = cacheDir ?: return
+        if (!dir.exists()) return
+        dir.listFiles()?.forEach { it.delete() }
     }
 }

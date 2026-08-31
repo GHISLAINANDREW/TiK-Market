@@ -7,6 +7,7 @@ import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.ui.story.StoryItem
 import com.tik_market.cache.AppCache
+import com.tik_market.utils.UrlUtils
 import com.tik_market.utils.safeApiCall
 import kotlinx.coroutines.*
 
@@ -139,30 +140,30 @@ class HomeViewModel(
 
     suspend fun loadStories() {
         try {
-            val apiStories = ApiClient.fetchStories(replies = true)
-            val cleanBase = ApiClient.baseUrl.trimEnd('/')
+            val apiStories = ApiClient.fetchStories(replies = true, city = userLocationName)
             
             val stories = apiStories.map { apiStory ->
-                fun cleanUrl(url: String?): String? {
-                    if (url == null || url.isBlank()) return null
-                    if (url.startsWith("http")) return url
-                    return "$cleanBase/${url.trimStart('/', '\\').replace("\\", "/")}"
+                // Nom affiché selon le rôle de l'auteur :
+                //  - super_admin → "TikMarket" (global)
+                //  - admin (ville) → nom du marché de sa ville (ex: "DoualaMarket")
+                //  - vendor → nom simple de sa boutique
+                val displayTitle = when (apiStory.userRole) {
+                    "super_admin" -> "TikMarket"
+                    "admin" -> com.tik_market.utils.marketNameForCity(apiStory.userManagedCity)
+                    else -> apiStory.shopName.ifBlank { apiStory.userName }
                 }
 
-                val finalMediaUrl = if (apiStory.mediaUrl.startsWith("http") || apiStory.mediaType == "text") 
-                    apiStory.mediaUrl else "$cleanBase/${apiStory.mediaUrl.trimStart('/', '\\').replace("\\", "/")}"
-
                 StoryItem(
-                    title = apiStory.shopName.ifBlank { apiStory.userName },
+                    title = displayTitle,
                     subtitle = "",
-                    imageUrl = finalMediaUrl,
+                    imageUrl = UrlUtils.resolveSafeUrl(apiStory.mediaUrl),
                     storyId = apiStory.id,
                     shopId = apiStory.shopId,
                     mediaType = apiStory.mediaType,
                     caption = apiStory.caption,
                     userId = apiStory.userId,
-                    userAvatar = cleanUrl(apiStory.userAvatar),
-                    shopLogo = cleanUrl(apiStory.shopLogo)
+                    userAvatar = UrlUtils.resolveSafeUrl(apiStory.userAvatar),
+                    shopLogo = UrlUtils.resolveSafeUrl(apiStory.shopLogo)
                 )
             }
             state = state.copy(stories = stories)

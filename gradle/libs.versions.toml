@@ -4,7 +4,6 @@ compose-multiplatform = "1.7.1"
 agp = "9.3.0"
 kotlinx-serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
-sqldelight = "2.3.2"
 ktor = "3.0.1"
 android-desugarjdk = "2.1.5"
 
@@ -12,9 +11,6 @@ android-desugarjdk = "2.1.5"
 desugar-jdk = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugarjdk" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
-sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
-sqldelight-web-worker-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "sqldelight" }
-sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
@@ -27,4 +23,3 @@ compose = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" 
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

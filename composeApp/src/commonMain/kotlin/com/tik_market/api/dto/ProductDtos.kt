@@ -2,6 +2,7 @@ package com.tik_market.api.dto
 
 import com.tik_market.api.ApiClient
 import com.tik_market.data.models.Product
+import com.tik_market.utils.UrlUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -258,15 +259,8 @@ data class ApiInteractionUser(
  * Converts an ApiProduct (from DB) to a Product (UI model).
  */
 fun ApiProduct.toProduct(): Product {
-    val cleanBase = ApiClient.baseUrl.trimEnd('/')
-    
     val imagePaths = imageUrl.split(",").filter { it.isNotBlank() }
-    val finalImages = imagePaths.map { path ->
-        val cleanPath = path.trim().trimStart('/', '\\').replace("\\", "/")
-        if (path.startsWith("http")) path 
-        else if (cleanPath.isBlank()) ""
-        else "$cleanBase/$cleanPath"
-    }.filter { it.isNotBlank() }
+    val finalImages = imagePaths.map { UrlUtils.resolveSafeUrl(it.trim()) }.filter { it.isNotBlank() }
 
     return Product(
         id = id.toString(),
@@ -293,13 +287,7 @@ fun ApiProduct.toProduct(): Product {
 }
 
 fun ApiWishlistItem.toProduct(): Product {
-    val cleanBase = ApiClient.baseUrl.trimEnd('/')
-    val cleanPath = imageUrl.trimStart('/', '\\').replace("\\", "/")
-    val finalImageUrl = if (imageUrl.isNotBlank()) {
-        if (imageUrl.startsWith("http")) imageUrl 
-        else if (cleanPath.isBlank()) ""
-        else "$cleanBase/$cleanPath"
-    } else ""
+    val finalImageUrl = UrlUtils.resolveSafeUrl(imageUrl)
 
     return Product(
         id = productId.toString(),

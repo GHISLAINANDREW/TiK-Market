@@ -79,18 +79,8 @@ fun ProfileScreen(
 
     // Load images
     LaunchedEffect(currentUser?.avatar, currentUser?.coverPhoto) {
-        currentUser?.avatar?.let { url ->
-            if (url.isNotBlank()) {
-                val fullUrl = if (url.startsWith("http")) url else "${ApiClient.baseUrl.trimEnd('/')}/${url.trimStart('/')}"
-                loadImageFromUrl(fullUrl)?.let { avatarBitmap = it }
-            }
-        }
-        currentUser?.coverPhoto?.let { url ->
-            if (url.isNotBlank()) {
-                val fullUrl = if (url.startsWith("http")) url else "${ApiClient.baseUrl.trimEnd('/')}/${url.trimStart('/')}"
-                loadImageFromUrl(fullUrl)?.let { coverBitmap = it }
-            }
-        }
+        currentUser?.avatar?.let { url -> if (url.isNotBlank()) avatarBitmap = loadImageFromUrl(url) }
+        currentUser?.coverPhoto?.let { url -> if (url.isNotBlank()) coverBitmap = loadImageFromUrl(url) }
     }
 
     Scaffold(

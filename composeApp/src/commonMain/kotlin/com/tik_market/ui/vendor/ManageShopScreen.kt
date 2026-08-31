@@ -94,10 +94,7 @@ fun ManageShopScreen(
                 
                 // Load logo bitmap if exists
                 if (!shop.logo.isNullOrBlank()) {
-                    val cleanBase = ApiClient.baseUrl.trimEnd('/')
-                    val cleanPath = shop.logo.trimStart('/', '\\').replace("\\", "/")
-                    val finalUrl = if (shop.logo.startsWith("http")) shop.logo else "$cleanBase/$cleanPath"
-                    existingLogoBitmap = loadImageFromUrl(finalUrl)
+                    existingLogoBitmap = loadImageFromUrl(shop.logo)
                 }
 
                 val allProducts = ApiClient.fetchProducts(includeInactive = true)

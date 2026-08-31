@@ -201,6 +201,26 @@ private external fun nativeFetchAsDataUrl(
     onError: (String) -> Unit
 )
 
+actual suspend fun fetchImageBytes(url: String): ByteArray? {
+    val dataUrl = fetchImageAsDataUrl(url) ?: return null
+    val base64 = dataUrl.substringAfter(",")
+    val binaryStr = base64ToBinaryString(base64)
+    if (binaryStr.isEmpty()) return null
+    return ByteArray(binaryStr.length) { i -> binaryStr[i].code.toByte() }
+}
+
+actual fun decodeBytesToBitmap(bytes: ByteArray): ImageBitmap? {
+    return try {
+        val skiaImage = org.jetbrains.skia.Image.makeFromEncoded(bytes)
+        skiaImage.toComposeImageBitmap()
+    } catch (_: Exception) { null }
+}
+
+actual suspend fun fetchImageAsBitmap(url: String): ImageBitmap? {
+    val dataUrl = fetchImageAsDataUrl(url) ?: return null
+    return decodeDataUrlToImageBitmap(dataUrl)
+}
+
 actual suspend fun fetchImageAsDataUrl(url: String): String? {
     return try {
         kotlin.coroutines.suspendCoroutine { cont ->

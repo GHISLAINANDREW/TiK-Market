@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.tik_market.utils.UrlUtils
 import com.tik_market.utils.VideoCompressor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -240,9 +241,64 @@ actual fun rememberImagePickerLauncher(
 }
 
 /**
+ * Android actual: fetches remote image bytes.
+ */
+actual suspend fun fetchImageBytes(url: String): ByteArray? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val safeUrl = UrlUtils.resolveSafeUrl(url)
+            val connection = URL(safeUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 30000
+            connection.readTimeout = 60000
+            connection.instanceFollowRedirects = true
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+            
+            if (connection.responseCode !in 200..299) return@withContext null
+            
+            connection.inputStream.use { it.readBytes() }
+        } catch (e: Exception) {
+            android.util.Log.e("ImageLoader", "Error fetching bytes $url", e)
+            null
+        }
+    }
+}
+
+/** Decodes a byte array to an ImageBitmap on Android. */
+actual fun decodeBytesToBitmap(bytes: ByteArray): ImageBitmap? {
+    return try {
+        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        bitmap?.asImageBitmap()
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * Android actual: fetches a remote image URL and returns it as an ImageBitmap.
+ */
+actual suspend fun fetchImageAsBitmap(url: String): ImageBitmap? {
+    return withContext(Dispatchers.IO) {
+        try {
+            if (url.startsWith("file://")) {
+                val path = url.substringAfter("file://")
+                val file = java.io.File(path)
+                if (!file.exists()) return@withContext null
+                val bytes = file.readBytes()
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                return@withContext bitmap?.asImageBitmap()
+            }
+
+            val bytes = fetchImageBytes(url) ?: return@withContext null
+            decodeBytesToBitmap(bytes)
+        } catch (e: Exception) {
+            android.util.Log.e("ImageLoader", "Error fetching $url", e)
+            null
+        }
+    }
+}
+
+/**
  * Android actual: fetches a remote image URL and returns it as a data URL string.
- * OPTIMIZATION: We try to avoid large base64 strings if possible, but to keep
- * compatibility with the current common logic, we use a more efficient stream reading.
  */
 actual suspend fun fetchImageAsDataUrl(url: String): String? {
     return withContext(Dispatchers.IO) {
@@ -252,47 +308,24 @@ actual suspend fun fetchImageAsDataUrl(url: String): String? {
                 val file = java.io.File(path)
                 if (!file.exists()) return@withContext null
                 val bytes = file.readBytes()
-                val contentType = "image/jpeg" // Fallback
                 val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-                return@withContext "data:$contentType;base64,$base64"
+                return@withContext "data:image/jpeg;base64,$base64"
             }
 
-            // Force HTTPS and use proxy if URL points to the blocked Render domain
-            val renderBase = "https://tik-market.onrender.com"
-            val proxyBase = "https://tik-market-proxy.gtankou.workers.dev"
-            
-            var safeUrl = if (url.startsWith("http://") && (url.contains("loca.lt") || url.contains("ngrok") || url.contains("cloudflare"))) {
-                url.replace("http://", "https://")
-            } else {
-                url
-            }
-
-            // Redirect Render and Cloudinary images through the Cloudflare proxy to bypass Orange Cameroon block
-            if (safeUrl.contains("onrender.com")) {
-                safeUrl = safeUrl.replace(renderBase, proxyBase)
-            } else if (safeUrl.contains("res.cloudinary.com")) {
-                // Proxy Cloudinary images too if Orange blocks res.cloudinary.com
-                safeUrl = "$proxyBase/proxy?url=" + java.net.URLEncoder.encode(safeUrl, "UTF-8")
-            }
-
+            val safeUrl = UrlUtils.resolveSafeUrl(url)
             val connection = URL(safeUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 15000
-            connection.readTimeout = 30000
+            connection.connectTimeout = 30000
+            connection.readTimeout = 60000
+            connection.instanceFollowRedirects = true
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-            connection.setRequestProperty("Accept", "image/*,*/*")
 
-            if (connection.responseCode != 200) {
-                android.util.Log.e("ImageLoader", "HTTP ${connection.responseCode} for $safeUrl")
-                return@withContext null
-            }
+            if (connection.responseCode !in 200..299) return@withContext null
 
-            val contentType = connection.contentType ?: "image/jpeg"
             val bytes = connection.inputStream.use { it.readBytes() }
+            val contentType = connection.contentType ?: "image/jpeg"
             val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-
             "data:$contentType;base64,$base64"
-        } catch (e: Exception) {
-            android.util.Log.e("ImageLoader", "Error fetching $url", e)
+        } catch (_: Exception) {
             null
         }
     }

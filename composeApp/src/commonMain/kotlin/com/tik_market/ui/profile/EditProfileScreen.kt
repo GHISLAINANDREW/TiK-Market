@@ -56,14 +56,8 @@ fun EditProfileScreen(onBack: () -> Unit, onProfileUpdated: (ApiUser) -> Unit) {
     var isSaving by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser) {
-        if (avatarUrl.isNotBlank()) {
-            val fullUrl = if (avatarUrl.startsWith("http")) avatarUrl else "${ApiClient.baseUrl.trimEnd('/')}/${avatarUrl.trimStart('/')}"
-            avatarBitmap = loadImageFromUrl(fullUrl)
-        }
-        if (coverUrl.isNotBlank()) {
-            val fullUrl = if (coverUrl.startsWith("http")) coverUrl else "${ApiClient.baseUrl.trimEnd('/')}/${coverUrl.trimStart('/')}"
-            coverBitmap = loadImageFromUrl(fullUrl)
-        }
+        if (avatarUrl.isNotBlank()) avatarBitmap = loadImageFromUrl(avatarUrl)
+        if (coverUrl.isNotBlank()) coverBitmap = loadImageFromUrl(coverUrl)
     }
 
     val avatarPicker = rememberImagePickerLauncher { result ->

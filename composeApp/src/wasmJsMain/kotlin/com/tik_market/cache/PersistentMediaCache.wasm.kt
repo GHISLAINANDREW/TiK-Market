@@ -13,4 +13,8 @@ actual object PersistentMediaCache {
     actual fun cleanupExpired() {
         // Browser handles cache cleanup
     }
+
+    actual fun clearAll() {
+        // Browser handles cache cleanup
+    }
 }

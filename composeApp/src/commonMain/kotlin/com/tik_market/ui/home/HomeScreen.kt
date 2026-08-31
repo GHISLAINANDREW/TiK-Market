@@ -183,7 +183,9 @@ fun HomeScreen(
                     onNotificationsClick = onNotificationsClick,
                     onCartClick = onCartClick,
                     onShopsClick = onShopsClick,
-                    onClearShopFilter = onClearShopFilter
+                    onClearShopFilter = onClearShopFilter,
+                    onRefresh = { viewModel.refresh(isLoggedIn) },
+                    isRefreshing = state.isRefreshing
                 )
             }
         ) { padding ->
@@ -358,7 +360,9 @@ private fun HomeTopBar(
     onNotificationsClick: () -> Unit,
     onCartClick: () -> Unit,
     onShopsClick: () -> Unit,
-    onClearShopFilter: () -> Unit
+    onClearShopFilter: () -> Unit,
+    onRefresh: () -> Unit,
+    isRefreshing: Boolean
 ) {
     val s = LocalAppStrings.current
     
@@ -407,6 +411,16 @@ private fun HomeTopBar(
                         IconButton(onClick = onCartClick, modifier = Modifier.size(36.dp)) {
                             Icon(Icons.Default.ShoppingCart, "Panier", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
+                    }
+
+                    Spacer(Modifier.width(6.dp))
+
+                    IconButton(onClick = onRefresh, modifier = Modifier.size(36.dp)) {
+                        RotatingRefreshIcon(
+                            isRefreshing = isRefreshing,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

@@ -18,6 +18,9 @@ data class ApiStory(
     @SerialName("user_avatar") val userAvatar: String? = null,
     @SerialName("shop_name") val shopName: String = "",
     @SerialName("shop_logo") val shopLogo: String? = null,
+    @SerialName("user_role") val userRole: String = "",
+    @SerialName("user_managed_city") val userManagedCity: String? = null,
+    val city: String? = null,
     val replies: List<ApiStoryReply>? = null,
     @SerialName("reply_count") val replyCount: Int = 0
 )

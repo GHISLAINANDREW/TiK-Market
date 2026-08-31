@@ -7,8 +7,10 @@ import kotlinx.serialization.encodeToString
  * Extension functions for ApiClient related to Stories and Hero Section.
  */
 
-suspend fun ApiClient.fetchStories(replies: Boolean = false): List<ApiStory> {
-    val path = buildUrl(ApiClient.Endpoints.STORIES, mapOf("replies" to if (replies) "1" else "0"))
+suspend fun ApiClient.fetchStories(replies: Boolean = false, city: String? = null): List<ApiStory> {
+    val params = mutableMapOf<String, Any>("replies" to if (replies) "1" else "0")
+    if (!city.isNullOrBlank()) params["city"] = city
+    val path = buildUrl(ApiClient.Endpoints.STORIES, params)
     return safeRequest<ApiStoriesResponse>("GET", path).stories
 }
 

@@ -202,7 +202,9 @@ object ApiClient {
                 c == ' ' -> sb.append("%20")
                 else -> {
                     sb.append("%")
-                    sb.append(c.code.toString(16).uppercase())
+                    val hex = c.code.toString(16).uppercase()
+                    if (hex.length < 2) sb.append('0')
+                    sb.append(hex)
                 }
             }
         }

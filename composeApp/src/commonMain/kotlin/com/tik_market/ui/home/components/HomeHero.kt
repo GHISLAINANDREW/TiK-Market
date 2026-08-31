@@ -74,9 +74,7 @@ fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
             Box(Modifier.fillMaxSize()) {
                 var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
                 LaunchedEffect(item.imageUrl) {
-                    val finalUrl = if (item.imageUrl.startsWith("http")) item.imageUrl 
-                    else "${ApiClient.baseUrl.trimEnd('/')}/${item.imageUrl.trimStart('/', '\\').replace("\\", "/")}"
-                    bitmap = loadImageFromUrl(finalUrl)
+                    bitmap = loadImageFromUrl(item.imageUrl)
                 }
                 
                 if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())

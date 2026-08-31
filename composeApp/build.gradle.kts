@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.sqldelight)
 }
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
@@ -61,7 +60,7 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.sqldelight.runtime)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
             implementation(libs.ktor.client.content.negotiation)
@@ -73,22 +72,13 @@ kotlin {
             implementation("androidx.credentials:credentials:1.3.0")
             implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-            implementation(libs.sqldelight.android.driver)
             implementation(libs.ktor.client.okhttp)
         }
         wasmJsMain.dependencies {
-            implementation(libs.sqldelight.web.worker.driver)
         }
     }
 }
 
-sqldelight {
-    databases {
-        create("TikMarketDatabase") {
-            packageName.set("com.tik_market.db")
-        }
-    }
-}
 
 android {
     namespace = "com.tik_market"
