@@ -13,7 +13,7 @@ const STATIC_URLS = [
   '/manifest.json',
   '/favicon.svg',
   '/composeApp.js',
-  '/4f3f1537bf14329b75aa.wasm',
+  '/e7534b326c4501910770.wasm',
   '/dd568dbcd078c0adf7cf.wasm'
 ];
 
