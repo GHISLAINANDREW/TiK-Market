@@ -2,6 +2,7 @@ package com.tik_market.ui.components
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.runtime.Composable
@@ -14,6 +15,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+
+private const val TAG = "CamPreview"
 
 // ── Pending camera permission callback ──
 private var pendingCameraCallback: ((Boolean) -> Unit)? = null
@@ -46,8 +49,13 @@ fun requestCameraPermission(onResult: (Boolean) -> Unit) {
     ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_REQ)
 }
 
-// ── Per-SurfaceView camera + capture state ──
-private val cameraRefs = ConcurrentHashMap<SurfaceView, android.hardware.Camera>()
+// ── Single shared camera + per-SurfaceView capture state ──
+// Only ONE camera is ever opened (multiple SurfaceViews can appear transiently
+// during navigation/recomposition; opening one camera per SurfaceView breaks the
+// shared camera device when one of them is released).
+private val cameraLock = Any()
+private var globalCamera: android.hardware.Camera? = null
+private val activeSurfaces = ConcurrentHashMap<SurfaceView, SurfaceHolder>()
 private val captureFlags = ConcurrentHashMap<SurfaceView, AtomicBoolean>()
 private val captureThreads = ConcurrentHashMap<SurfaceView, Thread>()
 
@@ -67,17 +75,9 @@ actual fun CameraPreviewWithFrames(
             SurfaceView(ctx).apply {
                 holder.addCallback(object : SurfaceHolder.Callback {
                     override fun surfaceCreated(holder: SurfaceHolder) {
-                        requestCameraPermission { granted ->
-                            if (!granted) return@requestCameraPermission
-                            try {
-                                val cam = android.hardware.Camera.open()
-                                cameraRefs[this@apply] = cam
-                                cam.setPreviewDisplay(holder)
-                                cam.startPreview()
-                            } catch (_: Exception) {
-                                try { cameraRefs.remove(this@apply)?.release() } catch (_: Exception) {}
-                            }
-                        }
+                        Log.i(TAG, "surfaceCreated sv=$this@apply")
+                        activeSurfaces[this@apply] = holder
+                        ensureCameraOpen(holder)
                     }
 
                     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -85,8 +85,10 @@ actual fun CameraPreviewWithFrames(
                     }
 
                     override fun surfaceDestroyed(holder: SurfaceHolder) {
+                        Log.i(TAG, "surfaceDestroyed sv=$this@apply")
                         stopFrameCapture(this@apply)
-                        try { cameraRefs.remove(this@apply)?.release() } catch (_: Exception) {}
+                        activeSurfaces.remove(this@apply)
+                        if (activeSurfaces.isEmpty()) closeCamera()
                     }
                 })
             }
@@ -94,19 +96,53 @@ actual fun CameraPreviewWithFrames(
         modifier = modifier,
         update = { sv ->
             if (captureEnabled) {
+                Log.i(TAG, "update: captureEnabled=true, hasThread=${captureThreads.containsKey(sv)}, hasCam=${globalCamera != null}")
                 startFrameCapture(sv, onFrame)
             } else {
+                Log.i(TAG, "update: captureEnabled=false")
                 stopFrameCapture(sv)
             }
         }
     )
 }
 
+private fun ensureCameraOpen(holder: SurfaceHolder) {
+    requestCameraPermission { granted ->
+        Log.i(TAG, "camera permission granted=$granted")
+        if (!granted) return@requestCameraPermission
+        synchronized(cameraLock) {
+            if (globalCamera != null) {
+                Log.i(TAG, "camera already open, reusing")
+                return@synchronized
+            }
+            try {
+                val cam = android.hardware.Camera.open()
+                globalCamera = cam
+                Log.i(TAG, "Camera.open OK")
+                cam.setPreviewDisplay(holder)
+                cam.startPreview()
+                Log.i(TAG, "startPreview OK")
+            } catch (e: Exception) {
+                Log.e(TAG, "Camera.open/preview FAILED: ${e.message}")
+                globalCamera = null
+            }
+        }
+    }
+}
+
+private fun closeCamera() {
+    synchronized(cameraLock) {
+        Log.i(TAG, "closeCamera (no active surfaces)")
+        try { globalCamera?.release() } catch (_: Exception) {}
+        globalCamera = null
+    }
+}
+
 private fun startFrameCapture(sv: SurfaceView, onFrame: (String) -> Unit) {
     if (captureThreads.containsKey(sv)) return
-    val cam = cameraRefs[sv] ?: return
     val flag = AtomicBoolean(true)
     captureFlags[sv] = flag
+    Log.i(TAG, "startFrameCapture: thread starting")
 
     val t = thread(name = "live-frame-capture", isDaemon = true) {
         var lastMs = 0L
@@ -114,21 +150,33 @@ private fun startFrameCapture(sv: SurfaceView, onFrame: (String) -> Unit) {
             val now = System.currentTimeMillis()
             if (now - lastMs >= 1000) { // ~1 fps
                 lastMs = now
-                try {
-                    val jpeg = captureJpeg(cam)
-                    if (jpeg != null) {
-                        val b64 = android.util.Base64.encodeToString(jpeg, android.util.Base64.NO_WRAP)
-                        onFrame(b64)
+                val cam = synchronized(cameraLock) { globalCamera }
+                if (cam == null) {
+                    Log.w(TAG, "capture: no camera available")
+                } else {
+                    try {
+                        val jpeg = captureJpeg(cam)
+                        if (jpeg != null) {
+                            val b64 = android.util.Base64.encodeToString(jpeg, android.util.Base64.NO_WRAP)
+                            Log.i(TAG, "frame captured ${jpeg.size} bytes")
+                            onFrame(b64)
+                        } else {
+                            Log.w(TAG, "captureJpeg returned null (timeout?)")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "captureJpeg exception: ${e.message}")
                     }
-                } catch (_: Exception) {}
+                }
             }
             try { Thread.sleep(200) } catch (_: InterruptedException) { break }
         }
+        Log.i(TAG, "capture thread exiting")
     }
     captureThreads[sv] = t
 }
 
 private fun stopFrameCapture(sv: SurfaceView) {
+    Log.i(TAG, "stopFrameCapture")
     captureFlags.remove(sv)?.set(false)
     captureThreads.remove(sv)?.interrupt()
 }
@@ -140,12 +188,15 @@ private fun captureJpeg(camera: android.hardware.Camera): ByteArray? {
         camera.takePicture(null, null, object : android.hardware.Camera.PictureCallback {
             override fun onPictureTaken(data: ByteArray?, camera: android.hardware.Camera) {
                 result = data
-                try { camera.startPreview() } catch (_: Exception) {}
+                Log.i(TAG, "onPictureTaken: ${data?.size ?: 0} bytes")
+                try { camera.startPreview() } catch (e: Exception) { Log.e(TAG, "restart preview failed: ${e.message}") }
                 latch.countDown()
             }
         })
-        latch.await(2, TimeUnit.SECONDS)
-    } catch (_: Exception) {
+        val ok = latch.await(2, TimeUnit.SECONDS)
+        if (!ok) Log.w(TAG, "takePicture callback timeout")
+    } catch (e: Exception) {
+        Log.e(TAG, "takePicture threw: ${e.message}")
         try { camera.startPreview() } catch (_: Exception) {}
     }
     return result
