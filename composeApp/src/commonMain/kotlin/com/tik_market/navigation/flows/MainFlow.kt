@@ -79,7 +79,7 @@ fun MainFlow(
             },
             onShopsClick = { appState.navigateTo(NavScreen.ShopsList) },
             onNotificationsClick = { appState.navigateTo(NavScreen.Notifications) },
-            onLiveClick = { _ -> appState.navigateTo(NavScreen.LiveShopping) },
+            onLiveClick = { id -> appState.selectedLiveStreamId = id; appState.navigateTo(NavScreen.LiveShopping) },
             onImageSearchClick = { appState.navigateTo(NavScreen.ImageSearch) },
             cartCount = appState.cartItems.sumOf { it.quantity },
             notificationCount = appState.unreadNotifications,
@@ -468,7 +468,7 @@ fun MainFlow(
             }
         )
         NavScreen.LiveShopping -> LiveShoppingScreen(
-            streamId = 1,
+            streamId = appState.selectedLiveStreamId,
             onBack = { appState.goBack() },
             onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) }
         )

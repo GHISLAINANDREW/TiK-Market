@@ -66,6 +66,7 @@ class AppState(
     var paymentOrder by mutableStateOf<ApiOrder?>(null)
     var selectedShopName by mutableStateOf<String?>(null)
     var selectedShopId by mutableStateOf(0)
+    var selectedLiveStreamId by mutableStateOf(0)
     
     // Data Cache
     var cachedProducts by mutableStateOf<List<Product>>(emptyList())
