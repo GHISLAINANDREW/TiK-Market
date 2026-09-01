@@ -394,6 +394,14 @@ CREATE TABLE live_comments (
     INDEX idx_live_comments_stream (stream_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE live_frames (
+    stream_id   INT NOT NULL,
+    frame_data  LONGBLOB NOT NULL,
+    frame_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (stream_id),
+    FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ============================================================
 -- REELS
 -- ============================================================
