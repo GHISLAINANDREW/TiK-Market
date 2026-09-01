@@ -2,9 +2,9 @@
 
 // ── Cache names ──
 const CACHES = {
-  STATIC: 'tik-market-static-v2',
-  MEDIA: 'tik-market-media-v2',
-  API: 'tik-market-api-v2'
+  STATIC: 'tik-market-static-v3',
+  MEDIA: 'tik-market-media-v3',
+  API: 'tik-market-api-v3'
 };
 
 const STATIC_URLS = [
@@ -12,8 +12,9 @@ const STATIC_URLS = [
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
-  '/skiko.js',
-  '/skiko.wasm'
+  '/composeApp.js',
+  '/4f3f1537bf14329b75aa.wasm',
+  '/dd568dbcd078c0adf7cf.wasm'
 ];
 
 // ── Install: precache known static assets ──
@@ -79,7 +80,9 @@ function isApiCall(url) {
      url.pathname.includes('/shops/') ||
      url.pathname.includes('/stories/') ||
      url.pathname.includes('/wallet/') ||
-     url.pathname.includes('/loyalty/'));
+     url.pathname.includes('/loyalty/') ||
+     url.pathname.includes('/live/') ||
+     url.pathname.includes('/reels/'));
 }
 
 function isProductListing(url) {
