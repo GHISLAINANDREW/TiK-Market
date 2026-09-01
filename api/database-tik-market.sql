@@ -734,5 +734,58 @@ CREATE TABLE notification_preferences (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ============================================================
+-- LIVE STREAMS
+-- ============================================================
+CREATE TABLE live_streams (
+    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id             INT NOT NULL,
+    title               VARCHAR(200) NOT NULL,
+    stream_url          VARCHAR(500) DEFAULT '',
+    viewer_count        INT DEFAULT 0,
+    is_live             TINYINT(1) DEFAULT 1,
+    pinned_product_id   INT DEFAULT NULL,
+    started_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at            TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+    INDEX idx_live_active (is_live, started_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE live_comments (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    stream_id   INT NOT NULL,
+    user_id     INT NOT NULL,
+    text        TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_live_comments_stream (stream_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- REELS
+-- ============================================================
+CREATE TABLE reels (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    shop_id     INT NOT NULL,
+    video_url   VARCHAR(500) NOT NULL,
+    description TEXT,
+    product_id  INT DEFAULT NULL,
+    like_count  INT DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+    INDEX idx_reels_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE reel_likes (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    reel_id     INT NOT NULL,
+    user_id     INT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_reel_user (reel_id, user_id),
+    FOREIGN KEY (reel_id) REFERENCES reels(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT IGNORE INTO wallets (user_id) SELECT id FROM users;
 INSERT IGNORE INTO notification_preferences (user_id) SELECT id FROM users;
