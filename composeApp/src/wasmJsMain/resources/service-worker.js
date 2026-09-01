@@ -2,9 +2,9 @@
 
 // ── Cache names ──
 const CACHES = {
-  STATIC: 'tik-market-static-v3',
-  MEDIA: 'tik-market-media-v3',
-  API: 'tik-market-api-v3'
+  STATIC: 'tik-market-static-v4',
+  MEDIA: 'tik-market-media-v4',
+  API: 'tik-market-api-v4'
 };
 
 const STATIC_URLS = [
@@ -13,7 +13,7 @@ const STATIC_URLS = [
   '/manifest.json',
   '/favicon.svg',
   '/composeApp.js',
-  '/e7534b326c4501910770.wasm',
+  '/1d74070525829e0cf877.wasm',
   '/dd568dbcd078c0adf7cf.wasm'
 ];
 

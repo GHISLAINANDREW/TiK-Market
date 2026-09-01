@@ -72,12 +72,14 @@ fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
         ) { item ->
             Box(Modifier.fillMaxSize()) {
                 if (item.mediaType == "video") {
-                    VideoPlayer(
-                        url = item.imageUrl,
-                        modifier = Modifier.fillMaxSize(),
-                        isPlaying = true,
-                        onEnded = {}
-                    )
+                    key(item.imageUrl) {
+                        VideoPlayer(
+                            url = item.imageUrl,
+                            modifier = Modifier.fillMaxSize(),
+                            isPlaying = true,
+                            onEnded = {}
+                        )
+                    }
                 } else {
                     var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
                     LaunchedEffect(item.imageUrl) {

@@ -18,26 +18,24 @@ actual fun VideoPlayer(
 ) {
     val safeUrl = remember(url) { UrlUtils.resolveSafeUrl(url) }
     
-    // Track the actual URI being played (could be remote then local)
-    var currentUri by remember(safeUrl) { 
-        mutableStateOf(PersistentMediaCache.getCachedPath(safeUrl) ?: safeUrl) 
+    // Determine initial URI: local if available, otherwise remote.
+    // We stay on this URI for the lifetime of this Composable instance
+    // to avoid reloads mid-play.
+    val playUri = remember(safeUrl) { 
+        PersistentMediaCache.getCachedPath(safeUrl) ?: safeUrl 
     }
     
-    // Background caching & dynamic URI update
+    // Background caching for NEXT time.
     LaunchedEffect(safeUrl) {
         if (PersistentMediaCache.getCachedPath(safeUrl) == null) {
             PersistentMediaCache.cacheMedia(safeUrl)
-            // Once cached, update the URI so the player can switch if needed
-            PersistentMediaCache.getCachedPath(safeUrl)?.let { 
-                currentUri = it 
-            }
         }
     }
 
     AndroidView(
         factory = { ctx ->
             VideoView(ctx).apply {
-                setVideoURI(Uri.parse(currentUri))
+                setVideoURI(Uri.parse(playUri))
                 setOnPreparedListener { mp ->
                     mp.isLooping = false
                     if (isPlaying) start()
@@ -51,13 +49,6 @@ actual fun VideoPlayer(
         },
         modifier = modifier,
         update = { vv ->
-            val uri = Uri.parse(currentUri)
-            // ONLY update URI if it actually changed to avoid restart flicker
-            if (vv.tag != currentUri) {
-                vv.setVideoURI(uri)
-                vv.tag = currentUri
-            }
-            
             if (isPlaying) {
                 if (!vv.isPlaying) vv.start()
             } else {

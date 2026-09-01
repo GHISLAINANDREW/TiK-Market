@@ -45,8 +45,14 @@ actual object PersistentMediaCache {
                         input.copyTo(output)
                     }
                 }
-                if (tempFile.exists()) {
-                    tempFile.renameTo(file)
+                if (tempFile.exists() && tempFile.length() > 0) {
+                    if (file.exists()) file.delete()
+                    val ok = tempFile.renameTo(file)
+                    if (ok) {
+                        println("[Cache] Successfully cached $url to ${file.absolutePath}")
+                    } else {
+                        println("[Cache] Failed to rename temp file for $url")
+                    }
                 }
             } else {
                 println("[Cache] HTTP ${connection.responseCode} for $safeUrl")
