@@ -12,12 +12,23 @@ try {
         title VARCHAR(200) NOT NULL,
         subtitle VARCHAR(500) NOT NULL,
         image_url VARCHAR(500) NOT NULL,
+        media_type VARCHAR(10) DEFAULT 'image',
         shop_id INT DEFAULT NULL,
         priority INT DEFAULT 0,
         is_active TINYINT(1) DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Auto-migration: ensure media_type column exists
+    try {
+        $checkMt = $db->query("SHOW COLUMNS FROM hero_items LIKE 'media_type'")->fetch();
+        if (!$checkMt) {
+            $db->exec("ALTER TABLE hero_items ADD COLUMN media_type VARCHAR(10) DEFAULT 'image' AFTER image_url");
+        }
+    } catch (Exception $e) {
+        error_log("Migration media_type error: " . $e->getMessage());
+    }
 
     if ($method === 'GET') {
         $stmt = $db->query("
@@ -33,6 +44,7 @@ try {
             $item['shop_id'] = $item['shop_id'] ? (int)$item['shop_id'] : null;
             $item['priority'] = (int)$item['priority'];
             $item['is_active'] = (bool)$item['is_active'];
+            $item['media_type'] = $item['media_type'] ?? 'image';
         }
         json(200, $items);
     }
@@ -51,6 +63,8 @@ try {
         $title = trim($input['title'] ?? '');
         $subtitle = trim($input['subtitle'] ?? '');
         $image_url = trim($input['image_url'] ?? '');
+        $media_type = trim($input['media_type'] ?? 'image');
+        if ($media_type !== 'video') $media_type = 'image';
         $shop_id = isset($input['shop_id']) ? (int)$input['shop_id'] : null;
         $priority = isset($input['priority']) ? (int)$input['priority'] : 0;
 
@@ -58,8 +72,8 @@ try {
             json(400, ['error' => 'Titre et URL d\'image requis']);
         }
 
-        $stmt = $db->prepare("INSERT INTO hero_items (title, subtitle, image_url, shop_id, priority) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $subtitle, $image_url, $shop_id, $priority]);
+        $stmt = $db->prepare("INSERT INTO hero_items (title, subtitle, image_url, media_type, shop_id, priority) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $subtitle, $image_url, $media_type, $shop_id, $priority]);
 
         $id = (int)$db->lastInsertId();
         json(201, ['message' => 'Bannière ajoutée', 'id' => $id]);

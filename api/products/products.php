@@ -123,8 +123,12 @@ try {
             $where[] = 'p.is_active = 1';
         }
 
-        // Exclude legacy story-products from product listings
-        $where[] = 'p.is_story = 0';
+        // Exclude legacy story-products from PUBLIC product listings,
+        // but keep them visible to the vendor (include_inactive=1) so a
+        // product marked as story does not disappear from the vendor's list.
+        if (!$include_inactive) {
+            $where[] = 'p.is_story = 0';
+        }
 
         $params = [];
 
