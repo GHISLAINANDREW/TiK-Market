@@ -32,22 +32,37 @@ try {
     if ($method === 'GET') {
         $shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
 
+        // A stream is considered "really live" only if a frame was uploaded
+        // recently (< 15s) OR it just started (< 30s, first frames may take a
+        // moment). Orphan streams (streamer app killed / navigated away) drop
+        // out of the list automatically instead of showing forever.
+        $liveFilter = "
+            AND (
+                lf.frame_at IS NOT NULL AND lf.frame_at > NOW() - INTERVAL 15 SECOND
+                OR ls.started_at > NOW() - INTERVAL 30 SECOND
+            )
+        ";
+
         if ($shopId > 0) {
             $stmt = $db->prepare("
-                SELECT ls.*, s.name AS shop_name, s.logo AS shop_logo
+                SELECT ls.*, s.name AS shop_name, s.logo AS shop_logo, lf.frame_at AS last_frame_at
                 FROM live_streams ls
                 JOIN shops s ON ls.shop_id = s.id
+                LEFT JOIN live_frames lf ON lf.stream_id = ls.id
                 WHERE ls.shop_id = ? AND ls.is_live = 1
+                $liveFilter
                 ORDER BY ls.started_at DESC
             ");
             $stmt->execute([$shopId]);
             $streams = $stmt->fetchAll();
         } else {
             $stmt = $db->query("
-                SELECT ls.*, s.name AS shop_name, s.logo AS shop_logo
+                SELECT ls.*, s.name AS shop_name, s.logo AS shop_logo, lf.frame_at AS last_frame_at
                 FROM live_streams ls
                 JOIN shops s ON ls.shop_id = s.id
+                LEFT JOIN live_frames lf ON lf.stream_id = ls.id
                 WHERE ls.is_live = 1
+                $liveFilter
                 ORDER BY ls.started_at DESC
             ");
             $streams = $stmt->fetchAll();

@@ -18,6 +18,7 @@ import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.CameraPreviewWithFrames
+import com.tik_market.ui.components.switchCamera
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +48,16 @@ fun LiveStreamingScreen(
         }
     }
 
+    // End the stream cleanly when leaving the screen (back gesture, etc.)
+    // so it does not stay orphaned in the live list.
+    DisposableEffect(isLive, streamId) {
+        onDispose {
+            if (isLive && streamId > 0) {
+                scope.launch { ApiClient.stopLiveStream(streamId) }
+            }
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Black
@@ -65,6 +76,17 @@ fun LiveStreamingScreen(
                     }
                 }
             )
+
+            // Camera switch button (back <-> front), always visible.
+            IconButton(
+                onClick = { switchCamera() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 48.dp, end = 16.dp)
+                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+            ) {
+                Icon(Icons.Default.Cameraswitch, null, tint = Color.White)
+            }
 
             if (!isLive) {
                 // Setup UI

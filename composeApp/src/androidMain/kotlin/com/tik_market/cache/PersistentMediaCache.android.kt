@@ -7,10 +7,25 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 actual object PersistentMediaCache {
     private val cacheDir: File? get() = AndroidChatContext.currentActivity?.cacheDir?.let { File(it, "stories_cache") }
     private val activeDownloads = ConcurrentHashMap<String, Boolean>()
+
+    // Global scope: downloads survive screen navigation (LaunchedEffect would
+    // cancel the download when the composable is disposed -> videos re-download
+    // every time the user opens a reel/story/hero).
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    /** Fire-and-forget download that keeps running after the UI leaves the screen. */
+    fun cacheMediaAsync(url: String) {
+        if (url.isBlank()) return
+        scope.launch { cacheMedia(url) }
+    }
 
     private fun getFileName(url: String): String {
         return url.replace("[^a-zA-Z0-9]".toRegex(), "_").takeLast(100) + "_" + url.hashCode()
@@ -32,32 +47,34 @@ actual object PersistentMediaCache {
 
         activeDownloads[url] = true
         try {
-            val safeUrl = UrlUtils.resolveSafeUrl(url)
-            val connection = URL(safeUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 15000
-            connection.readTimeout = 60000
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-            
-            if (connection.responseCode == 200) {
-                val tempFile = File(dir, "$fileName.tmp")
-                connection.inputStream.use { input ->
-                    tempFile.outputStream().use { output ->
-                        input.copyTo(output)
+            withContext(Dispatchers.IO) {
+                val safeUrl = UrlUtils.resolveSafeUrl(url)
+                val connection = URL(safeUrl).openConnection() as HttpURLConnection
+                connection.connectTimeout = 15000
+                connection.readTimeout = 60000
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+
+                if (connection.responseCode == 200) {
+                    val tempFile = File(dir, "$fileName.tmp")
+                    connection.inputStream.use { input ->
+                        tempFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
                     }
-                }
-                if (tempFile.exists() && tempFile.length() > 0) {
-                    if (file.exists()) file.delete()
-                    val ok = tempFile.renameTo(file)
-                    if (ok) {
-                        println("[Cache] Successfully cached $url to ${file.absolutePath}")
-                    } else {
-                        println("[Cache] Failed to rename temp file for $url")
+                    if (tempFile.exists() && tempFile.length() > 0) {
+                        if (file.exists()) file.delete()
+                        val ok = tempFile.renameTo(file)
+                        if (ok) {
+                            println("[Cache] Successfully cached $url to ${file.absolutePath}")
+                        } else {
+                            println("[Cache] Failed to rename temp file for $url")
+                        }
                     }
+                } else {
+                    println("[Cache] HTTP ${connection.responseCode} for $safeUrl")
                 }
-            } else {
-                println("[Cache] HTTP ${connection.responseCode} for $safeUrl")
+                connection.disconnect()
             }
-            connection.disconnect()
         } catch (e: Exception) {
             println("[Cache] Failed to cache $url: ${e.message}")
         } finally {

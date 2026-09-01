@@ -45,6 +45,8 @@ fun LiveShoppingScreen(
     var commentText by remember { mutableStateOf("") }
     var hearts by remember { mutableStateOf(0) }
     var frameBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var lastFrameAt by remember { mutableStateOf(0L) }
+    var streamEnded by remember { mutableStateOf(false) }
     
     val scope = rememberCoroutineScope()
 
@@ -78,7 +80,15 @@ fun LiveShoppingScreen(
                 val frameB64 = ApiClient.fetchLiveFrame(streamId)
                 if (frameB64 != null) {
                     val bmp = decodeDataUrlToImageBitmap("data:image/jpeg;base64,$frameB64")
-                    if (bmp != null) frameBitmap = bmp
+                    if (bmp != null) {
+                        frameBitmap = bmp
+                        lastFrameAt = System.currentTimeMillis()
+                        streamEnded = false
+                    }
+                }
+                // If we had frames but none for 15s, the streamer is gone.
+                if (lastFrameAt > 0 && System.currentTimeMillis() - lastFrameAt > 15000) {
+                    streamEnded = true
                 }
             } catch (_: Exception) {}
             delay(1000)
@@ -95,12 +105,18 @@ fun LiveShoppingScreen(
                 contentScale = ContentScale.Crop
             )
         } ?: run {
-            // Fallback: show a loading placeholder while waiting for the first frame.
+            // Fallback: loading placeholder, or "stream ended" if the streamer is gone.
             Box(Modifier.fillMaxSize().background(Color(0xFF1A1A1A)), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color.White)
-                    Spacer(Modifier.height(12.dp))
-                    Text("En attente du flux...", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                    if (streamEnded) {
+                        Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text("Le direct est terminé", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                    } else {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(Modifier.height(12.dp))
+                        Text("En attente du flux...", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                    }
                 }
             }
         }

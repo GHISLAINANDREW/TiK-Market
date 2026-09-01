@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.tik_market.cache.PersistentMediaCache
 import com.tik_market.utils.UrlUtils
-import kotlinx.coroutines.launch
 
 @Composable
 actual fun VideoPlayer(
@@ -25,10 +24,12 @@ actual fun VideoPlayer(
         PersistentMediaCache.getCachedPath(safeUrl) ?: safeUrl 
     }
     
-    // Background caching for NEXT time.
-    LaunchedEffect(safeUrl) {
+    // Background caching for NEXT time. Runs on a global scope so the
+    // download is NOT cancelled when this screen is disposed (otherwise
+    // videos would re-download on every open).
+    SideEffect {
         if (PersistentMediaCache.getCachedPath(safeUrl) == null) {
-            PersistentMediaCache.cacheMedia(safeUrl)
+            PersistentMediaCache.cacheMediaAsync(safeUrl)
         }
     }
 

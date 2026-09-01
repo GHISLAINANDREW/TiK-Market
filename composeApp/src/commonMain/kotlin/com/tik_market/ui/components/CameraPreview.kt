@@ -22,3 +22,13 @@ expect fun CameraPreviewWithFrames(
     captureEnabled: Boolean,
     onFrame: (String) -> Unit
 )
+
+/**
+ * Switches between the back and front camera (no-op if only one camera exists).
+ * Platform-specific.
+ */
+fun switchCamera() {
+    platformSwitchCamera()
+}
+
+internal expect fun platformSwitchCamera()

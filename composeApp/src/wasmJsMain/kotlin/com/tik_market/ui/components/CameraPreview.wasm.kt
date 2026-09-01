@@ -23,3 +23,7 @@ actual fun CameraPreviewWithFrames(
         Text("Caméra non supportée sur Web (Wasm)", color = Color.White)
     }
 }
+
+actual fun platformSwitchCamera() {
+    // Web camera not supported yet - no-op.
+}

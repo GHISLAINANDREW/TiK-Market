@@ -3,6 +3,7 @@ package com.tik_market.ui.components
 import android.Manifest
 import android.content.pm.PackageManager
 import android.util.Log
+import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.runtime.Composable
@@ -55,9 +56,50 @@ fun requestCameraPermission(onResult: (Boolean) -> Unit) {
 // shared camera device when one of them is released).
 private val cameraLock = Any()
 private var globalCamera: android.hardware.Camera? = null
+private var cameraFacing = android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK
 private val activeSurfaces = ConcurrentHashMap<SurfaceView, SurfaceHolder>()
 private val captureFlags = ConcurrentHashMap<SurfaceView, AtomicBoolean>()
 private val captureThreads = ConcurrentHashMap<SurfaceView, Thread>()
+
+/** Switches between back and front camera (no-op if only one camera exists). */
+actual fun platformSwitchCamera() {
+    synchronized(cameraLock) {
+        val count = android.hardware.Camera.getNumberOfCameras()
+        if (count < 2) {
+            Log.w(TAG, "switchCamera: only $count camera(s) available")
+            return
+        }
+        val newFacing = if (cameraFacing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK)
+            android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT
+        else
+            android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK
+        cameraFacing = newFacing
+        Log.i(TAG, "switchCamera -> facing=$newFacing")
+        try { globalCamera?.release() } catch (_: Exception) {}
+        globalCamera = null
+        activeSurfaces.values.firstOrNull()?.let { ensureCameraOpen(it) }
+    }
+}
+
+/** Computes the display/JPEG rotation for the given camera id (API 1). */
+private fun computeRotation(cameraId: Int): Int {
+    val info = android.hardware.Camera.CameraInfo()
+    android.hardware.Camera.getCameraInfo(cameraId, info)
+    val rotation = AndroidChatContext.currentActivity?.windowManager?.defaultDisplay?.rotation
+        ?: Surface.ROTATION_0
+    val degrees = when (rotation) {
+        Surface.ROTATION_0 -> 0
+        Surface.ROTATION_90 -> 90
+        Surface.ROTATION_180 -> 180
+        Surface.ROTATION_270 -> 270
+        else -> 0
+    }
+    return if (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT) {
+        (360 - (info.orientation + degrees) % 360) % 360
+    } else {
+        (info.orientation - degrees + 360) % 360
+    }
+}
 
 @Composable
 actual fun CameraPreview(modifier: Modifier) {
@@ -116,12 +158,20 @@ private fun ensureCameraOpen(holder: SurfaceHolder) {
                 return@synchronized
             }
             try {
-                val cam = android.hardware.Camera.open()
+                val cam = android.hardware.Camera.open(cameraFacing)
                 globalCamera = cam
-                Log.i(TAG, "Camera.open OK")
+                Log.i(TAG, "Camera.open OK facing=$cameraFacing")
+                // Portrait preview + JPEG rotation (fixes upside-down preview).
+                val rot = computeRotation(cameraFacing)
+                cam.setDisplayOrientation(rot)
+                try {
+                    val params = cam.parameters
+                    params.setRotation(rot)
+                    cam.parameters = params
+                } catch (_: Exception) {}
                 cam.setPreviewDisplay(holder)
                 cam.startPreview()
-                Log.i(TAG, "startPreview OK")
+                Log.i(TAG, "startPreview OK rotation=$rot")
             } catch (e: Exception) {
                 Log.e(TAG, "Camera.open/preview FAILED: ${e.message}")
                 globalCamera = null
