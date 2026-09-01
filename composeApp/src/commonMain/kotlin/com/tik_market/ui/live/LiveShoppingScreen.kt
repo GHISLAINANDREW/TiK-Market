@@ -31,6 +31,7 @@ import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,12 +83,12 @@ fun LiveShoppingScreen(
                     val bmp = decodeDataUrlToImageBitmap("data:image/jpeg;base64,$frameB64")
                     if (bmp != null) {
                         frameBitmap = bmp
-                        lastFrameAt = System.currentTimeMillis()
+                        lastFrameAt = Clock.System.now().toEpochMilliseconds()
                         streamEnded = false
                     }
                 }
                 // If we had frames but none for 15s, the streamer is gone.
-                if (lastFrameAt > 0 && System.currentTimeMillis() - lastFrameAt > 15000) {
+                if (lastFrameAt > 0 && Clock.System.now().toEpochMilliseconds() - lastFrameAt > 15000) {
                     streamEnded = true
                 }
             } catch (_: Exception) {}
