@@ -30,3 +30,24 @@ data class ApiLiveComment(
 data class ApiLiveStreamsResponse(
     val streams: List<ApiLiveStream>
 )
+
+@Serializable
+data class ApiStartLiveBody(
+    val title: String,
+    @SerialName("pinned_product_id") val pinnedProductId: Int? = null
+)
+
+@Serializable
+data class ApiStartLiveResponse(
+    val success: Boolean,
+    val message: String = "",
+    @SerialName("stream_id") val streamId: Int = 0,
+    @SerialName("stream_url") val streamUrl: String = ""
+)
+
+@Serializable
+data class ApiLiveFrameResponse(
+    val success: Boolean = false,
+    val frame: String? = null,
+    @SerialName("frame_at") val frameAt: String = ""
+)

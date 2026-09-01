@@ -10,6 +10,15 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 actual fun CameraPreview(modifier: Modifier) {
+    CameraPreviewWithFrames(modifier, captureEnabled = false, onFrame = {})
+}
+
+@Composable
+actual fun CameraPreviewWithFrames(
+    modifier: Modifier,
+    captureEnabled: Boolean,
+    onFrame: (String) -> Unit
+) {
     Box(modifier.background(Color.DarkGray), contentAlignment = Alignment.Center) {
         Text("Caméra non supportée sur Web (Wasm)", color = Color.White)
     }

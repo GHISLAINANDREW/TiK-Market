@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.app.ActivityCompat
 import com.tik_market.api.TokenStorage
+import com.tik_market.ui.components.handleCameraPermissionResult
 import com.tik_market.utils.NotificationUtils
 import com.tik_market.utils.handleLocationPermissionResult
 
@@ -67,6 +68,8 @@ class MainActivity : ComponentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Handle location permission result
         handleLocationPermissionResult(grantResults)
+        // Handle camera permission result
+        handleCameraPermissionResult(grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {

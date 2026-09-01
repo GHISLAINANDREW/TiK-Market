@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,8 +27,7 @@ import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
-import com.tik_market.ui.components.VideoPlayer
-import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,21 +44,16 @@ fun LiveShoppingScreen(
     var comments by remember { mutableStateOf<List<ApiLiveComment>>(emptyList()) }
     var commentText by remember { mutableStateOf("") }
     var hearts by remember { mutableStateOf(0) }
+    var frameBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     
     val scope = rememberCoroutineScope()
-    val ts = LocalAppStrings.current
 
-    // Initial load
+    // Initial load: fetch the real stream from the backend.
     LaunchedEffect(streamId) {
-        // Mocking for now, replace with real API call
-        stream = ApiLiveStream(
-            id = streamId,
-            shopId = 1,
-            shopName = "Boutique de Will",
-            title = "Dégustation & Promo Volaille Fraîche !",
-            streamUrl = "https://www.w3schools.com/html/mov_bbb.mp4",
-            viewerCount = 124
-        )
+        try {
+            val streams = ApiClient.fetchLiveStreams()
+            stream = streams.firstOrNull { it.id == streamId }
+        } catch (_: Exception) {}
         
         // Load pinned product if exists
         stream?.pinnedProductId?.let { id ->
@@ -76,15 +71,38 @@ fun LiveShoppingScreen(
         }
     }
 
+    // Polling for broadcast frames (frame-based live stream).
+    LaunchedEffect(streamId) {
+        while (true) {
+            try {
+                val frameB64 = ApiClient.fetchLiveFrame(streamId)
+                if (frameB64 != null) {
+                    val bmp = decodeDataUrlToImageBitmap("data:image/jpeg;base64,$frameB64")
+                    if (bmp != null) frameBitmap = bmp
+                }
+            } catch (_: Exception) {}
+            delay(1000)
+        }
+    }
+
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        // ── 1. Video Background ──
-        stream?.let { s ->
-            VideoPlayer(
-                url = s.streamUrl,
+        // ── 1. Live Frame Background (frame-based stream) ──
+        frameBitmap?.let { bmp ->
+            Image(
+                bitmap = bmp,
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                isPlaying = true,
-                onEnded = { }
+                contentScale = ContentScale.Crop
             )
+        } ?: run {
+            // Fallback: show a loading placeholder while waiting for the first frame.
+            Box(Modifier.fillMaxSize().background(Color(0xFF1A1A1A)), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(Modifier.height(12.dp))
+                    Text("En attente du flux...", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                }
+            }
         }
 
         // ── 2. Overlay UI ──
@@ -286,7 +304,7 @@ private fun LiveInputRow(value: String, onValueChange: (String) -> Unit, onSend:
         )
         Spacer(Modifier.width(12.dp))
         IconButton(onClick = onSend, enabled = value.isNotBlank()) {
-            Icon(Icons.Default.Send, null, tint = if (value.isNotBlank()) GreenAccent else Color.White.copy(alpha = 0.3f))
+            Icon(Icons.AutoMirrored.Filled.Send, null, tint = if (value.isNotBlank()) GreenAccent else Color.White.copy(alpha = 0.3f))
         }
     }
 }
