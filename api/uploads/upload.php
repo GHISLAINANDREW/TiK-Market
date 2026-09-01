@@ -28,7 +28,8 @@ if (strpos($contentType, 'application/json') !== false) {
 }
 
 if (!$fileData || strlen($fileData) > $maxSize) {
-    json(400, ['error' => 'Fichier invalide ou trop volumineux (Max 10MB)']);
+    $sizeMb = round(strlen($fileData) / (1024 * 1024), 2);
+    json(400, ['error' => "Fichier trop volumineux: {$sizeMb}MB (Max 15MB)"]);
 }
 
 // Get MIME type

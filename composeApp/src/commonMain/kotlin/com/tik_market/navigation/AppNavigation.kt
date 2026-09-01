@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SupportAgent
@@ -95,6 +96,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
 
     val bottomItems = listOf(
         BottomNavItem(NavScreen.Home, Icons.Default.Home, Icons.Filled.Home, s.home),
+        BottomNavItem(NavScreen.Reels, Icons.Default.Movie, Icons.Filled.Movie, "Reels"),
         BottomNavItem(NavScreen.Conversations, Icons.Default.Chat, Icons.Filled.Chat, s.messages),
         BottomNavItem(NavScreen.Cart, Icons.Default.ShoppingCart, Icons.Filled.ShoppingCart, s.cart),
         BottomNavItem(NavScreen.Profile, Icons.Default.Person, Icons.Filled.Person, s.account)
@@ -102,9 +104,10 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
 
     val hideBottomBar = appState.currentScreen in listOf(
         NavScreen.ProductDetail, NavScreen.Chat, NavScreen.Auth, NavScreen.Payment,
-        NavScreen.BarcodeScan, NavScreen.Checkout, NavScreen.AddProduct,
+        NavScreen.ImageSearch, NavScreen.Checkout, NavScreen.AddProduct,
         NavScreen.Compare, NavScreen.VendorDashboard, NavScreen.ShopPage,
-        NavScreen.StoryViewer, NavScreen.AdminDashboard
+        NavScreen.StoryViewer, NavScreen.AdminDashboard, NavScreen.LiveShopping,
+        NavScreen.LiveStreaming
     )
 
     Scaffold(
@@ -189,6 +192,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
         },
         label = "app_nav"
     ) { screen ->
+        println("AppNavigation: showing screen ${screen.route}")
         when (screen) {
             NavScreen.Splash -> SplashScreen(onFinished = { appState.navigateTo(NavScreen.Home) })
             NavScreen.Auth, NavScreen.Terms, NavScreen.Legal -> AuthFlow(appState, scope, snackbarHostState)
@@ -196,9 +200,10 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             NavScreen.Home, NavScreen.ProductDetail, NavScreen.Cart, NavScreen.Profile,
             NavScreen.Chat, NavScreen.Conversations, NavScreen.Orders, NavScreen.Notifications,
             NavScreen.Checkout, NavScreen.Payment, NavScreen.Settings, NavScreen.Wishlist,
-            NavScreen.ShopsList, NavScreen.ShopPage, NavScreen.BarcodeScan, NavScreen.Compare,
+            NavScreen.ShopsList, NavScreen.ShopPage, NavScreen.ImageSearch, NavScreen.Compare,
             NavScreen.Loyalty, NavScreen.NotifPrefs, NavScreen.StoryViewer, NavScreen.MyGroupBuys,
-            NavScreen.ShopsMap, NavScreen.EditProfile -> MainFlow(appState, scope, snackbarHostState, userCity)
+            NavScreen.ShopsMap, NavScreen.EditProfile, NavScreen.LiveShopping,
+            NavScreen.LiveStreaming, NavScreen.CreateReel, NavScreen.Reels -> MainFlow(appState, scope, snackbarHostState, userCity)
 
             NavScreen.VendorDashboard, NavScreen.ManageShop, NavScreen.AddProduct,
             NavScreen.VendorOrders, NavScreen.VendorGroupBuys, NavScreen.VendorSubscribers,
@@ -208,7 +213,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
 
             NavScreen.Legal, NavScreen.Terms, NavScreen.About -> MiscFlow(appState)
 
-            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Écran non implémenté") }
+            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Écran non implémenté: ${screen.route} (v1.1)") }
         }
     }
 }

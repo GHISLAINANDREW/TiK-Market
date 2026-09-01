@@ -20,10 +20,9 @@ actual object HttpEngine {
     ): String = withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = method.uppercase()
-        // Render free tier "Cold Start" can take up to 30 seconds.
-        // We must wait enough on the first attempt before falling back.
-        connection.connectTimeout = 30000
-        connection.readTimeout = 60000
+        // Large base64 video payloads need more time.
+        connection.connectTimeout = 60000
+        connection.readTimeout = 180000
         connection.instanceFollowRedirects = true
         connection.useCaches = false
         connection.doInput = true

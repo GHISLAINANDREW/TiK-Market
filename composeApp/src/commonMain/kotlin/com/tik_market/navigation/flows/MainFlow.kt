@@ -38,6 +38,11 @@ import com.tik_market.ui.settings.SettingsScreen
 import com.tik_market.ui.shop.ShopPageScreen
 import com.tik_market.ui.shop.ShopsListScreen
 import com.tik_market.ui.story.StoryViewerScreen
+import com.tik_market.ui.live.LiveShoppingScreen
+import com.tik_market.ui.live.LiveStreamingScreen
+import com.tik_market.ui.reels.ReelsScreen
+import com.tik_market.ui.search.ImageSearchScreen
+import com.tik_market.ui.vendor.CreateReelScreen
 import com.tik_market.ui.wishlist.WishlistScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -74,6 +79,8 @@ fun MainFlow(
             },
             onShopsClick = { appState.navigateTo(NavScreen.ShopsList) },
             onNotificationsClick = { appState.navigateTo(NavScreen.Notifications) },
+            onLiveClick = { _ -> appState.navigateTo(NavScreen.LiveShopping) },
+            onImageSearchClick = { appState.navigateTo(NavScreen.ImageSearch) },
             cartCount = appState.cartItems.sumOf { it.quantity },
             notificationCount = appState.unreadNotifications,
             selectedShopName = appState.selectedShopName,
@@ -205,6 +212,7 @@ fun MainFlow(
             onNotifPrefsClick = { appState.navigateTo(NavScreen.NotifPrefs) },
             onGroupBuysClick = { appState.navigateTo(NavScreen.MyGroupBuys) },
             onShopsMapClick = { appState.navigateTo(NavScreen.ShopsMap) },
+            onLiveStreamingClick = { appState.navigateTo(NavScreen.LiveStreaming) },
             walletBalance = appState.walletBalance,
             walletPoints = appState.currentPoints,
             walletTier = appState.walletTier,
@@ -276,8 +284,9 @@ fun MainFlow(
         NavScreen.Checkout -> CheckoutScreen(
             items = appState.cartItems,
             totalAmount = appState.cartItems.sumOf { it.subtotal },
+            walletBalance = appState.walletBalance,
             onBack = { appState.goBack() },
-            onPlaceOrder = { addr, ph, n, m, paymentType ->
+            onPlaceOrder = { addr, ph, n, m, paymentType, useWallet ->
                 scope.launch {
                     try {
                         val items = appState.cartItems.map { cartItem ->
@@ -288,9 +297,14 @@ fun MainFlow(
                                 title = cartItem.product.title
                             )
                         }
-                        val order = ApiClient.createOrder(addr, ph, n, m, paymentType, items)
+                        val order = ApiClient.createOrder(addr, ph, n, m, paymentType, items, useWallet)
                         appState.cartItems = emptyList()
                         appState.navigateTo(NavScreen.Orders)
+                        
+                        // Update wallet state after order (points might have changed if instant)
+                        val w = ApiClient.fetchWallet()
+                        if (w != null) appState.updateWallet(w)
+
                         if (paymentType == "delivery") {
                             snackbarHostState.showSnackbar("Commande enregistrée ! Vous gagnerez des points à la livraison.")
                         } else {
@@ -345,25 +359,19 @@ fun MainFlow(
             onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) },
             onChat = { id, n, _ -> appState.chatVendorId = id; appState.chatVendorName = n; appState.chatVendorIsOnline = false; appState.navigateTo(NavScreen.Chat) }
         )
-        NavScreen.BarcodeScan -> BarcodeScanScreen(
+        NavScreen.ImageSearch -> ImageSearchScreen(
             onBack = { appState.goBack() },
-            onResult = { barcode ->
-                scope.launch {
-                    try {
-                        // Find product by title containing barcode or by ID if barcode is numeric ID
-                        val products = ApiClient.fetchProducts(search = barcode)
-                        val product = products.firstOrNull()?.toProduct()
-                        if (product != null) {
-                            appState.selectedProduct = product
-                            appState.navigateTo(NavScreen.ProductDetail)
-                        } else {
-                            showError("Produit non trouvé ($barcode)")
-                        }
-                    } catch (e: Exception) {
-                        showError("Erreur lors de la recherche")
-                    }
-                }
+            onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) },
+            onAddToCart = { p ->
+                appState.cartItems += CartItem(p, 1, p.shopName)
+                scope.launch { snackbarHostState.showSnackbar("${p.title} ajouté") }
             }
+        )
+        NavScreen.LiveStreaming -> LiveStreamingScreen(
+            onBack = { appState.goBack() }
+        )
+        NavScreen.CreateReel -> CreateReelScreen(
+            onBack = { appState.goBack() }
         )
         NavScreen.Compare -> CompareScreen(
             products = appState.comparisonList,
@@ -385,15 +393,16 @@ fun MainFlow(
             totalPoints = appState.totalPoints,
             walletBalance = appState.walletBalance,
             walletTier = appState.walletTier,
+            cashbackPct = appState.walletCashbackPct,
+            bonusPct = appState.walletBonusPct,
+            nextTierPointsNeeded = appState.nextTierPointsNeeded,
+            nextTierName = appState.nextTierName,
             onRefresh = {
                 scope.launch {
                     try {
                         val w = ApiClient.fetchWallet()
                         if (w != null) {
-                            appState.currentPoints = w.currentPoints
-                            appState.totalPoints = w.totalPoints
-                            appState.walletBalance = w.balance
-                            appState.walletTier = w.tier
+                            appState.updateWallet(w)
                         }
                     } catch (_: Exception) {}
                 }
@@ -456,6 +465,18 @@ fun MainFlow(
             onProfileUpdated = { updatedUser ->
                 appState.currentUser = updatedUser
                 appState.userName = updatedUser.name
+            }
+        )
+        NavScreen.LiveShopping -> LiveShoppingScreen(
+            streamId = 1,
+            onBack = { appState.goBack() },
+            onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) }
+        )
+        NavScreen.Reels -> ReelsScreen(
+            onBack = { appState.goBack() },
+            onShopClick = { id -> 
+                appState.selectedShopId = id
+                appState.navigateTo(NavScreen.ShopPage)
             }
         )
         else -> {}

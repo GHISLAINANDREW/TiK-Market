@@ -79,7 +79,9 @@ fun VendorFlow(
                     }
                 }
             },
-            onSubscribers = { appState.navigateTo(NavScreen.VendorSubscribers) }
+            onSubscribers = { appState.navigateTo(NavScreen.VendorSubscribers) },
+            onLiveStreaming = { appState.navigateTo(NavScreen.LiveStreaming) },
+            onPublishReel = { appState.navigateTo(NavScreen.CreateReel) }
         )
         NavScreen.ManageShop -> ManageShopScreen(
             onBack = { appState.goBack() },

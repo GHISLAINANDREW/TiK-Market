@@ -1,7 +1,5 @@
 package com.tik_market.utils
 
-import com.tik_market.api.ApiClient
-
 object UrlUtils {
     private const val RENDER_BASE = "https://tik-market.onrender.com"
     private const val PROXY_BASE = "https://tik-market-proxy.gtankou.workers.dev"
@@ -27,28 +25,20 @@ object UrlUtils {
             absoluteUrl = absoluteUrl.replace("http://", "https://")
         }
 
-        // 3. Proxy logic
+        // 3. Robust Proxy Logic
         
         // Strategy A: Direct path replacement for Render (Primary Backend)
-        // Matches ApiClient logic: very fast, no encoding overhead.
-        if (absoluteUrl.startsWith(RENDER_BASE)) {
+        // This is THE MOST COMPATIBLE way for Android image decoders.
+        // Render is often blocked by Cameroonian ISPs, so we route it through
+        // the Cloudflare Worker reverse proxy (which serves /uploads, /stories, ...).
+        if (absoluteUrl.contains("onrender.com")) {
             return absoluteUrl.replace(RENDER_BASE, PROXY_BASE)
         }
 
-        // Strategy B: Proxy query parameter for external domains
-        // Required for domains with strict CORS or potentially blocked (Unsplash, Cloudinary)
-        if (absoluteUrl.contains("res.cloudinary.com") || absoluteUrl.contains("images.unsplash.com")) {
-            // Avoid double proxying
-            if (absoluteUrl.contains("$PROXY_BASE/proxy?url=")) return absoluteUrl
-            
-            // Optimize Unsplash for mobile if no params
-            var optimized = absoluteUrl
-            if (optimized.contains("images.unsplash.com") && !optimized.contains("?")) {
-                optimized += "?w=800&q=80"
-            }
-            
-            return "$PROXY_BASE/proxy?url=" + ApiClient.encodeUri(optimized)
-        }
+        // External CDNs (Unsplash, Cloudinary) are NOT blocked and send proper
+        // CORS headers, so we load them DIRECTLY. The old Strategy B routed them
+        // through /proxy?url= which does not exist on the Worker -> 404 -> broken
+        // hero images on Android. Direct loading works on both web and Android.
 
         return absoluteUrl
     }

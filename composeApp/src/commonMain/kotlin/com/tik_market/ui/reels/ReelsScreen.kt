@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.*
 import com.tik_market.api.dto.*
+import com.tik_market.cache.PersistentMediaCache
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
 import com.tik_market.utils.LocalAppStrings
@@ -55,6 +56,16 @@ fun ReelsScreen(
         if (isLoading) {
             CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
         } else {
+            // ── PRE-FETCHING ──
+            LaunchedEffect(pagerState.currentPage) {
+                for (i in 1..2) {
+                    val nextIndex = pagerState.currentPage + i
+                    if (nextIndex < reels.size) {
+                        PersistentMediaCache.cacheMedia(reels[nextIndex].videoUrl)
+                    }
+                }
+            }
+
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()

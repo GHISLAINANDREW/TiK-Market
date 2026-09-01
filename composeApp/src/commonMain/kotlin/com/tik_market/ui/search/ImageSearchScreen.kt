@@ -41,7 +41,7 @@ fun ImageSearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
-    val imagePicker = rememberImagePickerLauncher { result ->
+    val imagePicker = rememberImagePickerLauncher(maxDimension = 800) { result ->
         if (result != null) {
             selectedImageBitmap = decodeDataUrlToImageBitmap(result.dataUrl)
             isSearching = true
@@ -60,7 +60,7 @@ fun ImageSearchScreen(
         }
     }
 
-    val cameraLauncher = rememberTakePhotoLauncher { dataUrl ->
+    val cameraLauncher = rememberTakePhotoLauncher(maxDimension = 800) { dataUrl ->
         if (dataUrl != null) {
             selectedImageBitmap = decodeDataUrlToImageBitmap(dataUrl)
             isSearching = true

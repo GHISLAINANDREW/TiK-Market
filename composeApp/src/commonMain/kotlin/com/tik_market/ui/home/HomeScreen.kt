@@ -36,6 +36,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
 import com.tik_market.ui.home.components.*
+import com.tik_market.ui.home.components.HomeLiveShopping
 import com.tik_market.ui.story.StoryItem
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.format
@@ -51,6 +52,8 @@ fun HomeScreen(
     onVendorClick: () -> Unit,
     onShopsClick: () -> Unit,
     onNotificationsClick: () -> Unit = {},
+    onLiveClick: (Int) -> Unit = {},
+    onImageSearchClick: () -> Unit = {},
     cartCount: Int,
     notificationCount: Int = 0,
     selectedShopName: String? = null,
@@ -217,7 +220,8 @@ fun HomeScreen(
                             onQueryChange = { viewModel.onSearchQueryChange(it); if (it.isNotEmpty()) onSearchQuerySubmit(it) },
                             placeholder = searchPlaceholders[placeholderIndex % searchPlaceholders.size],
                             primary = primary,
-                            onFocusChanged = { isSearchFocused = it }
+                            onFocusChanged = { isSearchFocused = it },
+                            onImageSearchClick = onImageSearchClick
                         )
                     }
 
@@ -233,6 +237,13 @@ fun HomeScreen(
                     }
 
                     item {
+                        HomeLiveShopping(
+                            streams = state.liveStreams,
+                            onStreamClick = onLiveClick
+                        )
+                    }
+
+                    item {
                         HomeHero(
                             heroItems = state.heroItems,
                             screenWidth = screenWidth,
@@ -242,7 +253,7 @@ fun HomeScreen(
 
                     item {
                         SectionTitle(
-                            title = s.favorites,
+                            title = "Découvrir",
                             count = filteredProducts.size,
                             articlesText = s.articlesCount
                         )
@@ -461,7 +472,8 @@ private fun SearchBarSection(
     onQueryChange: (String) -> Unit,
     placeholder: String,
     primary: Color,
-    onFocusChanged: (Boolean) -> Unit
+    onFocusChanged: (Boolean) -> Unit,
+    onImageSearchClick: () -> Unit
 ) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         OutlinedTextField(
@@ -478,6 +490,9 @@ private fun SearchBarSection(
                     }
                     IconButton(onClick = { com.tik_market.ui.chat.startSpeechToText { text -> if (text.isNotBlank()) onQueryChange(text) } }) {
                         Icon(Icons.Default.Mic, "Recherche vocale", tint = primary, modifier = Modifier.size(20.dp))
+                    }
+                    IconButton(onClick = onImageSearchClick) {
+                        Icon(Icons.Default.CameraAlt, "Recherche par image", tint = Orange, modifier = Modifier.size(22.dp))
                     }
                 }
             },

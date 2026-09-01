@@ -73,6 +73,7 @@ data class ApiHeroItem(
     val title: String,
     val subtitle: String,
     @SerialName("image_url") val imageUrl: String,
+    @SerialName("media_type") val mediaType: String = "image",
     @SerialName("shop_id") val shopId: Int? = null,
     @SerialName("shop_name") val shopName: String? = null,
     val priority: Int = 0,
@@ -84,6 +85,7 @@ data class ApiCreateHeroBody(
     val title: String,
     val subtitle: String,
     @SerialName("image_url") val imageUrl: String,
+    @SerialName("media_type") val mediaType: String = "image",
     @SerialName("shop_id") val shopId: Int? = null,
     val priority: Int = 0
 )

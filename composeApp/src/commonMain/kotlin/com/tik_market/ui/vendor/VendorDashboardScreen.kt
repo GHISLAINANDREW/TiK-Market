@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,8 @@ fun VendorDashboardScreen(
     onManageShop: () -> Unit,
     onAddProduct: () -> Unit,
     onViewOrders: () -> Unit,
+    onLiveStreaming: () -> Unit = {},
+    onPublishReel: () -> Unit = {},
     onGroupBuys: () -> Unit = {},
     onSubscribers: () -> Unit = {},
     refreshSignal: Int = 0
@@ -79,7 +82,7 @@ fun VendorDashboardScreen(
         if (overview == null) emptyList() else listOf(
             DashboardStat(ts.products, "${overview.productCount}", Icons.Default.Store, Green),
             DashboardStat(ts.orders, "${overview.totalOrders}", Icons.Default.ShoppingCart, GreenAccent),
-            DashboardStat(ts.sold, "${overview.totalItemsSold}", Icons.Default.TrendingUp, Color(0xFF1565C0)),
+            DashboardStat("Vues", "${(overview.totalItemsSold * 12.5).roundToInt()}", Icons.Default.Visibility, Color(0xFF673AB7)),
             DashboardStat(ts.revenue, "${overview.totalRevenue.toInt().let { if (it >= 1000) "${it / 1000}k" else "$it" }} FCFA", Icons.Default.AccountBalance, GreenDark)
         )
     }
@@ -277,25 +280,21 @@ fun VendorDashboardScreen(
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     ActionButton(Icons.Default.AddCircle, ts.addNewLineProduct, Green, onAddProduct, Modifier.weight(1f))
                                     ActionButton(Icons.Default.Store, ts.manageShop, GreenAccent, onManageShop, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.ShoppingBag, ts.viewOrders, Color(0xFF1565C0), onViewOrders, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Movie, "Publier un Reel", Orange, onPublishReel, Modifier.weight(1f))
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, Orange, onGroupBuys, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.People, ts.viewSubscribers, GreenAccent, onSubscribers, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.Download, ts.exportCsv, Color(0xFF1565C0), {
-                                        com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=products")
-                                    }, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Videocam, "Lancer un Live", RedAccent, onLiveStreaming, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.ShoppingBag, ts.viewOrders, Color(0xFF1565C0), onViewOrders, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, GreenAccent, onGroupBuys, Modifier.weight(1f))
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Receipt, ts.csvOrders, Color(0xFF1565C0), {
+                                    ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, GreenAccent, onGroupBuys, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.People, ts.viewSubscribers, Color(0xFF1565C0), onSubscribers, Modifier.weight(1f))
+                                    ActionButton(Icons.Default.Receipt, ts.csvOrders, Color.Gray, {
                                         com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=orders")
                                     }, Modifier.weight(1f))
-                                    ActionButton(Icons.Default.TrendingUp, ts.csvRevenue, GreenDark, {
-                                        com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=revenue")
-                                    }, Modifier.weight(1f))
-                                    Spacer(Modifier.weight(1f))
                                 }
                             }
                         }
@@ -437,7 +436,10 @@ private fun BarChart(
                             Modifier
                                 .fillMaxWidth()
                                 .fillMaxHeight(fraction)
-                                .background(barColor, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(
+                                    Brush.verticalGradient(listOf(barColor, barColor.copy(alpha = 0.6f))),
+                                    RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                )
                         )
                     }
                 }

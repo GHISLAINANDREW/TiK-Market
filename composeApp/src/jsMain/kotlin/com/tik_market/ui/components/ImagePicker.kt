@@ -20,6 +20,7 @@ actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
     videoOnly: Boolean,
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     return {
@@ -69,13 +70,15 @@ actual fun rememberMediaPickerLauncher(
 
 @Composable
 actual fun rememberImagePickerLauncher(
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
-    return rememberMediaPickerLauncher(allowVideo = false, onResult = onResult)
+    return rememberMediaPickerLauncher(allowVideo = false, maxDimension = maxDimension, onResult = onResult)
 }
 
 @Composable
 actual fun rememberTakePhotoLauncher(
+    maxDimension: Int,
     onResult: (dataUrl: String?) -> Unit
 ): () -> Unit {
     val scope = rememberCoroutineScope()

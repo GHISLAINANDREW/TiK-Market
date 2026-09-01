@@ -2,6 +2,7 @@ package com.tik_market.ui.checkout
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -29,8 +30,9 @@ import kotlinx.coroutines.launch
 fun CheckoutScreen(
     items: List<CartItem>,
     totalAmount: Double,
+    walletBalance: Double = 0.0,
     onBack: () -> Unit,
-    onPlaceOrder: (shippingAddress: String, phone: String, notes: String, paymentMethod: String, paymentType: String) -> Unit
+    onPlaceOrder: (shippingAddress: String, phone: String, notes: String, paymentMethod: String, paymentType: String, useWallet: Boolean) -> Unit
 ) {
     var address by remember { mutableStateOf("Dschang, Cameroun") }
     var phone by remember { mutableStateOf("+237 6") }
@@ -42,6 +44,8 @@ fun CheckoutScreen(
     var promoValid by remember { mutableStateOf(false) }
     var promoChecking by remember { mutableStateOf(false) }
     var promoError by remember { mutableStateOf("") }
+    var useWallet by remember { mutableStateOf(false) }
+    
     val coroutineScope = rememberCoroutineScope()
     val s = LocalAppStrings.current
 
@@ -50,6 +54,9 @@ fun CheckoutScreen(
 
     val effectiveTotal = (totalAmount - promoDiscount).coerceAtLeast(0.0)
     
+    val walletDiscount = if (useWallet) walletBalance.coerceAtMost(effectiveTotal) else 0.0
+    val totalAfterWallet = (effectiveTotal - walletDiscount).coerceAtLeast(0.0)
+    
     val deliveryFee = when {
         address.lowercase().contains("dschang") -> 500
         address.lowercase().contains("keleng") || address.lowercase().contains("foto") -> 700
@@ -57,7 +64,7 @@ fun CheckoutScreen(
         else -> 0
     }
     
-    val finalTotal = effectiveTotal + deliveryFee
+    val finalTotal = totalAfterWallet + deliveryFee
 
     // Group vendors for direct payment display
     val vendors = remember(items) {
@@ -79,7 +86,7 @@ fun CheckoutScreen(
             Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(s.total, fontSize = 13.sp, color = Color.Gray)
-                    if (promoDiscount > 0) {
+                    if (promoDiscount > 0 || walletDiscount > 0) {
                         Text("${totalAmount.toInt()} FCFA", fontSize = 13.sp, color = Color.Gray, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
                     }
                     Text("${finalTotal.toInt()} FCFA", fontSize = if (isCompact) 18.sp else 22.sp, fontWeight = FontWeight.Bold, color = BrandTopBarColor)
@@ -87,7 +94,7 @@ fun CheckoutScreen(
                 Button(
                     onClick = {
                         placing = true
-                        onPlaceOrder(address, phone, notes, selectedPayment, paymentType)
+                        onPlaceOrder(address, phone, notes, selectedPayment, paymentType, useWallet)
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.height(50.dp),
@@ -307,6 +314,28 @@ promoValid = false; promoDiscount = 0; promoError = result.error ?: s.promoInval
 
             Spacer(Modifier.height(12.dp))
 
+            // ── Wallet Balance ──
+            if (walletBalance > 0) {
+                Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(40.dp).background(Green.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.AccountBalanceWallet, null, tint = Green, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Solde TiK-Market", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("${walletBalance.toInt()} FCFA disponibles", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        Switch(
+                            checked = useWallet,
+                            onCheckedChange = { useWallet = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Green, checkedTrackColor = Green.copy(alpha = 0.3f))
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
             // ── Order items summary ──
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
@@ -325,14 +354,22 @@ promoValid = false; promoDiscount = 0; promoError = result.error ?: s.promoInval
                         }
                     }
                     HorizontalDivider(Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0))
-                    if (promoDiscount > 0) {
+                    if (promoDiscount > 0 || walletDiscount > 0) {
                         Row(Modifier.fillMaxWidth()) {
                             Text(s.subtotal, fontSize = 14.sp, color = Color.Gray, modifier = Modifier.weight(1f))
                             Text("${totalAmount.toInt()} FCFA", fontSize = 14.sp, color = Color.Gray)
                         }
-                        Row(Modifier.fillMaxWidth()) {
-                            Text(s.discount.format(promoDiscount), fontSize = 14.sp, color = Color.Red, modifier = Modifier.weight(1f))
-                            Text("-$promoDiscount FCFA", fontSize = 14.sp, color = Color.Red)
+                        if (promoDiscount > 0) {
+                            Row(Modifier.fillMaxWidth()) {
+                                Text(s.discount.format(promoDiscount), fontSize = 14.sp, color = Color.Red, modifier = Modifier.weight(1f))
+                                Text("-$promoDiscount FCFA", fontSize = 14.sp, color = Color.Red)
+                            }
+                        }
+                        if (walletDiscount > 0) {
+                            Row(Modifier.fillMaxWidth()) {
+                                Text("Réduction Solde", fontSize = 14.sp, color = Color.Red, modifier = Modifier.weight(1f))
+                                Text("-${walletDiscount.toInt()} FCFA", fontSize = 14.sp, color = Color.Red)
+                            }
                         }
                     }
                     Row(Modifier.fillMaxWidth()) {

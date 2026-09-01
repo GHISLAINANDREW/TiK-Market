@@ -5,34 +5,48 @@ import com.tik_market.utils.UrlUtils
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 actual object PersistentMediaCache {
     private val cacheDir: File? get() = AndroidChatContext.currentActivity?.cacheDir?.let { File(it, "stories_cache") }
+    private val activeDownloads = ConcurrentHashMap<String, Boolean>()
+
+    private fun getFileName(url: String): String {
+        return url.replace("[^a-zA-Z0-9]".toRegex(), "_").takeLast(100) + "_" + url.hashCode()
+    }
 
     actual suspend fun cacheMedia(url: String) {
+        if (url.isBlank()) return
         val dir = cacheDir ?: return
         if (!dir.exists()) dir.mkdirs()
 
-        val fileName = url.hashCode().toString()
+        val fileName = getFileName(url)
         val file = File(dir, fileName)
 
         if (file.exists() && System.currentTimeMillis() - file.lastModified() < TimeUnit.DAYS.toMillis(1)) {
             return // Already cached and fresh
         }
 
+        if (activeDownloads.containsKey(url)) return // Already being downloaded
+
+        activeDownloads[url] = true
         try {
             val safeUrl = UrlUtils.resolveSafeUrl(url)
             val connection = URL(safeUrl).openConnection() as HttpURLConnection
             connection.connectTimeout = 15000
-            connection.readTimeout = 30000
+            connection.readTimeout = 60000
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
             
             if (connection.responseCode == 200) {
+                val tempFile = File(dir, "$fileName.tmp")
                 connection.inputStream.use { input ->
-                    file.outputStream().use { output ->
+                    tempFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
+                }
+                if (tempFile.exists()) {
+                    tempFile.renameTo(file)
                 }
             } else {
                 println("[Cache] HTTP ${connection.responseCode} for $safeUrl")
@@ -40,6 +54,8 @@ actual object PersistentMediaCache {
             connection.disconnect()
         } catch (e: Exception) {
             println("[Cache] Failed to cache $url: ${e.message}")
+        } finally {
+            activeDownloads.remove(url)
         }
     }
 
@@ -48,7 +64,7 @@ actual object PersistentMediaCache {
         if (!dir.exists()) dir.mkdirs()
         
         try {
-            val file = File(dir, url.hashCode().toString())
+            val file = File(dir, getFileName(url))
             file.writeBytes(bytes)
         } catch (e: Exception) {
             println("[Cache] Failed to save bytes for $url: ${e.message}")
@@ -57,7 +73,7 @@ actual object PersistentMediaCache {
 
     actual fun getCachedPath(url: String): String? {
         val dir = cacheDir ?: return null
-        val file = File(dir, url.hashCode().toString())
+        val file = File(dir, getFileName(url))
         
         if (file.exists() && System.currentTimeMillis() - file.lastModified() < TimeUnit.DAYS.toMillis(1)) {
             return "file://${file.absolutePath}"

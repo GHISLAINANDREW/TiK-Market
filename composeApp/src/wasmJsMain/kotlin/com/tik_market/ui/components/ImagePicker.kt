@@ -83,6 +83,7 @@ actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
     videoOnly: Boolean,
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     // IMPORTANT: input.click() doit être appelé de manière SYNCHRONE dans le
@@ -110,15 +111,17 @@ actual fun rememberMediaPickerLauncher(
 
 @Composable
 actual fun rememberImagePickerLauncher(
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
-    return rememberMediaPickerLauncher(allowVideo = false, onResult = onResult)
+    return rememberMediaPickerLauncher(allowVideo = false, maxDimension = maxDimension, onResult = onResult)
 }
 
 // ── Camera / Photo launcher (wasmJs: uses capture input) ─────────
 
 @Composable
 actual fun rememberTakePhotoLauncher(
+    maxDimension: Int,
     onResult: (dataUrl: String?) -> Unit
 ): () -> Unit {
     val scope = rememberCoroutineScope()

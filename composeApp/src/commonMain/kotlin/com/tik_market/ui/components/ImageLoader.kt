@@ -51,7 +51,7 @@ suspend fun loadImageFromUrl(url: String): ImageBitmap? {
     // 1. Check memory cache first
     globalImageCache.get(optimizedUrl)?.let { return it }
 
-    // 2. Check persistent cache (stories & products)
+    // 2. Check persistent disk cache
     try {
         PersistentMediaCache.getCachedPath(optimizedUrl)?.let { cachedUrl ->
             val bitmap = fetchImageAsBitmap(cachedUrl)
@@ -62,8 +62,8 @@ suspend fun loadImageFromUrl(url: String): ImageBitmap? {
         }
     } catch (_: Exception) {}
 
-    // 3. Fetch from network (Download ONCE)
-    val bytes = fetchImageBytes(optimizedUrl) ?: return null
+    // 3. Fetch from network via Ktor (modern & fast)
+    val bytes = ImageFetcher.fetchBytes(optimizedUrl) ?: return null
     
     // 4. Decode to bitmap
     val bitmap = decodeBytesToBitmap(bytes) ?: return null
@@ -71,7 +71,8 @@ suspend fun loadImageFromUrl(url: String): ImageBitmap? {
     // 5. Store in memory cache
     globalImageCache.put(optimizedUrl, bitmap)
     
-    // 6. Background cache to disk (using the bytes we ALREADY have)
+    // 6. Immediate disk cache (SAVE THE BYTES WE JUST GOT)
+    // No redundant network call anymore.
     if (optimizedUrl.contains("/stories/") || optimizedUrl.contains("/uploads/")) {
         PersistentMediaCache.saveMediaBytes(optimizedUrl, bytes)
     }

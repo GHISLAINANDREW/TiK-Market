@@ -406,6 +406,7 @@ fun ProductDetailScreen(
                 val groupBuyShopId = product.shopId.toIntOrNull() ?: 0
                 GroupBuySection(
                     productId = groupBuyProductId,
+                    productName = product.title,
                     shopId = groupBuyShopId
                 )
 

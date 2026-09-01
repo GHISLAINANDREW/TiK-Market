@@ -2,6 +2,9 @@ package com.tik_market.ui.vendor
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,7 +21,6 @@ import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.*
-import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -26,7 +28,7 @@ import kotlinx.coroutines.launch
 fun CreateReelScreen(
     onBack: () -> Unit
 ) {
-    val s = LocalAppStrings.current
+    // val s = LocalAppStrings.current // Unused
     val scope = rememberCoroutineScope()
     
     var videoDataUrl by remember { mutableStateOf<String?>(null) }

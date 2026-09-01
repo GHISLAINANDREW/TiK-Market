@@ -29,52 +29,50 @@ import java.net.URL
  * base64 payload small enough for the upload endpoint. Videos are passed
  * through as-is (they are compressed separately by VideoCompressor).
  */
-private suspend fun contentUriToDataUrl(context: Context, uri: Uri): String? {
+private suspend fun contentUriToDataUrl(context: Context, uri: Uri, maxDim: Int = 1600): String? {
     return withContext(Dispatchers.IO) {
         try {
             var mimeType = context.contentResolver.getType(uri)
-            if (mimeType == null) {
-                val fileName = getFileName(context, uri)
-                val ext = fileName?.substringAfterLast('.', "")?.lowercase() ?: ""
-                mimeType = mapOf(
-                    "pdf" to "application/pdf",
-                    "doc" to "application/msword",
-                    "docx" to "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    "xls" to "application/vnd.ms-excel",
-                    "xlsx" to "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "ppt" to "application/vnd.ms-powerpoint",
-                    "pptx" to "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    "zip" to "application/zip",
-                    "rar" to "application/vnd.rar",
-                    "gz" to "application/gzip",
-                    "txt" to "text/plain",
-                    "csv" to "text/csv",
-                    "vcf" to "text/vcard",
-                    "json" to "application/json",
-                    "jpg" to "image/jpeg",
-                    "jpeg" to "image/jpeg",
-                    "png" to "image/png",
-                    "gif" to "image/gif",
-                    "mp4" to "video/mp4",
-                    "mp3" to "audio/mpeg",
-                )[ext] ?: "application/octet-stream"
+            val fileName = getFileName(context, uri)
+            
+            if (mimeType == null && fileName != null) {
+                val ext = fileName.substringAfterLast('.', "").lowercase()
+                mimeType = when (ext) {
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "png" -> "image/png"
+                    "mp4" -> "video/mp4"
+                    "mov" -> "video/quicktime"
+                    else -> null
+                }
+            }
+            if (mimeType == null) mimeType = "application/octet-stream"
+
+            // Client-side size check (15MB limit)
+            context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { afd ->
+                if (afd.length > 15 * 1024 * 1024) {
+                    throw Exception("Fichier trop volumineux (> 15MB)")
+                }
             }
 
-            // Compress images (photos from phones are 3-8MB; base64 adds +33%).
+            // Compress images
             if (mimeType.startsWith("image/")) {
-                val compressed = compressImage(context, uri)
+                val compressed = compressImage(context, uri, maxDim)
                 if (compressed != null) return@withContext "data:image/jpeg;base64,$compressed"
             }
 
-            // Non-image: read raw bytes.
+            // Non-image or compression failed: read raw bytes.
             val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            val baos = ByteArrayOutputStream()
-            inputStream.copyTo(baos)
+            val bytes = inputStream.readBytes()
             inputStream.close()
-            val bytes = baos.toByteArray()
+            
+            if (bytes.size > 15 * 1024 * 1024) {
+                throw Exception("Fichier trop volumineux (> 15MB)")
+            }
+            
             val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
             "data:$mimeType;base64,$base64"
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.e("Picker", "contentUriToDataUrl error: ${e.message}")
             null
         }
     }
@@ -82,19 +80,17 @@ private suspend fun contentUriToDataUrl(context: Context, uri: Uri): String? {
 
 /**
  * Downscales and compresses an image to a small JPEG data payload.
- * Max dimension 1600px, JPEG quality 80 -> typically 100-400 KB.
  */
-private fun compressImage(context: Context, uri: Uri): String? {
+fun compressImage(context: Context, uri: Uri, maxDim: Int = 1600): String? {
     return try {
         val resolver = context.contentResolver
-        // Read bounds first to avoid loading a huge bitmap into memory.
+        // Read bounds first
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         val srcW = bounds.outWidth
         val srcH = bounds.outHeight
         if (srcW <= 0 || srcH <= 0) return null
 
-        val maxDim = 1600
         var sampleSize = 1
         while (srcW / sampleSize > maxDim * 2 || srcH / sampleSize > maxDim * 2) {
             sampleSize *= 2
@@ -134,23 +130,43 @@ private fun compressImage(context: Context, uri: Uri): String? {
 private suspend fun compressVideoToDataUrl(context: Context, uri: Uri): String? {
     return withContext(Dispatchers.IO) {
         try {
+            // Pre-check size
+            context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { afd ->
+                if (afd.length > 50 * 1024 * 1024) {
+                    throw Exception("Vidéo trop lourde (> 50MB)")
+                }
+            }
+
             val cacheDir = context.cacheDir
             val outputFile = File.createTempFile("compressed_", ".mp4", cacheDir)
             val ok = VideoCompressor.compress(context, uri, outputFile)
+            
             if (ok && outputFile.exists() && outputFile.length() > 0) {
+                if (outputFile.length() > 15 * 1024 * 1024) {
+                    outputFile.delete()
+                    throw Exception("Vidéo compressée encore trop lourde (> 15MB)")
+                }
                 val bytes = outputFile.readBytes()
                 outputFile.delete()
                 val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                 "data:video/mp4;base64,$base64"
             } else {
                 outputFile.delete()
-                // Fallback: read raw bytes.
-                val raw = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@withContext null
+                // Fallback: only if it's small
+                val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
+                val bytes = inputStream.readBytes()
+                inputStream.close()
+                
+                if (bytes.size > 15 * 1024 * 1024) {
+                    throw Exception("La vidéo doit être compressée mais le processus a échoué.")
+                }
+                
                 val mime = context.contentResolver.getType(uri) ?: "video/mp4"
-                val base64 = Base64.encodeToString(raw, Base64.NO_WRAP)
+                val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                 "data:$mime;base64,$base64"
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.e("Picker", "Video error: ${e.message}")
             null
         }
     }
@@ -185,6 +201,7 @@ actual fun rememberMediaPickerLauncher(
     allowVideo: Boolean,
     maxDurationSeconds: Int,
     videoOnly: Boolean,
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
     val context = LocalContext.current
@@ -206,7 +223,7 @@ actual fun rememberMediaPickerLauncher(
                         retriever.release()
                         compressVideoToDataUrl(context, uri)
                     } else {
-                        contentUriToDataUrl(context, uri)
+                        contentUriToDataUrl(context, uri, maxDimension)
                     }
 
                     if (dataUrl != null) {
@@ -235,42 +252,70 @@ actual fun rememberMediaPickerLauncher(
 
 @Composable
 actual fun rememberImagePickerLauncher(
+    maxDimension: Int,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit {
-    return rememberMediaPickerLauncher(allowVideo = false, onResult = onResult)
+    return rememberMediaPickerLauncher(allowVideo = false, maxDimension = maxDimension, onResult = onResult)
 }
 
 /**
- * Android actual: fetches remote image bytes.
+ * Android actual: fetches remote image bytes with auto-retry.
  */
 actual suspend fun fetchImageBytes(url: String): ByteArray? {
-    return withContext(Dispatchers.IO) {
+    var lastError: Exception? = null
+    repeat(3) { attempt ->
         try {
-            val safeUrl = UrlUtils.resolveSafeUrl(url)
-            val connection = URL(safeUrl).openConnection() as HttpURLConnection
-            connection.connectTimeout = 30000
-            connection.readTimeout = 60000
-            connection.instanceFollowRedirects = true
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-            
-            if (connection.responseCode !in 200..299) return@withContext null
-            
-            connection.inputStream.use { it.readBytes() }
+            val bytes = ImageFetcher.fetchBytes(url)
+            if (bytes != null) return bytes
         } catch (e: Exception) {
-            android.util.Log.e("ImageLoader", "Error fetching bytes $url", e)
-            null
+            lastError = e
+            kotlinx.coroutines.delay(kotlin.time.Duration.parse("${500 * (attempt + 1)}ms"))
         }
     }
+    android.util.Log.e("ImageLoader", "Failed to fetch $url after 3 attempts. Last error: ${lastError?.message}")
+    return null
 }
 
-/** Decodes a byte array to an ImageBitmap on Android. */
+/** 
+ * Decodes a byte array to an ImageBitmap on Android with sampled decoding.
+ * This is much faster and uses way less RAM than full decoding for thumbnails.
+ */
 actual fun decodeBytesToBitmap(bytes: ByteArray): ImageBitmap? {
     return try {
-        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val options = BitmapFactory.Options()
+        
+        // 1. Just decode bounds to check size
+        options.inJustDecodeBounds = true
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+        
+        // 2. Calculate sample size (max target size 1200px for safety)
+        val targetSize = 1200
+        options.inSampleSize = calculateInSampleSize(options, targetSize, targetSize)
+        
+        // 3. Decode for real
+        options.inJustDecodeBounds = false
+        options.inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 // Less RAM
+        
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
         bitmap?.asImageBitmap()
     } catch (_: Exception) {
         null
     }
+}
+
+private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+    val height = options.outHeight
+    val width = options.outWidth
+    var inSampleSize = 1
+
+    if (height > reqHeight || width > reqWidth) {
+        val halfHeight: Int = height / 2
+        val halfWidth: Int = width / 2
+        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+            inSampleSize *= 2
+        }
+    }
+    return inSampleSize
 }
 
 /**
@@ -284,8 +329,7 @@ actual suspend fun fetchImageAsBitmap(url: String): ImageBitmap? {
                 val file = java.io.File(path)
                 if (!file.exists()) return@withContext null
                 val bytes = file.readBytes()
-                val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                return@withContext bitmap?.asImageBitmap()
+                return@withContext decodeBytesToBitmap(bytes)
             }
 
             val bytes = fetchImageBytes(url) ?: return@withContext null
@@ -336,6 +380,7 @@ actual suspend fun fetchImageAsDataUrl(url: String): String? {
  */
 @Composable
 actual fun rememberTakePhotoLauncher(
+    maxDimension: Int,
     onResult: (dataUrl: String?) -> Unit
 ): () -> Unit {
     val context = LocalContext.current
@@ -344,8 +389,16 @@ actual fun rememberTakePhotoLauncher(
         if (bitmap != null) {
             scope.launch {
                 try {
+                    // Resize bitmap if needed
+                    val scaled = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+                        val scale = maxDimension.toFloat() / maxOf(bitmap.width, bitmap.height)
+                        android.graphics.Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt(), (bitmap.height * scale).toInt(), true)
+                    } else bitmap
+
                     val baos = ByteArrayOutputStream()
-                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos)
+                    scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos)
+                    if (scaled != bitmap) scaled.recycle()
+                    
                     val bytes = baos.toByteArray()
                     val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                     onResult("data:image/jpeg;base64,$base64")

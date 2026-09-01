@@ -5,7 +5,9 @@ import android.widget.VideoView
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.tik_market.cache.PersistentMediaCache
 import com.tik_market.utils.UrlUtils
+import kotlinx.coroutines.launch
 
 @Composable
 actual fun VideoPlayer(
@@ -15,20 +17,32 @@ actual fun VideoPlayer(
     onEnded: () -> Unit
 ) {
     val safeUrl = remember(url) { UrlUtils.resolveSafeUrl(url) }
-    var lastUrl by remember { mutableStateOf(safeUrl) }
+    
+    // Track the actual URI being played (could be remote then local)
+    var currentUri by remember(safeUrl) { 
+        mutableStateOf(PersistentMediaCache.getCachedPath(safeUrl) ?: safeUrl) 
+    }
+    
+    // Background caching & dynamic URI update
+    LaunchedEffect(safeUrl) {
+        if (PersistentMediaCache.getCachedPath(safeUrl) == null) {
+            PersistentMediaCache.cacheMedia(safeUrl)
+            // Once cached, update the URI so the player can switch if needed
+            PersistentMediaCache.getCachedPath(safeUrl)?.let { 
+                currentUri = it 
+            }
+        }
+    }
 
     AndroidView(
         factory = { ctx ->
             VideoView(ctx).apply {
-                setVideoURI(Uri.parse(safeUrl))
-                // Start only once the video is actually prepared, otherwise
-                // start() is a no-op and the story appears stuck.
+                setVideoURI(Uri.parse(currentUri))
                 setOnPreparedListener { mp ->
-                    if (isPlaying && !mp.isPlaying) start()
+                    mp.isLooping = false
+                    if (isPlaying) start()
                 }
                 setOnCompletionListener { onEnded() }
-                // If loading/playback fails, advance to the next story instead
-                // of freezing forever (the 5s timer is skipped for videos).
                 setOnErrorListener { _, _, _ ->
                     onEnded()
                     true
@@ -37,10 +51,13 @@ actual fun VideoPlayer(
         },
         modifier = modifier,
         update = { vv ->
-            if (safeUrl != lastUrl) {
-                lastUrl = safeUrl
-                vv.setVideoURI(Uri.parse(safeUrl))
+            val uri = Uri.parse(currentUri)
+            // ONLY update URI if it actually changed to avoid restart flicker
+            if (vv.tag != currentUri) {
+                vv.setVideoURI(uri)
+                vv.tag = currentUri
             }
+            
             if (isPlaying) {
                 if (!vv.isPlaying) vv.start()
             } else {

@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.dto.ApiHeroItem
 import com.tik_market.theme.GreenDark
-import com.tik_market.theme.LocalCityColors
 import com.tik_market.theme.Orange
+import com.tik_market.ui.components.VideoPlayer
 import com.tik_market.ui.components.loadImageFromUrl
 import kotlinx.coroutines.delay
 
@@ -46,7 +46,6 @@ fun HomeHero(
 @Composable
 fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
     var index by remember { mutableStateOf(0) }
-    val cityColors = LocalCityColors.current
     
     LaunchedEffect(items) {
         while (items.isNotEmpty()) {
@@ -72,15 +71,36 @@ fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
             }
         ) { item ->
             Box(Modifier.fillMaxSize()) {
-                var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                LaunchedEffect(item.imageUrl) {
-                    bitmap = loadImageFromUrl(item.imageUrl)
+                if (item.mediaType == "video") {
+                    VideoPlayer(
+                        url = item.imageUrl,
+                        modifier = Modifier.fillMaxSize(),
+                        isPlaying = true,
+                        onEnded = {}
+                    )
+                } else {
+                    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                    LaunchedEffect(item.imageUrl) {
+                        bitmap = loadImageFromUrl(item.imageUrl)
+                    }
+                    
+                    if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    else Box(Modifier.fillMaxSize().background(Color(0xFFE0E0E0)))
                 }
                 
-                if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                else Box(Modifier.fillMaxSize().background(cityColors.gradient))
-                
-                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Orange.copy(alpha = 0.5f), GreenDark.copy(alpha = 0.7f)))))
+                // ── Gradient Overlay (Always on top of media) ──
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.05f),
+                                    Color.Black.copy(alpha = 0.2f),
+                                    Color.Black.copy(alpha = 0.7f)
+                                )
+                            )
+                        )
+                )
                 
                 Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                     Text(
@@ -120,7 +140,6 @@ fun DynamicHeroSection(items: List<ApiHeroItem>, screenWidth: Dp) {
 
 @Composable
 fun AnimatedHeroSection(screenWidth: Dp, cityName: String?) {
-    val cityColors = LocalCityColors.current
     val items = when {
         cityName?.contains("Bafoussam", ignoreCase = true) == true -> listOf(
             Triple("Marché de Bafoussam", "Le cœur du commerce à l'Ouest", "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&q=80"),
@@ -171,9 +190,21 @@ fun AnimatedHeroSection(screenWidth: Dp, cityName: String?) {
                 LaunchedEffect(item.third) { bitmap = loadImageFromUrl(item.third) }
                 
                 if (bitmap != null) Image(bitmap!!, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                else Box(Modifier.fillMaxSize().background(cityColors.gradient))
+                else Box(Modifier.fillMaxSize().background(Color(0xFFE0E0E0)))
                 
-                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Orange.copy(alpha = 0.5f), GreenDark.copy(alpha = 0.7f)))))
+                // ── Gradient Overlay (Always on top of media) ──
+                Box(
+                    Modifier.fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.05f),
+                                    Color.Black.copy(alpha = 0.2f),
+                                    Color.Black.copy(alpha = 0.7f)
+                                )
+                            )
+                        )
+                )
                 
                 Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
                     Text(

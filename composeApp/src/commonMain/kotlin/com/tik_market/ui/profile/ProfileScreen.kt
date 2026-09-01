@@ -45,6 +45,7 @@ fun ProfileScreen(
     onNotifPrefsClick: () -> Unit = {},
     onGroupBuysClick: () -> Unit = {},
     onShopsMapClick: () -> Unit = {},
+    onLiveStreamingClick: () -> Unit = {},
     walletBalance: Double = 0.0,
     walletPoints: Int = 0,
     walletTier: String = "bronze",
@@ -245,6 +246,8 @@ fun ProfileScreen(
                             Column {
                                 if (userRole == "vendor") {
                                     ProfileMenuItem(Icons.Default.Storefront, s.vendorSpace, s.vendorSpaceSubtitle, Green) { onVendorDashboardClick() }
+                                    HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Color(0xFFF5F5F5))
+                                    ProfileMenuItem(Icons.Default.Videocam, "Démarrer un Live", "Vendez en direct à vos abonnés", RedAccent) { onLiveStreamingClick() }
                                 }
                                 if (userRole == "admin" || userRole == "super_admin") {
                                     if (userRole == "vendor") HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Color(0xFFF5F5F5))

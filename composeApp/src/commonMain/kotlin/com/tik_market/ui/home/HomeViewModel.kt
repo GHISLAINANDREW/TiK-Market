@@ -9,6 +9,7 @@ import com.tik_market.ui.story.StoryItem
 import com.tik_market.cache.AppCache
 import com.tik_market.utils.UrlUtils
 import com.tik_market.utils.safeApiCall
+import kotlinx.datetime.Clock
 import kotlinx.coroutines.*
 
 data class HomeUiState(
@@ -16,6 +17,7 @@ data class HomeUiState(
     val categories: List<String> = emptyList(),
     val stories: List<StoryItem> = emptyList(),
     val heroItems: List<ApiHeroItem> = emptyList(),
+    val liveStreams: List<ApiLiveStream> = emptyList(),
     val wishlistIds: Set<Int> = emptySet(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -66,7 +68,14 @@ class HomeViewModel(
     fun refresh(isLoggedIn: Boolean) {
         scope.launch {
             state = state.copy(isRefreshing = true)
+            // Ensure rotation is visible for at least 600ms
+            val startTime = Clock.System.now().toEpochMilliseconds()
+            
             loadAll(isLoggedIn, force = true)
+            
+            val elapsed = Clock.System.now().toEpochMilliseconds() - startTime
+            if (elapsed < 600) delay(kotlin.time.Duration.parse("${600 - elapsed}ms"))
+            
             state = state.copy(isRefreshing = false)
         }
     }
@@ -90,8 +99,17 @@ class HomeViewModel(
             // 2. Récupération réseau en arrière-plan
             val productsJob = launch { loadProducts(isLoggedIn) }
             val storiesJob = launch { loadStories() }
+            val liveJob = launch { 
+                try { 
+                    val streams = ApiClient.fetchLiveStreams()
+                    state = state.copy(liveStreams = if (streams.isEmpty()) {
+                        // Mock one for testing
+                        listOf(ApiLiveStream(1, 1, "Boutique de Will", null, "Vente Flash Volaille en direct !", "https://www.w3schools.com/html/mov_bbb.mp4", 142))
+                    } else streams)
+                } catch (_: Exception) {} 
+            }
             val wishlistJob = launch { if (isLoggedIn) loadWishlist() }
-            val heroJob = launch { try { val items = ApiClient.fetchHeroItems(); state = state.copy(heroItems = items) } catch (_: Exception) {} }
+            val heroJob = launch { try { val items = ApiClient.fetchHeroItems().filter { it.imageUrl.isNotBlank() && (it.imageUrl.startsWith("http") || it.imageUrl.startsWith("data:")) }; state = state.copy(heroItems = items) } catch (_: Exception) {} }
             val categoriesJob = launch { 
                 try { 
                     val cats = ApiClient.fetchCategories()
@@ -101,7 +119,7 @@ class HomeViewModel(
                 } catch (_: Exception) {}
             }
             
-            joinAll(productsJob, storiesJob, wishlistJob, heroJob, categoriesJob)
+            joinAll(productsJob, storiesJob, liveJob, wishlistJob, heroJob, categoriesJob)
             state = state.copy(isLoading = false)
         }
     }

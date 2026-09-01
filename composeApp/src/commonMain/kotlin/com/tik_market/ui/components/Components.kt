@@ -110,49 +110,36 @@ fun ProductCard(
     isFavorite: Boolean = false,
     onToggleFavorite: () -> Unit = {}
 ) {
-    // ── Animation: fade-in au montage ──
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
-    // ── Animation: scale au clic ET au hover (go out) ──
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHovered by interactionSource.collectIsHoveredAsState()
     
-    // ── Animation: Hover/Click scale "go out" ──
     val cardScale by animateFloatAsState(
-        targetValue = when {
-            isPressed -> 0.98f      // léger enfoncement au clic
-            isHovered -> 1.05f      // "go out"
-            else -> 1f
-        },
+        targetValue = if (isPressed) 0.98f else 1f,
         animationSpec = spring(dampingRatio = 0.5f, stiffness = 350f)
-    )
-
-    // ── Animation: elevation ──
-    val elevation by animateDpAsState(
-        targetValue = if (isHovered) 6.dp else 2.dp,
-        animationSpec = tween(180)
     )
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = tween(400)) + scaleIn(initialScale = 0.9f, animationSpec = tween(400, easing = FastOutSlowInEasing))
+        enter = fadeIn(animationSpec = tween(500)) + scaleIn(initialScale = 0.95f)
     ) {
         Card(
             onClick = onClick,
-            modifier = modifier.scale(cardScale),
+            modifier = modifier.scale(cardScale).shadow(if (isHovered) 8.dp else 2.dp, RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(elevation),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             interactionSource = interactionSource
         ) {
             Column {
-                // Product image
+                // 1. Image Section (Alibaba Style: Clean, high aspect ratio)
                 var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
                 var imageLoading by remember { mutableStateOf(false) }
+                var retryCount by remember { mutableStateOf(0) }
 
-                LaunchedEffect(product.images.firstOrNull()) {
+                LaunchedEffect(product.images.firstOrNull(), retryCount) {
                     val imgUrl = product.images.firstOrNull()
                     if (!imgUrl.isNullOrBlank()) {
                         imageLoading = true
@@ -161,148 +148,124 @@ fun ProductCard(
                     }
                 }
 
-                val emoji = SampleData.productEmojis[product.id] ?: "📦"
-                val cityColors = LocalCityColors.current
                 val primary = MaterialTheme.colorScheme.primary
-                val gradient = SampleData.categoryGradients[product.category]
-                val productBg = if (gradient != null) Brush.verticalGradient(listOf(Color(gradient.first), Color(gradient.second)))
-                               else Brush.verticalGradient(listOf(cityColors.primary.copy(alpha = 0.1f), cityColors.primary.copy(alpha = 0.05f)))
-
-                // ── Animation: Image Zoom on Hover/Press ──
-                val imageScale by animateFloatAsState(
-                    targetValue = if (isHovered || isPressed) 1.15f else 1f,
-                    animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-                )
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .background(productBg)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)), // Clip the zoom inside the box
+                        .aspectRatio(0.9f) // Slightly taller for premium look
+                        .background(Color(0xFFF8F8F8)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (imageBitmap != null) {
                         Image(
                             bitmap = imageBitmap!!,
                             contentDescription = product.title,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .scale(imageScale),
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
                     } else if (imageLoading) {
-                        Box(modifier = Modifier.fillMaxSize().background(cityColors.primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = primary.copy(alpha = 0.5f), modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        }
+                        CircularProgressIndicator(color = primary.copy(alpha = 0.3f), modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
-                        Text(emoji, fontSize = 48.sp)
+                        // Retry button if failed
+                        IconButton(onClick = { retryCount++ }) {
+                            Icon(Icons.Default.Refresh, null, tint = Color.LightGray)
+                        }
                     }
 
-                    // Favorite heart button
+                    // Top Right: Favorite
                     Box(modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
-                        IconButton(
-                            onClick = onToggleFavorite,
-                            modifier = Modifier.size(28.dp)
+                        Surface(
+                            color = Color.Black.copy(alpha = 0.2f),
+                            shape = CircleShape,
+                            modifier = Modifier.size(32.dp).clickable { onToggleFavorite() }
                         ) {
-                            Icon(
-                                if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                "Favori",
-                                tint = if (isFavorite) Color(0xFFE91E63) else Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    if (product.discountPercent > 0) {
-                        Box(modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                            DiscountBadge(product.discountPercent)
-                        }
-                        
-                        if (product.discountPercent >= 20) {
-                            Surface(
-                                modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
-                                color = Orange,
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    "VENTE FLASH",
-                                    color = Color.White,
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Black,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    null,
+                                    tint = if (isFavorite) Color(0xFFE91E63) else Color.White,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
+
+                    // Bottom Left: Sales Badge
+                    if (product.totalSales > 10) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                            color = Color.Black.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                "Vendu ${product.totalSales}+",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
                 
-                Column(modifier = Modifier.padding(8.dp)) {
+                // 2. Info Section
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // Price (Primary focus in Alibaba model)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            FormatUtils.formatPrice(product.price),
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Orange
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("CFA", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Orange, modifier = Modifier.padding(bottom = 2.dp))
+                    }
+                    
+                    if (product.comparePrice != null && product.comparePrice > product.price) {
+                        Text(
+                            FormatUtils.formatPrice(product.comparePrice),
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            textDecoration = TextDecoration.LineThrough
+                        )
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
                     Text(
                         product.title, 
-                        fontWeight = FontWeight.SemiBold, 
+                        fontWeight = FontWeight.Medium, 
                         fontSize = 13.sp,
-                        color = Color.Black,
+                        color = Color.DarkGray,
                         maxLines = 2, 
                         overflow = TextOverflow.Ellipsis,
                         lineHeight = 16.sp,
                         modifier = Modifier.heightIn(min = 32.dp)
                     )
                     
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(8.dp))
                     
-                    Text(
-                        product.shopName,
-                        fontSize = 10.sp,
-                        color = Color.Gray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    
-                    Spacer(Modifier.height(4.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        PriceDisplay(product.price, product.comparePrice, 15.sp)
-                        
-                        if (product.rating > 0) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, null, Modifier.size(10.dp), tint = Color(0xFFFFB300))
-                                Text("${product.rating}", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
-                            }
-                        }
-                    }
-                    
-                    Spacer(Modifier.height(6.dp))
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                    if (product.shopVerified) {
-                            Surface(
-                                color = primary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically, 
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                ) {
-                                    Icon(Icons.Default.Verified, null, Modifier.size(10.dp), tint = primary)
-                                    Text("Vérifié", fontWeight = FontWeight.Bold, fontSize = 8.sp, color = primary)
-                                }
-                            }
-                        } else {
-                            Spacer(Modifier.weight(1f))
+                    // Shop & Trust signals
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            product.shopName,
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (product.shopVerified) {
+                            Icon(Icons.Default.Verified, null, Modifier.size(14.dp), tint = primary)
                         }
                         
+                        Spacer(Modifier.width(8.dp))
+                        
+                        // Action button (Quick add to cart)
                         Surface(
-                            onClick = { onAddToCart() },
+                            onClick = onAddToCart,
                             modifier = Modifier.size(24.dp),
                             shape = CircleShape,
                             color = Orange.copy(alpha = 0.1f)

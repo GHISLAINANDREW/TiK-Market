@@ -18,9 +18,9 @@ import java.nio.ByteBuffer
  */
 object VideoCompressor {
 
-    private const val MAX_DIM = 720
-    private const val BIT_RATE = 1_500_000
-    private const val FRAME_RATE = 24
+    private const val MAX_DIM = 480
+    private const val BIT_RATE = 800_000
+    private const val FRAME_RATE = 20
     private const val I_FRAME_INTERVAL = 2
 
     /**

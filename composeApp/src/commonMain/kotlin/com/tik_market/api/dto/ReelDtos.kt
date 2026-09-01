@@ -20,3 +20,17 @@ data class ApiReel(
 data class ApiReelsResponse(
     val reels: List<ApiReel>
 )
+
+@Serializable
+data class ApiCreateReelBody(
+    @SerialName("shop_id") val shopId: Int,
+    @SerialName("video_url") val videoUrl: String,
+    val description: String = "",
+    @SerialName("product_id") val productId: Int? = null
+)
+
+@Serializable
+data class ApiCreateReelResponse(
+    val success: Boolean,
+    val message: String = ""
+)

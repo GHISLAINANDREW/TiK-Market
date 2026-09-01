@@ -24,7 +24,7 @@ sealed class NavScreen(val route: String, val title: String) {
     object Notifications : NavScreen("notifications", "Notifications")
     object ShopPage : NavScreen("shop-page", "Boutique")
     object Compare : NavScreen("compare", "Comparer")
-    object BarcodeScan : NavScreen("barcode", "Scan code-barres")
+    object ImageSearch : NavScreen("image-search", "Recherche par image")
     object StoryViewer : NavScreen("story-viewer", "Story")
     object VendorGroupBuys : NavScreen("vendor-group-buys", "Achats groupés")
     object VendorSubscribers : NavScreen("vendor-subscribers", "Abonnés")
@@ -38,4 +38,8 @@ sealed class NavScreen(val route: String, val title: String) {
     object Terms : NavScreen("terms", "Conditions d'Utilisation")
     object About : NavScreen("about", "À Propos")
     object Splash : NavScreen("splash", "TiK-Market")
+    object LiveShopping : NavScreen("live-shopping", "Live Shopping")
+    object LiveStreaming : NavScreen("live-streaming", "Lancer un Live")
+    object Reels : NavScreen("reels", "Reels")
+    object CreateReel : NavScreen("create-reel", "Publier un Reel")
 }

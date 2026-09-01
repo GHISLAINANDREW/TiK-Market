@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.*
+import com.tik_market.cache.PersistentMediaCache
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
@@ -105,6 +106,17 @@ fun StoryViewerScreen(
     }
 
     val currentStory = stories.getOrNull(currentIndex) ?: return
+
+    // ── PRE-FETCHING ──
+    LaunchedEffect(currentIndex) {
+        val nextIndex = currentIndex + 1
+        if (nextIndex < stories.size) {
+            val nextStory = stories[nextIndex]
+            if (nextStory.imageUrl.isNotBlank() && nextStory.mediaType != "text") {
+                PersistentMediaCache.cacheMedia(nextStory.imageUrl)
+            }
+        }
+    }
 
     Box(
         modifier = Modifier

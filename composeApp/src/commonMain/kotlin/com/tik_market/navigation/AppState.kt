@@ -55,6 +55,11 @@ class AppState(
     var totalPoints by mutableStateOf(0)
     var walletBalance by mutableStateOf(0.0)
     var walletTier by mutableStateOf("bronze")
+    var walletCashbackPct by mutableStateOf(1.0)
+    var walletBonusPct by mutableStateOf(0.0)
+    var nextTierPointsNeeded by mutableStateOf(0)
+    var nextTierName by mutableStateOf<String?>(null)
+    
     var isDarkMode by mutableStateOf(isDarkModeInitial)
     var language by mutableStateOf(getSavedLanguage())
     val strings get() = getStrings(language)
@@ -124,9 +129,18 @@ class AppState(
 
     fun refreshWallet() {
         if (!isLoggedIn) return
-        // On lance dans un scope si nécessaire, mais ici on peut juste déclencher un signal
-        // ou appeler l'API directement si on est dans un composable via LaunchedEffect.
-        // Pour AppState, on va ajouter une méthode suspend ou utiliser un signal.
+        // Trigger a global refresh signal for wallet
         refreshSignal++
+    }
+
+    fun updateWallet(w: com.tik_market.api.dto.ApiWallet) {
+        currentPoints = w.currentPoints
+        totalPoints = w.totalPoints
+        walletBalance = w.balance
+        walletTier = w.tier
+        walletCashbackPct = w.cashbackPct
+        walletBonusPct = w.bonusPct
+        nextTierPointsNeeded = w.nextTier?.pointsNeeded ?: 0
+        nextTierName = w.nextTier?.name
     }
 }

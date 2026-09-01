@@ -33,24 +33,12 @@ data class MediaPickResult(
 expect fun decodeDataUrlToImageBitmap(dataUrl: String): ImageBitmap?
 
 /**
- * Platform-specific image picker launcher for use with Compose.
- * Returns a lambda that, when invoked, opens the device photo gallery.
- * The result is delivered via [onResult] callback (null means cancelled/error).
- *
- * - WasmJs: uses hidden <input type="file"> + FileReader
- * - Android: uses ActivityResultContracts.GetContent()
- */
-@Composable
-expect fun rememberImagePickerLauncher(
-    onResult: (result: MediaPickResult?) -> Unit
-): () -> Unit
-
-/**
  * Platform-specific launcher to take a photo using the device camera.
  * Returns a lambda to launch the camera. Result is a base64 data URL.
  */
 @Composable
 expect fun rememberTakePhotoLauncher(
+    maxDimension: Int = 1600,
     onResult: (dataUrl: String?) -> Unit
 ): () -> Unit
 
@@ -68,9 +56,15 @@ expect fun rememberMediaPickerLauncher(
     allowVideo: Boolean = false,
     maxDurationSeconds: Int = 0,
     videoOnly: Boolean = false,
+    maxDimension: Int = 1600,
     onResult: (result: MediaPickResult?) -> Unit
 ): () -> Unit
 
+@Composable
+expect fun rememberImagePickerLauncher(
+    maxDimension: Int = 1600,
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit
 @Composable
 fun MediaPicker(
     currentUrl: String = "",

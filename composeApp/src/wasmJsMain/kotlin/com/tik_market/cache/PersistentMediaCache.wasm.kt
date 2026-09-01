@@ -5,6 +5,10 @@ actual object PersistentMediaCache {
         // Browser handles caching automatically via fetch
     }
 
+    actual fun saveMediaBytes(url: String, bytes: ByteArray) {
+        // Browser handles caching automatically via fetch
+    }
+
     actual fun getCachedPath(url: String): String? {
         // Return null to use original URL
         return null

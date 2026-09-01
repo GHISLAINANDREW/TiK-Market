@@ -171,6 +171,17 @@ suspend fun ApiClient.createShop(
     return safeRequest<ApiShopResponse>("POST", ApiClient.Endpoints.SHOPS, body).shop
 }
 
+suspend fun ApiClient.searchByImage(imageBase64: String): List<ApiProduct> {
+    val body = buildJsonObject {
+        put("image_data", imageBase64)
+    }.toString()
+    return try {
+        safeRequest<ApiProductsResponse>("POST", "/products/visual-search.php", body).products
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 suspend fun ApiClient.updateShop(
     shopId: Int,
     name: String? = null,

@@ -50,9 +50,18 @@ suspend fun ApiClient.createOrder(
     notes: String? = null,
     paymentMethod: String = "Mobile Money",
     paymentType: String = "delivery",
-    items: List<ApiCartItemBody> = emptyList()
+    items: List<ApiCartItemBody> = emptyList(),
+    useWallet: Boolean = false
 ): ApiOrder {
-    val body = json.encodeToString(ApiCreateOrderBody(shippingAddress, phone, notes ?: "", paymentMethod, paymentType, items))
+    val body = json.encodeToString(ApiCreateOrderBody(
+        shippingAddress = shippingAddress,
+        phone = phone,
+        notes = notes ?: "",
+        paymentMethod = paymentMethod,
+        paymentType = paymentType,
+        items = items,
+        useWallet = if (useWallet) 1 else 0
+    ))
     return safeRequest<ApiOrderResponse>("POST", ApiClient.Endpoints.ORDERS, body).order
 }
 

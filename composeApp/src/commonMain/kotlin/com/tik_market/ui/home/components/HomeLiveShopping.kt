@@ -26,8 +26,9 @@ fun HomeLiveShopping(
     streams: List<ApiLiveStream>,
     onStreamClick: (Int) -> Unit
 ) {
-    if (streams.isEmpty()) return
-
+    if (streams.isEmpty()) {
+        return
+    }
     Column(Modifier.padding(vertical = 8.dp)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -41,7 +42,7 @@ fun HomeLiveShopping(
                 Spacer(Modifier.width(8.dp))
                 Text("Shopping en direct", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-            Text("Voir tout", fontSize = 12.sp, color = Green, modifier = Modifier.clickable { })
+            Text("Voir tout", fontSize = 12.sp, color = Green, modifier = Modifier.clickable { onStreamClick(0) })
         }
 
         Row(

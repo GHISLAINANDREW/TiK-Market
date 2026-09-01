@@ -1377,8 +1377,10 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
     var newTitle by remember { mutableStateOf("") }
     var newSubtitle by remember { mutableStateOf("") }
     var newImageUrl by remember { mutableStateOf("") }
+    var newMediaType by remember { mutableStateOf("image") }
     var selectedShopId by remember { mutableStateOf<Int?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    var isUploading by remember { mutableStateOf(false) }
 
     fun load() { scope.launch { isLoading = true; error = null; try { heroItems = ApiClient.fetchHeroItems() } catch (e: Exception) { error = e.message }; isLoading = false } }
     LaunchedEffect(Unit) { load() }
@@ -1396,6 +1398,7 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
         }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                if (isSubmitting) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Orange)
                 Column(Modifier.padding(16.dp)) {
                     Text(ts.addPromotion, style = MaterialTheme.typography.titleMedium); Spacer(Modifier.height(12.dp))
                     OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, label = { Text(ts.heroTitleExample) }, modifier = Modifier.fillMaxWidth())
@@ -1408,10 +1411,13 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         currentUrl = newImageUrl,
                         onMediaPicked = { res ->
                             scope.launch {
+                                isUploading = true
                                 try {
                                     val url = ApiClient.uploadImage(res.dataUrl, res.fileName)
                                     newImageUrl = url
+                                    newMediaType = if (res.mimeType.startsWith("video")) "video" else "image"
                                 } catch (e: Exception) { error = ts.mediaUploadError.replace("%s", e.message ?: "") }
+                                finally { isUploading = false }
                             }
                         },
                         label = ts.selectMedia,
@@ -1419,12 +1425,18 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         maxDurationSeconds = 10,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+                    
+                    if (isUploading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), color = Green)
+                        Text("Envoi du média en cours...", fontSize = 10.sp, color = Green)
+                    }
+
                     if (error != null) {
                         Spacer(Modifier.height(8.dp))
                         Text(error!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it }, label = { Text(ts.orDirectUrl) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newImageUrl, onValueChange = { newImageUrl = it; newMediaType = if (it.endsWith(".mp4", ignoreCase = true) || it.startsWith("data:video")) "video" else "image" }, label = { Text(ts.orDirectUrl) }, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(12.dp))
 
                     Text(ts.shopToPromote, style = MaterialTheme.typography.labelSmall)
@@ -1443,8 +1455,8 @@ fun AdminHeroContent(scope: kotlinx.coroutines.CoroutineScope, shops: List<Admin
                         onClick = {
                             scope.launch {
                                 isSubmitting = true; try {
-                                    ApiClient.createHeroItem(ApiCreateHeroBody(title = newTitle, subtitle = newSubtitle, imageUrl = newImageUrl, shopId = selectedShopId))
-                                    newTitle = ""; newSubtitle = ""; newImageUrl = ""; selectedShopId = null; load()
+                                    ApiClient.createHeroItem(ApiCreateHeroBody(title = newTitle, subtitle = newSubtitle, imageUrl = newImageUrl, mediaType = newMediaType, shopId = selectedShopId))
+                                    newTitle = ""; newSubtitle = ""; newImageUrl = ""; newMediaType = "image"; selectedShopId = null; load()
                                 } catch (e: Exception) { error = e.message }; isSubmitting = false
                             }
                         },

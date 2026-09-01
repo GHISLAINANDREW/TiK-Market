@@ -21,9 +21,9 @@ fun HomeProductGrid(
     // Le paramètre 'columns' peut servir à ajuster la largeur des cartes si besoin.
     
     FlowRow(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), // More breathing room
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         products.forEach { product ->
             val productId = product.id.toIntOrNull()
@@ -33,7 +33,7 @@ fun HomeProductGrid(
                 product = product,
                 onClick = { onProductClick(product) },
                 onAddToCart = { onAddToCart(product) },
-                modifier = Modifier.width(160.dp), // Largeur fixe pour la cohérence en FlowRow
+                modifier = Modifier.fillMaxWidth(0.47f), // Dynamic width for 2 columns with spacing
                 isFavorite = isFav,
                 onToggleFavorite = { if (productId != null) onToggleFavorite(productId) }
             )

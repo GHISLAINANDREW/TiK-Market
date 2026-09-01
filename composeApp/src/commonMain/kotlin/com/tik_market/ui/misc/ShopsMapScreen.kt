@@ -203,16 +203,30 @@ private fun ShopMapCard(
                     Icon(Icons.Default.LocationOn, null, Modifier.size(18.dp), tint = Orange)
                     Spacer(Modifier.width(6.dp))
                     Text(shop.location, fontSize = 13.sp, modifier = Modifier.weight(1f), color = Color.DarkGray)
-                    // Bouton pour ouvrir dans Google Maps
-                    Surface(
-                        onClick = { openUrl("https://www.google.com/maps/search/${shop.location.replace(" ", "+")}") },
-                        shape = RoundedCornerShape(12.dp),
-                        color = Green.copy(alpha = 0.1f)
-                    ) {
-                        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Map, null, Modifier.size(14.dp), tint = Green)
-                            Spacer(Modifier.width(4.dp))
-                            Text(ts.map, fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
+                    // Boutons pour ouvrir dans Google Maps
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            onClick = { openUrl("https://www.google.com/maps/search/${shop.location.replace(" ", "+")}") },
+                            shape = RoundedCornerShape(12.dp),
+                            color = Green.copy(alpha = 0.1f)
+                        ) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Map, null, Modifier.size(14.dp), tint = Green)
+                                Spacer(Modifier.width(4.dp))
+                                Text(ts.map, fontSize = 11.sp, color = Green, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                        
+                        Surface(
+                            onClick = { openUrl("https://www.google.com/maps/dir/?api=1&destination=${shop.location.replace(" ", "+")}") },
+                            shape = RoundedCornerShape(12.dp),
+                            color = BlueAccent.copy(alpha = 0.1f)
+                        ) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Directions, null, Modifier.size(14.dp), tint = BlueAccent)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Itinéraire", fontSize = 11.sp, color = BlueAccent, fontWeight = FontWeight.Medium)
+                            }
                         }
                     }
                 }

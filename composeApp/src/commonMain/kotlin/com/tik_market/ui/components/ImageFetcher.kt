@@ -21,7 +21,7 @@ object ImageFetcher {
                 header("Accept", "image/*,*/*")
             }
             if (response.status.isSuccess()) {
-                response.readBytes()
+                response.readRawBytes()
             } else {
                 null
             }

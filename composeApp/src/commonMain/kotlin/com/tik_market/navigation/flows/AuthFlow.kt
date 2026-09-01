@@ -43,10 +43,7 @@ fun AuthFlow(
                     try {
                         val w = ApiClient.fetchWallet()
                         if (w != null) {
-                            appState.currentPoints = w.currentPoints
-                            appState.totalPoints = w.totalPoints
-                            appState.walletBalance = w.balance
-                            appState.walletTier = w.tier
+                            appState.updateWallet(w)
                         }
                     } catch (_: Exception) {}
 

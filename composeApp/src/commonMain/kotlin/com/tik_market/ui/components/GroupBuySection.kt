@@ -23,6 +23,7 @@ import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.utils.FormatUtils
+import com.tik_market.utils.shareText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun GroupBuySection(
     productId: Int,
+    productName: String,
     shopId: Int,
     modifier: Modifier = Modifier
 ) {
@@ -73,15 +75,22 @@ fun GroupBuySection(
         } else {
             Spacer(Modifier.height(8.dp))
             groupBuys.forEach { gb ->
-                ActiveGroupBuyCard(gb, onJoin = { qty ->
-                    scope.launch {
-                        try {
-                            ApiClient.joinGroupBuy(gb.id, qty)
-                            // Recharger
-                            groupBuys = ApiClient.fetchGroupBuys(productId)
-                        } catch (_: Exception) { }
+                ActiveGroupBuyCard(
+                    gb = gb,
+                    onJoin = { qty ->
+                        scope.launch {
+                            try {
+                                ApiClient.joinGroupBuy(gb.id, qty)
+                                // Recharger
+                                groupBuys = ApiClient.fetchGroupBuys(productId)
+                            } catch (_: Exception) { }
+                        }
+                    },
+                    onShare = {
+                        val text = "Rejoignez mon équipe sur TiK-Market pour acheter « $productName » à ${FormatUtils.formatPrice(gb.targetPrice)} ! 🚀\nLien : https://tik-market.com/group-buy/${gb.id}"
+                        shareText(text)
                     }
-                })
+                )
                 Spacer(Modifier.height(6.dp))
             }
         }
@@ -94,7 +103,8 @@ fun GroupBuySection(
 @Composable
 private fun ActiveGroupBuyCard(
     gb: ApiGroupBuy,
-    onJoin: (Int) -> Unit
+    onJoin: (Int) -> Unit,
+    onShare: () -> Unit
 ) {
     val progress = if (gb.minQuantity > 0) (gb.currentQty.toFloat() / gb.minQuantity).coerceAtMost(1f) else 0f
     val remaining = gb.minQuantity - gb.currentQty
@@ -127,9 +137,11 @@ private fun ActiveGroupBuyCard(
                         fullWidth = false,
                         modifier = Modifier.height(36.dp).widthIn(min = 90.dp)
                     )
-                    if (remaining > 0) {
-                        Spacer(Modifier.height(2.dp))
-                        Text("Plus que $remaining", style = MaterialTheme.typography.labelSmall, color = Orange)
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    IconButton(onClick = onShare, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Share, null, tint = BlueAccent, modifier = Modifier.size(18.dp))
                     }
                 }
             }

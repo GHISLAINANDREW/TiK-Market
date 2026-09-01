@@ -50,6 +50,10 @@ fun LoyaltyScreen(
     totalPoints: Int = 0,
     walletBalance: Double = 0.0,
     walletTier: String = "bronze",
+    cashbackPct: Double = 1.0,
+    bonusPct: Double = 0.0,
+    nextTierPointsNeeded: Int = 0,
+    nextTierName: String? = null,
     onRefresh: () -> Unit = {}
 ) {
     var transactions by remember { mutableStateOf<List<ApiWalletTransaction>>(emptyList()) }
@@ -63,12 +67,10 @@ fun LoyaltyScreen(
     val snackbar = remember { SnackbarHostState() }
     val ts = LocalAppStrings.current
 
-    val nextTierData = remember(totalPoints, walletTier) {
-        when (walletTier.lowercase()) {
-            "bronze" -> Pair("argent", 100 - totalPoints)
-            "argent" -> Pair("or", 500 - totalPoints)
-            else -> null
-        }
+    val nextTierData = remember(nextTierPointsNeeded, nextTierName) {
+        if (nextTierPointsNeeded > 0 && nextTierName != null) {
+            Pair(nextTierName, nextTierPointsNeeded)
+        } else null
     }
 
     suspend fun loadData() {
@@ -118,7 +120,7 @@ fun LoyaltyScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // ── Carte de fidélité ──
-                item { LoyaltyCard(walletBalance, currentPoints, totalPoints, walletTier) }
+                item { LoyaltyCard(walletBalance, currentPoints, totalPoints, walletTier, cashbackPct, bonusPct) }
 
                 // ── Niveau suivant ──
                 nextTierData?.let { (nextName, pointsNeeded) ->
@@ -183,9 +185,19 @@ text = ts.recharge,
                         Column(Modifier.padding(16.dp)) {
                             Text(ts.advantagesPerTier, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(12.dp))
+                            
+                            val cashbackStr = if (cashbackPct % 1.0 == 0.0) "${cashbackPct.toInt()}%" else "$cashbackPct%"
+                            val bonusStr = if (bonusPct > 0) " + ${bonusPct.toInt()}% bonus" else ""
+                            
+                            val currentTierAdvantage = "$cashbackStr cashback$bonusStr"
+
                             TierAdvantageRow("Bronze", "0 pts", "1% cashback", Color(0xFF8D6E63), isActive = walletTier == "bronze")
                             TierAdvantageRow("Argent", "100 pts", "2% cashback + 5% bonus", Color(0xFF9E9E9E), isActive = walletTier == "argent")
                             TierAdvantageRow("Or", "500 pts", "3.5% cashback + 10% bonus", Color(0xFFFFD700), isActive = walletTier == "or")
+                            
+                            if (walletTier.lowercase() != "bronze" && walletTier.lowercase() != "argent" && walletTier.lowercase() != "or") {
+                                TierAdvantageRow(walletTier.uppercase(), "-", currentTierAdvantage, Color.DarkGray, isActive = true)
+                            }
                         }
                     }
                 }
@@ -207,6 +219,7 @@ text = ts.recharge,
                         if (resp.success && resp.coupon != null) {
                             snackbar.showSnackbar(ts.couponGenerated.format(resp.coupon.code))
                             showRedeemDialog = false
+                            onRefresh() // Refresh AppState immediately
                             coupons = ApiClient.fetchCoupons()
                         } else {
                             snackbar.showSnackbar(ts.errorRedeem)
@@ -230,6 +243,7 @@ text = ts.recharge,
                         if (resp.success) {
                             snackbar.showSnackbar(ts.rechargeDone.format(amount.toInt()))
                             showRechargeDialog = false
+                            onRefresh() // Refresh AppState immediately
                             transactions = ApiClient.fetchWalletTransactions()
                         } else {
                             snackbar.showSnackbar(ts.errorRecharge)
@@ -245,14 +259,14 @@ text = ts.recharge,
 
 // ── Carte de fidélité principale ──
 @Composable
-private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, tier: String) {
+private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, tier: String, cashbackPct: Double = 1.0, bonusPct: Double = 0.0) {
     val ts = LocalAppStrings.current
     val tierColor = tierColors[tier] ?: Color(0xFF8D6E63)
     val gradient = tierGradients[tier] ?: listOf(Color(0xFF8D6E63), Color(0xFFA1887F))
 
     Card(
         shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth().height(200.dp)
+        modifier = Modifier.fillMaxWidth().height(210.dp)
     ) {
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(gradient))) {
             Column(Modifier.padding(20.dp).fillMaxSize()) {
@@ -264,6 +278,11 @@ private fun LoyaltyCard(balance: Double, currentPoints: Int, totalPoints: Int, t
                 Spacer(Modifier.weight(1f))
                 Text("${balance.toInt()} FCFA", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
                 Text(ts.cashbackBalanceLabel, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                
+                val cashbackStr = if (cashbackPct % 1.0 == 0.0) "${cashbackPct.toInt()}%" else "$cashbackPct%"
+                val bonusStr = if (bonusPct > 0) " + ${bonusPct.toInt()}% bonus" else ""
+                Text("$cashbackStr cashback$bonusStr", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {

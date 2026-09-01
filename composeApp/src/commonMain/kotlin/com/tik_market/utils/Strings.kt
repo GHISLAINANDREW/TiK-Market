@@ -174,8 +174,8 @@ data class SettingsMiscStrings(
     val completed: String, val cancelled: String, val profileUpdated: String, val saveError: String, val personalInfo: String,
     val locationLabel: String, val locationPlaceholder: String, val security: String, val newPassword: String, val passwordPlaceholder: String,
     val updateProfile: String, val avatarError: String, val coverError: String, val followedShops: String, val noFollowedShops: String,
-    val unfollowedMsg: String, val unfollowError: String, val productsCount: String, val salesCount: String, val unsubscribe: String,
-    val failed: String
+    val unfollowedMsg: String,    val unfollowError: String, val productsCount: String, val salesCount: String, val unsubscribe: String,
+    val failed: String, val visualSearchTitle: String
 )
 
 data class VendorStrings(
@@ -743,6 +743,7 @@ data class AppStrings(
     val salesCount get() = miscS.salesCount
     val unsubscribe get() = miscS.unsubscribe
     val failed get() = miscS.failed
+    val visualSearchTitle get() = miscS.visualSearchTitle
 
     val createMyShop get() = vendorS.createMyShop
     val addShopPhoto get() = vendorS.addShopPhoto
@@ -1269,7 +1270,7 @@ private fun getSettingsMiscStrings(lang: String) = if (lang == "en") SettingsMis
     locationLabel = "Location (City)", locationPlaceholder = "e.g. Bafoussam", security = "Security", newPassword = "New password", passwordPlaceholder = "Leave empty to keep it unchanged",
     updateProfile = "Update profile", avatarError = "Avatar error: %s", coverError = "Cover error: %s", followedShops = "Followed shops", noFollowedShops = "You are not following any shop",
     unfollowedMsg = "%s removed from followed", unfollowError = "Error: %s", productsCount = "%d products", salesCount = "%d sales", unsubscribe = "Unfollow",
-    failed = "failed"
+    failed = "failed", visualSearchTitle = "Visual Search"
 ) else SettingsMiscStrings(
     legalMentions = "Mentions Légales", termsOfUse = "Conditions d'Utilisation", downloads = "Téléchargements", androidApk = "Android APK", installApk = "v1.0.0 — Installer l'APK",
     iosApp = "iOS App", comingSoon = "Bientôt disponible", about = "À propos", next = "Suivant", start = "🚀 Démarrer",
@@ -1294,7 +1295,7 @@ private fun getSettingsMiscStrings(lang: String) = if (lang == "en") SettingsMis
     locationLabel = "Localisation (Ville)", locationPlaceholder = "ex: Bafoussam", security = "Sécurité", newPassword = "Nouveau mot de passe", passwordPlaceholder = "Laisser vide pour ne pas changer",
     updateProfile = "Mettre à jour le profil", avatarError = "Erreur avatar: %s", coverError = "Erreur couverture: %s", followedShops = "Boutiques suivies", noFollowedShops = "Vous ne suivez aucune boutique",
     unfollowedMsg = "%s retiré des suivis", unfollowError = "Erreur: %s", productsCount = "%d produits", salesCount = "%d ventes", unsubscribe = "Se désabonner",
-    failed = "échec"
+    failed = "échec", visualSearchTitle = "Recherche Visuelle"
 )
 
 private fun getVendorStrings(lang: String) = if (lang == "en") VendorStrings(

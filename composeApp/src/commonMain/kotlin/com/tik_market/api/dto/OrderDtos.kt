@@ -62,7 +62,8 @@ data class ApiCreateOrderBody(
     val notes: String = "",
     @SerialName("payment_method") val paymentMethod: String = "Mobile Money",
     @SerialName("payment_type") val paymentType: String = "delivery",
-    val items: List<ApiCartItemBody> = emptyList()
+    val items: List<ApiCartItemBody> = emptyList(),
+    @SerialName("use_wallet") val useWallet: Int = 0
 )
 
 @Serializable
