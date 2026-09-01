@@ -44,8 +44,12 @@ try {
     if ($method === 'GET') {
         $shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
         $userId = 0;
-        // Try to get the current user for is_liked (optional auth)
-        try { $userId = getAuthUserId(); } catch (Exception $e) { $userId = 0; }
+        // Optional auth: only resolve the user if a token is present (for is_liked)
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $hasAuth = !empty($headers['Authorization']) || !empty($_SERVER['HTTP_AUTHORIZATION']);
+        if ($hasAuth) {
+            try { $userId = getAuthUserId(); } catch (Exception $e) { $userId = 0; }
+        }
 
         if ($shopId > 0) {
             $stmt = $db->prepare("
