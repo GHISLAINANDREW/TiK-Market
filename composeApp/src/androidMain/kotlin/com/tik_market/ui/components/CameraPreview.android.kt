@@ -101,6 +101,23 @@ private fun computeRotation(cameraId: Int): Int {
     }
 }
 
+/**
+ * Picks a small picture size (<= 640x480) for live frames. Keeps each JPEG
+ * small (~50-100KB) so the frame-capture thread does not exhaust the heap.
+ */
+private fun setSmallPictureSize(params: android.hardware.Camera.Parameters) {
+    val sizes = params.supportedPictureSizes ?: return
+    val target = sizes
+        .filter { it.width <= 640 && it.height <= 480 }
+        .maxByOrNull { it.width * it.height }
+    if (target != null) {
+        params.setPictureSize(target.width, target.height)
+        Log.i(TAG, "picture size set to ${target.width}x${target.height}")
+    } else {
+        Log.w(TAG, "no small picture size available, using default")
+    }
+}
+
 @Composable
 actual fun CameraPreview(modifier: Modifier) {
     CameraPreviewWithFrames(modifier, captureEnabled = false, onFrame = {})
@@ -167,6 +184,9 @@ private fun ensureCameraOpen(holder: SurfaceHolder) {
                 try {
                     val params = cam.parameters
                     params.setRotation(rot)
+                    // Use a small picture size for live frames to keep memory + upload
+                    // payload low (full-res JPEGs ~2MB/frame quickly exhaust the heap).
+                    setSmallPictureSize(params)
                     cam.parameters = params
                 } catch (_: Exception) {}
                 cam.setPreviewDisplay(holder)

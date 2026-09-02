@@ -36,6 +36,11 @@ fun LiveStreamingScreen(
     var viewerCount by remember { mutableStateOf(0) }
     var comments by remember { mutableStateOf<List<ApiLiveComment>>(emptyList()) }
 
+    // Throttle frame uploads: only one upload in flight at a time. If a new
+    // frame arrives while the previous upload is still running, it is dropped.
+    // This prevents base64 frames from accumulating in memory (which caused OOM).
+    val uploadInFlight = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+
     // Polling for stats and comments once live
     LaunchedEffect(isLive, streamId) {
         if (!isLive) return@LaunchedEffect
@@ -50,10 +55,16 @@ fun LiveStreamingScreen(
 
     // End the stream cleanly when leaving the screen (back gesture, etc.)
     // so it does not stay orphaned in the live list.
-    DisposableEffect(isLive, streamId) {
+    // NOTE: keyed on Unit so the effect is only disposed when the screen is
+    // actually left. Keying on (isLive, streamId) caused onDispose to fire
+    // immediately when isLive flipped to true (it reads the CURRENT state),
+    // which stopped the stream right after it started.
+    val currentIsLive by rememberUpdatedState(isLive)
+    val currentStreamId by rememberUpdatedState(streamId)
+    DisposableEffect(Unit) {
         onDispose {
-            if (isLive && streamId > 0) {
-                scope.launch { ApiClient.stopLiveStream(streamId) }
+            if (currentIsLive && currentStreamId > 0) {
+                scope.launch { ApiClient.stopLiveStream(currentStreamId) }
             }
         }
     }
@@ -69,9 +80,14 @@ fun LiveStreamingScreen(
                 captureEnabled = isLive && streamId > 0,
                 onFrame = { frameB64 ->
                     // Upload the captured frame to broadcast to spectators.
-                    if (isLive && streamId > 0) {
+                    // Drop the frame if a previous upload is still in flight.
+                    if (isLive && streamId > 0 && uploadInFlight.compareAndSet(false, true)) {
                         scope.launch {
-                            ApiClient.uploadLiveFrame(streamId, frameB64)
+                            try {
+                                ApiClient.uploadLiveFrame(streamId, frameB64)
+                            } finally {
+                                uploadInFlight.set(false)
+                            }
                         }
                     }
                 }

@@ -56,6 +56,10 @@ fun LiveShoppingScreen(
         try {
             val streams = ApiClient.fetchLiveStreams()
             stream = streams.firstOrNull { it.id == streamId }
+            // If the stream is no longer listed as live (orphaned/ended), show "ended".
+            if (stream == null) {
+                streamEnded = true
+            }
         } catch (_: Exception) {}
         
         // Load pinned product if exists
