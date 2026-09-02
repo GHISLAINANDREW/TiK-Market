@@ -29,6 +29,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.shareText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -163,7 +164,7 @@ fun LiveShoppingScreen(
                 // Right: Actions (Like, Share, etc.)
                 LiveActions(
                     onLike = { hearts++ },
-                    onShare = { /* TODO */ }
+                    onShare = { com.tik_market.utils.shareText("Regardez ce direct sur TiK-Market !", "Partager le direct") }
                 )
             }
             

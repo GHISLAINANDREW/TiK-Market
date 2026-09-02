@@ -414,8 +414,60 @@ actual fun rememberTakePhotoLauncher(
 }
 
 /**
- * Android actual: uses ActivityResultContracts.GetContent() with MIME wildcard to pick any file.
+ * Android actual: launches the system camera to record a short video using an
+ * explicit MediaStore.ACTION_VIDEO_CAPTURE intent. The result is compressed and
+ * returned as a base64 data URL (same pipeline as the media picker).
  */
+@Composable
+actual fun rememberTakeVideoLauncher(
+    maxDurationSeconds: Int,
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val mimeType = context.contentResolver.getType(uri) ?: "video/mp4"
+                    val fileName = getFileName(context, uri) ?: "video.mp4"
+                    val retriever = android.media.MediaMetadataRetriever()
+                    retriever.setDataSource(context, uri)
+                    val time = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    val duration = (time?.toLong() ?: 0L) / 1000.0
+                    retriever.release()
+
+                    if (maxDurationSeconds > 0 && duration > maxDurationSeconds) {
+                        onResult(null)
+                        return@launch
+                    }
+
+                    val dataUrl = compressVideoToDataUrl(context, uri)
+                    if (dataUrl != null) {
+                        onResult(MediaPickResult(dataUrl, fileName, mimeType, duration))
+                    } else {
+                        onResult(null)
+                    }
+                } catch (_: Exception) {
+                    onResult(null)
+                }
+            }
+        } else {
+            onResult(null)
+        }
+    }
+    return remember {
+        {
+            val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
+            intent.putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 1)
+            if (maxDurationSeconds > 0) {
+                intent.putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, maxDurationSeconds)
+            }
+            launcher.launch(intent)
+        }
+    }
+}
 @Composable
 actual fun rememberPickFileLauncher(
     onResult: (dataUrl: String?) -> Unit
@@ -441,15 +493,54 @@ actual fun rememberPickFileLauncher(
 
 /**
  * Decodes a base64 data URL to an ImageBitmap on Android.
+ *
+ * Applies EXIF orientation so images captured by the camera (which embed a
+ * rotation tag in the JPEG header) are displayed upright. Without this, live
+ * frames captured with setRotation() appear upside down on the spectator side.
  */
 actual fun decodeDataUrlToImageBitmap(dataUrl: String): ImageBitmap? {
     return try {
         if (!dataUrl.startsWith("data:image")) return null
         val base64 = dataUrl.substringAfter(",")
         val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
-        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        bitmap?.asImageBitmap()
+        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        val oriented = applyExifOrientation(bitmap, bytes)
+        if (oriented != bitmap) bitmap.recycle()
+        oriented.asImageBitmap()
     } catch (_: Exception) {
         null
+    }
+}
+
+/**
+ * Reads the EXIF orientation tag from a JPEG byte array and rotates the bitmap
+ * accordingly. Returns the original bitmap if no rotation is needed or the
+ * metadata cannot be read.
+ */
+private fun applyExifOrientation(bitmap: android.graphics.Bitmap, jpegBytes: ByteArray): android.graphics.Bitmap {
+    return try {
+        val exif = androidx.exifinterface.media.ExifInterface(java.io.ByteArrayInputStream(jpegBytes))
+        val orientation = exif.getAttributeInt(
+            androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
+        )
+        val matrix = android.graphics.Matrix()
+        when (orientation) {
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 ->
+                matrix.postRotate(90f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 ->
+                matrix.postRotate(180f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 ->
+                matrix.postRotate(270f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL ->
+                matrix.postScale(-1f, 1f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_VERTICAL ->
+                matrix.postScale(1f, -1f)
+            else -> return bitmap
+        }
+        val rotated = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        rotated
+    } catch (_: Exception) {
+        bitmap
     }
 }

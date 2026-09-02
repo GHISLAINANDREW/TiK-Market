@@ -32,6 +32,41 @@ suspend fun ApiClient.uploadImage(dataUrl: String, fileName: String): String {
     return safeRequest<ApiUploadResponse>("POST", ApiClient.Endpoints.UPLOADS, body).imageUrl
 }
 
+/**
+ * Uploads a media file (base64 data URL) in chunks, reporting progress via
+ * onProgress(0.0..1.0). Returns the uploaded URL. This gives a real progress
+ * bar for large files (videos) instead of a single blocking POST.
+ */
+suspend fun ApiClient.uploadImageChunked(
+    dataUrl: String,
+    fileName: String,
+    chunkSize: Int = 512 * 1024, // 512KB per chunk (base64 chars)
+    onProgress: (Float) -> Unit = {}
+): String {
+    val base64Data = dataUrl.substringAfter(",", dataUrl)
+    val uploadId = "up_" + kotlin.random.Random.nextLong().toString(36) + "_" + kotlin.random.Random.nextLong().toString(36)
+    val totalChunks = maxOf(1, (base64Data.length + chunkSize - 1) / chunkSize)
+
+    for (i in 0 until totalChunks) {
+        val start = i * chunkSize
+        val end = minOf(start + chunkSize, base64Data.length)
+        val chunk = base64Data.substring(start, end)
+        val body = json.encodeToString(
+            ApiChunkedUploadBody(uploadId, i, totalChunks, chunk)
+        )
+        safeRequest<ApiChunkedUploadResponse>("POST", "/uploads/chunked.php", body)
+        onProgress((i + 1).toFloat() / totalChunks)
+    }
+
+    // Finalize
+    val finalBody = json.encodeToString(
+        ApiChunkedFinalizeBody(uploadId, totalChunks, fileName)
+    )
+    val resp = safeRequest<ApiUploadResponse>("POST", "/uploads/chunked.php", finalBody)
+    onProgress(1f)
+    return resp.imageUrl
+}
+
 suspend fun ApiClient.submitReport(type: String, targetId: Int, reason: String, comment: String = "") {
     val body = json.encodeToString(ApiReportBody(type, targetId, reason, comment))
     post(ApiClient.Endpoints.REPORTS, body)

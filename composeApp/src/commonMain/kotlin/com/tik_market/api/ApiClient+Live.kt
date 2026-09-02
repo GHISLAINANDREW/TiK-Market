@@ -95,3 +95,29 @@ suspend fun ApiClient.createReel(shopId: Int, videoUrl: String, description: Str
     val body = json.encodeToString(ApiCreateReelBody.serializer(), ApiCreateReelBody(shopId, videoUrl, description, productId))
     return safeRequest("POST", "/reels/create.php", body)
 }
+
+suspend fun ApiClient.fetchReelComments(reelId: Int): List<ApiReelComment> {
+    return try {
+        safeRequest<List<ApiReelComment>>("GET", "/reels/comments.php?reel_id=$reelId")
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
+suspend fun ApiClient.postReelComment(reelId: Int, text: String): Boolean {
+    return try {
+        post("/reels/comment.php", """{"reel_id":$reelId,"text":"$text"}""")
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+suspend fun ApiClient.deleteReel(reelId: Int): Boolean {
+    return try {
+        post("/reels/delete.php", """{"reel_id":$reelId}""")
+        true
+    } catch (_: Exception) {
+        false
+    }
+}

@@ -19,6 +19,7 @@ import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.CameraPreviewWithFrames
 import com.tik_market.ui.components.switchCamera
+import com.tik_market.utils.shareText
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,11 +36,13 @@ fun LiveStreamingScreen(
     var streamId by remember { mutableStateOf(0) }
     var viewerCount by remember { mutableStateOf(0) }
     var comments by remember { mutableStateOf<List<ApiLiveComment>>(emptyList()) }
+    var chatText by remember { mutableStateOf("") }
+    var isMuted by remember { mutableStateOf(false) }
 
     // Throttle frame uploads: only one upload in flight at a time. If a new
     // frame arrives while the previous upload is still running, it is dropped.
     // This prevents base64 frames from accumulating in memory (which caused OOM).
-    val uploadInFlight = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    var uploadInFlight by remember { mutableStateOf(false) }
 
     // Polling for stats and comments once live
     LaunchedEffect(isLive, streamId) {
@@ -47,7 +50,9 @@ fun LiveStreamingScreen(
         while (true) {
             try {
                 comments = ApiClient.fetchLiveComments(streamId)
-                viewerCount = (viewerCount + (1..5).random()).coerceAtMost(1000)
+                // Real viewer count from the backend (distinct spectators polling).
+                val streams = ApiClient.fetchLiveStreams()
+                viewerCount = streams.firstOrNull { it.id == streamId }?.viewerCount ?: viewerCount
             } catch (_: Exception) {}
             delay(3000)
         }
@@ -81,12 +86,13 @@ fun LiveStreamingScreen(
                 onFrame = { frameB64 ->
                     // Upload the captured frame to broadcast to spectators.
                     // Drop the frame if a previous upload is still in flight.
-                    if (isLive && streamId > 0 && uploadInFlight.compareAndSet(false, true)) {
+                    if (isLive && streamId > 0 && !uploadInFlight) {
+                        uploadInFlight = true
                         scope.launch {
                             try {
                                 ApiClient.uploadLiveFrame(streamId, frameB64)
                             } finally {
-                                uploadInFlight.set(false)
+                                uploadInFlight = false
                             }
                         }
                     }
@@ -177,6 +183,26 @@ fun LiveStreamingScreen(
                             }
                         }
                         Spacer(Modifier.weight(1f))
+                        // Mute / unmute toggle
+                        IconButton(
+                            onClick = { isMuted = !isMuted },
+                            modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                        ) {
+                            Icon(
+                                if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                null,
+                                tint = Color.White
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        // Share the live
+                        IconButton(
+                            onClick = { com.tik_market.utils.shareText("Regardez mon direct sur TiK-Market !", "Partager le direct") },
+                            modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Share, null, tint = Color.White)
+                        }
+                        Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onBack, modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
                             Icon(Icons.Default.Close, null, tint = Color.White)
                         }
@@ -214,14 +240,38 @@ fun LiveStreamingScreen(
                             Text("Terminer", color = Color.White)
                         }
                         Spacer(Modifier.width(12.dp))
-                        Surface(
+                        // Chat input so the streamer can reply to spectators.
+                        OutlinedTextField(
+                            value = chatText,
+                            onValueChange = { chatText = it },
+                            placeholder = { Text("Répondre au chat...", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp) },
                             modifier = Modifier.weight(1f).height(44.dp),
-                            color = Color.White.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(22.dp)
+                            shape = RoundedCornerShape(22.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Green,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                                focusedContainerColor = Color.White.copy(alpha = 0.15f),
+                                unfocusedContainerColor = Color.White.copy(alpha = 0.15f)
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                val text = chatText.trim()
+                                if (text.isNotEmpty()) {
+                                    scope.launch {
+                                        ApiClient.postLiveComment(streamId, text)
+                                        chatText = ""
+                                        comments = ApiClient.fetchLiveComments(streamId)
+                                    }
+                                }
+                            },
+                            enabled = chatText.isNotBlank(),
+                            modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
                         ) {
-                            Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(horizontal = 16.dp)) {
-                                Text("Le chat est actif", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp)
-                            }
+                            Icon(Icons.Filled.Send, null, tint = if (chatText.isNotBlank()) GreenAccent else Color.White.copy(alpha = 0.3f))
                         }
                     }
                 }

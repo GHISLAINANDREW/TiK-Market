@@ -43,6 +43,16 @@ expect fun rememberTakePhotoLauncher(
 ): () -> Unit
 
 /**
+ * Platform-specific launcher to record a short video using the device camera.
+ * Returns a lambda to launch the camera. Result is a base64 data URL.
+ */
+@Composable
+expect fun rememberTakeVideoLauncher(
+    maxDurationSeconds: Int = 30,
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit
+
+/**
  * Platform-specific launcher to pick any file from the device.
  * Returns a lambda to launch the picker. Result is a base64 data URL.
  */

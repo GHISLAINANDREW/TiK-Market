@@ -34,6 +34,29 @@ data class ApiUploadBody(
 )
 
 @Serializable
+data class ApiChunkedUploadBody(
+    @SerialName("upload_id") val uploadId: String,
+    @SerialName("chunk_index") val chunkIndex: Int,
+    @SerialName("total_chunks") val totalChunks: Int,
+    val data: String
+)
+
+@Serializable
+data class ApiChunkedFinalizeBody(
+    @SerialName("upload_id") val uploadId: String,
+    @SerialName("total_chunks") val totalChunks: Int,
+    val filename: String,
+    val finalize: Boolean = true
+)
+
+@Serializable
+data class ApiChunkedUploadResponse(
+    val success: Boolean = true,
+    val received: Int = 0,
+    val total: Int = 0
+)
+
+@Serializable
 data class ApiUploadResponse(
     val success: Boolean = true,
     @SerialName("image_url") val imageUrl: String = "",

@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,9 +39,18 @@ fun CreateReelScreen(
     var myProducts by remember { mutableStateOf<List<ApiProduct>>(emptyList()) }
     var isLoadingProducts by remember { mutableStateOf(false) }
     var isPublishing by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableStateOf(0f) }
     var showProductPicker by remember { mutableStateOf(false) }
 
     val videoPicker = rememberMediaPickerLauncher(allowVideo = true, videoOnly = true) { result ->
+        if (result != null) {
+            videoDataUrl = result.dataUrl
+            videoFileName = result.fileName
+        }
+    }
+
+    // Record a short video directly with the device camera.
+    val takeVideo = rememberTakeVideoLauncher(maxDurationSeconds = 30) { result ->
         if (result != null) {
             videoDataUrl = result.dataUrl
             videoFileName = result.fileName
@@ -95,6 +105,20 @@ fun CreateReelScreen(
                     }
                 }
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Record directly with the camera
+            OutlinedButton(
+                onClick = { takeVideo() },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Green)
+            ) {
+                Icon(Icons.Default.Videocam, null, tint = Green)
+                Spacer(Modifier.width(8.dp))
+                Text("Enregistrer avec la caméra", color = Green, fontWeight = FontWeight.SemiBold)
+            }
             
             Spacer(Modifier.height(20.dp))
             
@@ -132,35 +156,63 @@ fun CreateReelScreen(
             Spacer(Modifier.height(32.dp))
             
             // 4. Publish Button
-            Button(
-                onClick = {
-                    scope.launch {
-                        isPublishing = true
-                        try {
-                            if (videoDataUrl != null) {
-                                val uploadedUrl = ApiClient.uploadImage(videoDataUrl!!, videoFileName!!)
-                                val shop = ApiClient.fetchShopByVendor()
-                                if (shop != null) {
-                                    ApiClient.createReel(
-                                        shopId = shop.id,
-                                        videoUrl = uploadedUrl,
-                                        description = description,
-                                        productId = selectedProductId
-                                    )
-                                    onBack()
-                                }
-                            }
-                        } catch (_: Exception) {}
-                        isPublishing = false
+            if (isPublishing) {
+                // Upload progress bar
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Upload en cours...", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Spacer(Modifier.weight(1f))
+                            Text("${(uploadProgress * 100).toInt()}%", fontWeight = FontWeight.Bold, color = Green, fontSize = 14.sp)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = uploadProgress,
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = Green,
+                            trackColor = Color.LightGray
+                        )
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Green),
-                enabled = !isPublishing && videoDataUrl != null
-            ) {
-                if (isPublishing) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("PUBLIER MON REEL", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            isPublishing = true
+                            uploadProgress = 0f
+                            try {
+                                if (videoDataUrl != null) {
+                                    val uploadedUrl = ApiClient.uploadImageChunked(
+                                        dataUrl = videoDataUrl!!,
+                                        fileName = videoFileName ?: "reel.mp4",
+                                        onProgress = { uploadProgress = it }
+                                    )
+                                    val shop = ApiClient.fetchShopByVendor()
+                                    if (shop != null) {
+                                        ApiClient.createReel(
+                                            shopId = shop.id,
+                                            videoUrl = uploadedUrl,
+                                            description = description,
+                                            productId = selectedProductId
+                                        )
+                                        onBack()
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                            isPublishing = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Green),
+                    enabled = !isPublishing && videoDataUrl != null
+                ) {
+                    Text("PUBLIER MON REEL", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

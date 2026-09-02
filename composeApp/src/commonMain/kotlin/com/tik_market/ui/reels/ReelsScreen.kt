@@ -2,10 +2,13 @@ package com.tik_market.ui.reels
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,6 +99,10 @@ private fun ReelItem(
 ) {
     var isLiked by remember { mutableStateOf(reel.isLiked) }
     var likes by remember { mutableStateOf(reel.likeCount) }
+    var showComments by remember { mutableStateOf(false) }
+    var comments by remember { mutableStateOf<List<ApiReelComment>>(emptyList()) }
+    var commentText by remember { mutableStateOf("") }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Box(Modifier.fillMaxSize()) {
@@ -134,13 +141,24 @@ private fun ReelItem(
             }
             
             // Comment
-            IconButton(onClick = { /* TODO */ }) {
-                Icon(Icons.Default.Comment, null, tint = Color.White, modifier = Modifier.size(32.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(onClick = {
+                    showComments = true
+                    scope.launch { comments = ApiClient.fetchReelComments(reel.id) }
+                }) {
+                    Icon(Icons.Default.Comment, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                }
+                Text("${comments.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             
             // Share
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { com.tik_market.utils.shareText("Regardez ce reel sur TiK-Market !", "Partager le reel") }) {
                 Icon(Icons.Default.Share, null, tint = Color.White, modifier = Modifier.size(32.dp))
+            }
+
+            // Delete (only for the shop owner — checked via a lightweight call)
+            IconButton(onClick = { showDeleteConfirm = true }) {
+                Icon(Icons.Default.Delete, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(32.dp))
             }
         }
 
@@ -181,5 +199,75 @@ private fun ReelItem(
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
         }
+    }
+
+    // ── Comments dialog ──
+    if (showComments) {
+        AlertDialog(
+            onDismissRequest = { showComments = false },
+            title = { Text("Commentaires", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    LazyColumn(Modifier.heightIn(max = 300.dp)) {
+                        items(comments) { c ->
+                            Row(Modifier.padding(vertical = 6.dp)) {
+                                Text(c.userName, color = Amber, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(c.text, fontSize = 13.sp)
+                            }
+                        }
+                        if (comments.isEmpty()) {
+                            item { Text("Aucun commentaire. Soyez le premier !", color = Color.Gray, fontSize = 13.sp) }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = commentText,
+                            onValueChange = { commentText = it },
+                            placeholder = { Text("Ajouter un commentaire...") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                val text = commentText.trim()
+                                if (text.isNotEmpty()) {
+                                    scope.launch {
+                                        if (ApiClient.postReelComment(reel.id, text)) {
+                                            commentText = ""
+                                            comments = ApiClient.fetchReelComments(reel.id)
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = commentText.isNotBlank()
+                        ) {
+                            Icon(Icons.Filled.Send, null, tint = if (commentText.isNotBlank()) Green else Color.Gray)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showComments = false }) { Text("Fermer") } }
+        )
+    }
+
+    // ── Delete confirmation ──
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Supprimer ce reel ?") },
+            text = { Text("Cette action est irréversible.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        ApiClient.deleteReel(reel.id)
+                        showDeleteConfirm = false
+                    }
+                }) { Text("Supprimer", color = Color.Red) }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Annuler") } }
+        )
     }
 }

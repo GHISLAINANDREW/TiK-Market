@@ -34,3 +34,12 @@ data class ApiCreateReelResponse(
     val success: Boolean,
     val message: String = ""
 )
+
+@Serializable
+data class ApiReelComment(
+    val id: Int = 0,
+    @SerialName("user_id") val userId: Int,
+    @SerialName("user_name") val userName: String,
+    val text: String,
+    @SerialName("created_at") val createdAt: String = ""
+)

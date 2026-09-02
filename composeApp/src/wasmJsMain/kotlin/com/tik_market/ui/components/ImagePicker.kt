@@ -139,6 +139,21 @@ actual fun rememberTakePhotoLauncher(
     }
 }
 
+@Composable
+actual fun rememberTakeVideoLauncher(
+    maxDurationSeconds: Int,
+    onResult: (result: MediaPickResult?) -> Unit
+): () -> Unit {
+    // On web, fall back to the media picker (video only) since there is no
+    // direct camera capture API available in the browser.
+    return rememberMediaPickerLauncher(
+        allowVideo = true,
+        maxDurationSeconds = maxDurationSeconds,
+        videoOnly = true,
+        onResult = onResult
+    )
+}
+
 // ── File picker launcher (wasmJs: uses general file input) ──────
 
 @Composable

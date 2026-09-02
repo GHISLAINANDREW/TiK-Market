@@ -71,7 +71,10 @@ try {
         foreach ($streams as &$st) {
             $st['id'] = (int)$st['id'];
             $st['shop_id'] = (int)$st['shop_id'];
-            $st['viewer_count'] = (int)$st['viewer_count'];
+            // Real viewer count: distinct users who polled within the last 15s.
+            $vcStmt = $db->prepare("SELECT COUNT(*) FROM live_viewers WHERE stream_id = ? AND last_seen > NOW() - INTERVAL 15 SECOND");
+            $vcStmt->execute([$st['id']]);
+            $st['viewer_count'] = (int)$vcStmt->fetchColumn();
             $st['is_live'] = (bool)$st['is_live'];
             $st['pinned_product_id'] = $st['pinned_product_id'] ? (int)$st['pinned_product_id'] : null;
         }

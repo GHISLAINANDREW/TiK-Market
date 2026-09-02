@@ -78,6 +78,31 @@ try {
         $row = $stmt->fetch();
         if (!$row) json(404, ['success' => false, 'message' => 'Aucune frame']);
 
+        // ── Viewer tracking ──
+        // Record this spectator as an active viewer (heartbeat). The streamer's
+        // viewer count is derived from the number of distinct users who polled
+        // within the last 15 seconds, so it reflects real spectators.
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS live_viewers (
+                stream_id INT NOT NULL,
+                user_id INT NOT NULL,
+                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (stream_id, user_id),
+                FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )");
+        } catch (Exception $e) { error_log("Migration live_viewers table: " . $e->getMessage()); }
+
+        $viewerUserId = 0;
+        try { $viewerUserId = getAuthUserId(); } catch (Exception $e) { $viewerUserId = 0; }
+        if ($viewerUserId > 0) {
+            try {
+                $db->prepare("INSERT INTO live_viewers (stream_id, user_id, last_seen) VALUES (?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE last_seen = NOW()")
+                    ->execute([$streamId, $viewerUserId]);
+            } catch (Exception $e) { error_log("Viewer tracking: " . $e->getMessage()); }
+        }
+
         json(200, [
             'success' => true,
             'frame' => base64_encode($row['frame_data']),
