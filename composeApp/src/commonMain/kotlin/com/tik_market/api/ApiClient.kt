@@ -192,6 +192,13 @@ object ApiClient {
     internal suspend fun put(path: String, body: String): String = request("PUT", path, body)
     internal suspend fun delete(path: String): String = request("DELETE", path)
 
+    /**
+     * Measures round-trip latency (ms) against a lightweight backend endpoint.
+     * Used to adapt playback quality to the current connection.
+     */
+    suspend fun probeLatencyMs(): Long =
+        kotlin.system.measureTimeMillis { request("GET", "/ping.php") }
+
     // ── Helper ──
 
     internal fun encodeUri(s: String): String {

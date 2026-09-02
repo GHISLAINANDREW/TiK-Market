@@ -19,7 +19,9 @@ import com.tik_market.api.dto.*
 import com.tik_market.theme.*
 import com.tik_market.ui.components.CameraPreviewWithFrames
 import com.tik_market.ui.components.switchCamera
+import com.tik_market.utils.ConnectionQualityMonitor
 import com.tik_market.utils.shareText
+import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +40,10 @@ fun LiveStreamingScreen(
     var comments by remember { mutableStateOf<List<ApiLiveComment>>(emptyList()) }
     var chatText by remember { mutableStateOf("") }
     var isMuted by remember { mutableStateOf(false) }
+
+    // ── Connection quality adaptation ──
+    val qualityMonitor = remember { ConnectionQualityMonitor() }
+    var qualityLabel by remember { mutableStateOf("HD") }
 
     // Throttle frame uploads: only one upload in flight at a time. If a new
     // frame arrives while the previous upload is still running, it is dropped.
@@ -83,17 +89,23 @@ fun LiveStreamingScreen(
             CameraPreviewWithFrames(
                 modifier = Modifier.fillMaxSize(),
                 captureEnabled = isLive && streamId > 0,
+                quality = qualityMonitor.currentQuality(),
                 onFrame = { frameB64 ->
                     // Upload the captured frame to broadcast to spectators.
                     // Drop the frame if a previous upload is still in flight.
                     if (isLive && streamId > 0 && !uploadInFlight) {
                         uploadInFlight = true
                         scope.launch {
-                            try {
-                                ApiClient.uploadLiveFrame(streamId, frameB64)
-                            } finally {
-                                uploadInFlight = false
+                            val elapsed = kotlin.system.measureTimeMillis {
+                                try {
+                                    ApiClient.uploadLiveFrame(streamId, frameB64)
+                                } catch (e: Exception) {
+                                    // Upload failed — treat as very slow.
+                                }
                             }
+                            qualityMonitor.recordUpload(elapsed)
+                            qualityLabel = qualityMonitor.currentQuality().label
+                            uploadInFlight = false
                         }
                     }
                 }
@@ -181,6 +193,11 @@ fun LiveStreamingScreen(
                                 Spacer(Modifier.width(4.dp))
                                 Text("$viewerCount", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        // Connection quality indicator (HD / SD / LD)
+                        Surface(color = when (qualityLabel) { "HD" -> Green; "SD" -> Amber; else -> RedAccent }.copy(alpha = 0.6f), shape = RoundedCornerShape(12.dp)) {
+                            Text(qualityLabel, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                         }
                         Spacer(Modifier.weight(1f))
                         // Mute / unmute toggle

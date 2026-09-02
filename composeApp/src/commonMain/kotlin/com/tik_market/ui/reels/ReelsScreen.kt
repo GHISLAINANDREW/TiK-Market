@@ -27,7 +27,9 @@ import com.tik_market.api.dto.*
 import com.tik_market.cache.PersistentMediaCache
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
+import com.tik_market.utils.ConnectionQuality
 import com.tik_market.utils.LocalAppStrings
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -39,6 +41,15 @@ fun ReelsScreen(
     var reels by remember { mutableStateOf<List<ApiReel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
+
+    // ── Connection quality adaptation for reel playback ──
+    var quality by remember { mutableStateOf(ConnectionQuality.GOOD) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            quality = com.tik_market.utils.estimateConnectionQuality()
+            delay(5000)
+        }
+    }
     
     val pagerState = rememberPagerState(pageCount = { reels.size })
 
@@ -76,6 +87,7 @@ fun ReelsScreen(
                 ReelItem(
                     reel = reels[index],
                     isCurrent = pagerState.currentPage == index,
+                    quality = quality,
                     onShopClick = onShopClick
                 )
             }
@@ -95,6 +107,7 @@ fun ReelsScreen(
 private fun ReelItem(
     reel: ApiReel,
     isCurrent: Boolean,
+    quality: ConnectionQuality,
     onShopClick: (Int) -> Unit
 ) {
     var isLiked by remember { mutableStateOf(reel.isLiked) }
@@ -111,6 +124,7 @@ private fun ReelItem(
             url = reel.videoUrl,
             modifier = Modifier.fillMaxSize(),
             isPlaying = isCurrent,
+            quality = quality,
             onEnded = { }
         )
 

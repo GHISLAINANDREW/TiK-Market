@@ -7,14 +7,17 @@ import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import com.tik_market.AndroidChatContext
+import com.tik_market.utils.ConnectionQuality
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
 private const val TAG = "CamPreview"
@@ -60,6 +63,8 @@ private var cameraFacing = android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK
 private val activeSurfaces = ConcurrentHashMap<SurfaceView, SurfaceHolder>()
 private val captureFlags = ConcurrentHashMap<SurfaceView, AtomicBoolean>()
 private val captureThreads = ConcurrentHashMap<SurfaceView, Thread>()
+/** Shared quality level updated by the streaming screen. The capture thread reads it each frame. */
+private val currentQuality = AtomicReference(ConnectionQuality.GOOD)
 
 /** Switches between back and front camera (no-op if only one camera exists). */
 actual fun platformSwitchCamera() {
@@ -127,8 +132,12 @@ actual fun CameraPreview(modifier: Modifier) {
 actual fun CameraPreviewWithFrames(
     modifier: Modifier,
     captureEnabled: Boolean,
+    quality: ConnectionQuality,
     onFrame: (String) -> Unit
 ) {
+    // Update the shared quality ref so the capture thread picks it up.
+    LaunchedEffect(quality) { currentQuality.set(quality) }
+
     AndroidView(
         factory = { ctx ->
             SurfaceView(ctx).apply {
@@ -218,17 +227,26 @@ private fun startFrameCapture(sv: SurfaceView, onFrame: (String) -> Unit) {
         var lastMs = 0L
         while (flag.get()) {
             val now = System.currentTimeMillis()
-            if (now - lastMs >= 1000) { // ~1 fps
+            val quality = currentQuality.get()
+            val intervalMs = quality.captureIntervalMs
+            if (now - lastMs >= intervalMs) {
                 lastMs = now
                 val cam = synchronized(cameraLock) { globalCamera }
                 if (cam == null) {
                     Log.w(TAG, "capture: no camera available")
                 } else {
+                    // Adapt JPEG quality before capture.
+                    try {
+                        val params = cam.parameters
+                        params.jpegQuality = quality.jpegQuality
+                        cam.parameters = params
+                    } catch (_: Exception) {}
+
                     try {
                         val jpeg = captureJpeg(cam)
                         if (jpeg != null) {
                             val b64 = android.util.Base64.encodeToString(jpeg, android.util.Base64.NO_WRAP)
-                            Log.i(TAG, "frame captured ${jpeg.size} bytes")
+                            Log.i(TAG, "frame captured ${jpeg.size} bytes [${quality.label}]")
                             onFrame(b64)
                         } else {
                             Log.w(TAG, "captureJpeg returned null (timeout?)")

@@ -6,6 +6,19 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLVideoElement
 import org.w3c.dom.events.Event
 
+import com.tik_market.utils.ConnectionQuality
+
+private fun adaptCloudinaryQuality(url: String, quality: ConnectionQuality): String {
+    if (!url.contains("cloudinary.com")) return url
+    val qualityParam = when (quality) {
+        ConnectionQuality.GOOD    -> return url
+        ConnectionQuality.MEDIUM -> "q_auto:good"
+        ConnectionQuality.POOR   -> "q_auto:low"
+    }
+    val separator = if (url.contains("?")) "&" else "?"
+    return "$url${separator}$qualityParam"
+}
+
 private var videoIdCounter = 0
 
 @Composable
@@ -13,14 +26,16 @@ actual fun VideoPlayer(
     url: String,
     modifier: Modifier,
     isPlaying: Boolean,
+    quality: ConnectionQuality,
     onEnded: () -> Unit
 ) {
     val videoId = remember { "story-video-js-${++videoIdCounter}" }
+    val adaptedUrl = remember(url, quality) { adaptCloudinaryQuality(url, quality) }
 
-    DisposableEffect(url) {
+    DisposableEffect(adaptedUrl) {
         val video = document.createElement("video") as HTMLVideoElement
         video.id = videoId
-        video.src = url
+        video.src = adaptedUrl
         val style = video.style
         style.setProperty("position", "fixed")
         style.setProperty("top", "0")

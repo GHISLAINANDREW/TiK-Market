@@ -8,6 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
+import com.tik_market.utils.ConnectionQuality
+
 @Composable
 actual fun CameraPreview(modifier: Modifier) {
     CameraPreviewWithFrames(modifier, captureEnabled = false, onFrame = {})
@@ -17,6 +19,7 @@ actual fun CameraPreview(modifier: Modifier) {
 actual fun CameraPreviewWithFrames(
     modifier: Modifier,
     captureEnabled: Boolean,
+    quality: ConnectionQuality,
     onFrame: (String) -> Unit
 ) {
     Box(modifier.background(Color.DarkGray), contentAlignment = Alignment.Center) {
