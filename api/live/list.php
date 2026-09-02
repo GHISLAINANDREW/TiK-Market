@@ -29,6 +29,18 @@ try {
         )");
     } catch (Exception $e) { error_log("Migration live_streams table: " . $e->getMessage()); }
 
+    // ── Auto-migration: create live_viewers table (used for real viewer count) ──
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS live_viewers (
+            stream_id INT NOT NULL,
+            user_id INT NOT NULL,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (stream_id, user_id),
+            FOREIGN KEY (stream_id) REFERENCES live_streams(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+    } catch (Exception $e) { error_log("Migration live_viewers table: " . $e->getMessage()); }
+
     if ($method === 'GET') {
         $shopId = isset($_GET['shop_id']) ? (int)$_GET['shop_id'] : 0;
 
