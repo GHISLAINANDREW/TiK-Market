@@ -51,3 +51,16 @@ data class ApiLiveFrameResponse(
     val frame: String? = null,
     @SerialName("frame_at") val frameAt: String = ""
 )
+
+@Serializable
+data class ApiLiveAudioChunk(
+    val seq: Int = 0,
+    val audio: String = "",
+    @SerialName("created_at") val createdAt: String = ""
+)
+
+@Serializable
+data class ApiLiveAudioResponse(
+    val success: Boolean = false,
+    val chunks: List<ApiLiveAudioChunk> = emptyList()
+)

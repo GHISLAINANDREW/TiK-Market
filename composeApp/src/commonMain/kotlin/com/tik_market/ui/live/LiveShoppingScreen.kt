@@ -29,6 +29,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
 import com.tik_market.utils.LocalAppStrings
+import com.tik_market.utils.playLiveAudioChunk
 import com.tik_market.utils.shareText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -98,6 +99,23 @@ fun LiveShoppingScreen(
                 }
             } catch (_: Exception) {}
             delay(1000)
+        }
+    }
+
+    // Polling for live audio (streamer voice) and playing it.
+    var audioSeq by remember { mutableStateOf(0) }
+    LaunchedEffect(streamId) {
+        while (true) {
+            try {
+                val chunks = ApiClient.fetchLiveAudio(streamId, audioSeq)
+                for (chunk in chunks) {
+                    if (chunk.audio.isNotBlank()) {
+                        playLiveAudioChunk(chunk.audio)
+                    }
+                    audioSeq = chunk.seq
+                }
+            } catch (_: Exception) {}
+            delay(1500)
         }
     }
 

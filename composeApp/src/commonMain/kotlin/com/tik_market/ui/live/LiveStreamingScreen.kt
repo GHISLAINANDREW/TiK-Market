@@ -21,6 +21,8 @@ import com.tik_market.ui.components.CameraPreviewWithFrames
 import com.tik_market.ui.components.switchCamera
 import com.tik_market.utils.ConnectionQualityMonitor
 import com.tik_market.utils.shareText
+import com.tik_market.utils.startLiveAudioCapture
+import com.tik_market.utils.stopLiveAudioCapture
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.*
 
@@ -45,6 +47,11 @@ fun LiveStreamingScreen(
     val qualityMonitor = remember { ConnectionQualityMonitor() }
     var qualityLabel by remember { mutableStateOf("HD") }
 
+    // ── Live audio (streamer voice) ──
+    // Plain counter (not Compose state) so it can be safely mutated from the
+    // audio-capture background thread.
+    val audioSeqCounter = remember { object { var value = 0 } }
+
     // Throttle frame uploads: only one upload in flight at a time. If a new
     // frame arrives while the previous upload is still running, it is dropped.
     // This prevents base64 frames from accumulating in memory (which caused OOM).
@@ -53,6 +60,14 @@ fun LiveStreamingScreen(
     // Polling for stats and comments once live
     LaunchedEffect(isLive, streamId) {
         if (!isLive) return@LaunchedEffect
+        // Start capturing the streamer's voice and upload each chunk.
+        startLiveAudioCapture { chunkB64 ->
+            if (isLive && streamId > 0) {
+                val seq = audioSeqCounter.value
+                audioSeqCounter.value = seq + 1
+                scope.launch { ApiClient.uploadLiveAudio(streamId, seq, chunkB64) }
+            }
+        }
         while (true) {
             try {
                 comments = ApiClient.fetchLiveComments(streamId)
@@ -74,6 +89,7 @@ fun LiveStreamingScreen(
     val currentStreamId by rememberUpdatedState(streamId)
     DisposableEffect(Unit) {
         onDispose {
+            stopLiveAudioCapture()
             if (currentIsLive && currentStreamId > 0) {
                 scope.launch { ApiClient.stopLiveStream(currentStreamId) }
             }
@@ -200,9 +216,21 @@ fun LiveStreamingScreen(
                             Text(qualityLabel, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                         }
                         Spacer(Modifier.weight(1f))
-                        // Mute / unmute toggle
+                        // Mute / unmute toggle (stops/starts voice capture)
                         IconButton(
-                            onClick = { isMuted = !isMuted },
+                            onClick = {
+                                isMuted = !isMuted
+                                if (isMuted) stopLiveAudioCapture()
+                                else if (isLive && streamId > 0) {
+                                    startLiveAudioCapture { chunkB64 ->
+                                        if (isLive && streamId > 0) {
+                                            val seq = audioSeqCounter.value
+                                            audioSeqCounter.value = seq + 1
+                                            scope.launch { ApiClient.uploadLiveAudio(streamId, seq, chunkB64) }
+                                        }
+                                    }
+                                }
+                            },
                             modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)
                         ) {
                             Icon(

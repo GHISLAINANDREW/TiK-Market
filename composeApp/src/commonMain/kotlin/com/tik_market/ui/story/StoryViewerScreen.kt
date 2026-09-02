@@ -29,6 +29,7 @@ import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.VideoPlayer
 import com.tik_market.ui.components.loadImageFromUrl
+import com.tik_market.utils.ConnectionQuality
 import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.format
 import kotlinx.coroutines.delay
@@ -75,6 +76,15 @@ fun StoryViewerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val ts = LocalAppStrings.current
     val storyDurationMs = 5000L // 5 seconds per story
+
+    // ── Connection quality adaptation for story video playback ──
+    var quality by remember { mutableStateOf(ConnectionQuality.GOOD) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            quality = com.tik_market.utils.estimateConnectionQuality()
+            delay(5000)
+        }
+    }
 
     // Auto-advance timer using delay.
     // NOTE: les stories vidéo avancent via onEnded du lecteur vidéo (pas ce timer),
@@ -155,6 +165,7 @@ fun StoryViewerScreen(
                     url = currentStory.imageUrl,
                     modifier = Modifier.fillMaxSize(),
                     isPlaying = !isPaused,
+                    quality = quality,
                     onEnded = {
                         if (currentIndex < stories.lastIndex) {
                             currentIndex++

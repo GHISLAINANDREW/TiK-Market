@@ -72,6 +72,31 @@ suspend fun ApiClient.fetchLiveFrame(streamId: Int): String? {
     }
 }
 
+/**
+ * Uploads an audio chunk (base64 AAC/MP4) for a live stream. Used by the
+ * streamer to broadcast their voice to spectators.
+ */
+suspend fun ApiClient.uploadLiveAudio(streamId: Int, seq: Int, audioBase64: String): Boolean {
+    return try {
+        post("/live/audio.php?stream_id=$streamId", """{"seq":$seq,"audio":"$audioBase64"}""")
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+/**
+ * Fetches audio chunks after a given sequence number for a live stream.
+ * Used by spectators to hear the streamer's voice.
+ */
+suspend fun ApiClient.fetchLiveAudio(streamId: Int, afterSeq: Int): List<ApiLiveAudioChunk> {
+    return try {
+        safeRequest<ApiLiveAudioResponse>("GET", "/live/audio.php?stream_id=$streamId&after_seq=$afterSeq").chunks
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 // ── Reels ──
 
 suspend fun ApiClient.fetchReels(): List<ApiReel> {
