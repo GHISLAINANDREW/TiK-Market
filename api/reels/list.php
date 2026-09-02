@@ -53,7 +53,7 @@ try {
 
         if ($shopId > 0) {
             $stmt = $db->prepare("
-                SELECT r.*, s.name AS shop_name, s.logo AS shop_logo
+                SELECT r.*, s.name AS shop_name, s.logo AS shop_logo, s.vendor_id
                 FROM reels r
                 JOIN shops s ON r.shop_id = s.id
                 WHERE r.shop_id = ?
@@ -63,7 +63,7 @@ try {
             $reels = $stmt->fetchAll();
         } else {
             $stmt = $db->query("
-                SELECT r.*, s.name AS shop_name, s.logo AS shop_logo
+                SELECT r.*, s.name AS shop_name, s.logo AS shop_logo, s.vendor_id
                 FROM reels r
                 JOIN shops s ON r.shop_id = s.id
                 ORDER BY r.created_at DESC
@@ -73,6 +73,12 @@ try {
 
         // Fetch liked reel ids for the current user
         $likedIds = [];
+        $userRole = '';
+        if ($userId > 0) {
+            $stmtU = $db->prepare("SELECT role FROM users WHERE id = ?");
+            $stmtU->execute([$userId]);
+            $userRole = (string)$stmtU->fetchColumn();
+        }
         if ($userId > 0 && !empty($reels)) {
             $ids = array_column($reels, 'id');
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -82,11 +88,15 @@ try {
             $likedIds = array_map('intval', $stmtL->fetchAll(PDO::FETCH_COLUMN));
         }
 
+        $isAdmin = in_array($userRole, ['admin', 'super_admin']);
         foreach ($reels as &$r) {
             $r['id'] = (int)$r['id'];
             $r['shop_id'] = (int)$r['shop_id'];
             $r['like_count'] = (int)$r['like_count'];
             $r['is_liked'] = in_array((int)$r['id'], $likedIds);
+            // Only the shop owner (vendor) or an admin can delete this reel.
+            $r['is_owner'] = $isAdmin || ($userId > 0 && (int)$r['vendor_id'] === $userId);
+            unset($r['vendor_id']);
         }
         unset($r);
 

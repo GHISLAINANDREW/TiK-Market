@@ -156,9 +156,11 @@ private fun ReelItem(
                 Icon(Icons.Default.Share, null, tint = Color.White, modifier = Modifier.size(32.dp))
             }
 
-            // Delete (only for the shop owner — checked via a lightweight call)
-            IconButton(onClick = { showDeleteConfirm = true }) {
-                Icon(Icons.Default.Delete, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(32.dp))
+            // Delete (only for the shop owner who added the reel)
+            if (reel.isOwner) {
+                IconButton(onClick = { showDeleteConfirm = true }) {
+                    Icon(Icons.Default.Delete, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(32.dp))
+                }
             }
         }
 

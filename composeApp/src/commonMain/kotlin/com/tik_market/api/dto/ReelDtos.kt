@@ -13,6 +13,7 @@ data class ApiReel(
     val description: String = "",
     @SerialName("like_count") val likeCount: Int = 0,
     @SerialName("is_liked") val isLiked: Boolean = false,
+    @SerialName("is_owner") val isOwner: Boolean = false,
     @SerialName("created_at") val createdAt: String = ""
 )
 
