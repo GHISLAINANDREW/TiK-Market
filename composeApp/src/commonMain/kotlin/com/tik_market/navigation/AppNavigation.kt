@@ -107,7 +107,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
         NavScreen.ImageSearch, NavScreen.Checkout, NavScreen.AddProduct,
         NavScreen.Compare, NavScreen.VendorDashboard, NavScreen.ShopPage,
         NavScreen.StoryViewer, NavScreen.AdminDashboard, NavScreen.LiveShopping,
-        NavScreen.LiveStreaming
+        NavScreen.LiveStreaming, NavScreen.Call
     )
 
     Scaffold(
@@ -203,7 +203,8 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
             NavScreen.ShopsList, NavScreen.ShopPage, NavScreen.ImageSearch, NavScreen.Compare,
             NavScreen.Loyalty, NavScreen.NotifPrefs, NavScreen.StoryViewer, NavScreen.MyGroupBuys,
             NavScreen.ShopsMap, NavScreen.EditProfile, NavScreen.LiveShopping,
-            NavScreen.LiveStreaming, NavScreen.CreateReel, NavScreen.Reels -> MainFlow(appState, scope, snackbarHostState, userCity)
+            NavScreen.LiveStreaming, NavScreen.CreateReel, NavScreen.Reels,
+            NavScreen.Call -> MainFlow(appState, scope, snackbarHostState, userCity)
 
             NavScreen.VendorDashboard, NavScreen.ManageShop, NavScreen.AddProduct,
             NavScreen.VendorOrders, NavScreen.VendorGroupBuys, NavScreen.VendorSubscribers,

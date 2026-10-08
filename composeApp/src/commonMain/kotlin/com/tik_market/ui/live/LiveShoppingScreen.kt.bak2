@@ -1,6 +1,5 @@
 package com.tik_market.ui.live
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -26,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.tik_market.api.ApiClient
 import com.tik_market.api.*
 import com.tik_market.api.dto.*
+import com.tik_market.ui.live.CommentItem
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
@@ -53,7 +53,7 @@ fun LiveShoppingScreen(
     var frameBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     var lastFrameAt by remember { mutableStateOf(0L) }
     var streamEnded by remember { mutableStateOf(false) }
-
+    
     val scope = rememberCoroutineScope()
 
     // Initial load: fetch the real stream from the backend.
@@ -66,7 +66,7 @@ fun LiveShoppingScreen(
                 streamEnded = true
             }
         } catch (_: Exception) {}
-
+        
         // Load pinned product if exists
         stream?.pinnedProductId?.let { id ->
             try {
@@ -138,7 +138,7 @@ fun LiveShoppingScreen(
                     if (streamEnded) {
                         Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
                         Spacer(Modifier.height(12.dp))
-                        Text("Le direct est termine", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                        Text("Le direct est terminé", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
                     } else {
                         CircularProgressIndicator(color = Color.White)
                         Spacer(Modifier.height(12.dp))
@@ -147,7 +147,87 @@ fun LiveShoppingScreen(
                 }
             }
         }
+
+        // ── 2. Overlay UI ──
+        Column(Modifier.fillMaxSize()) {
+            // Header: Shop info + Viewers + Close
+            LiveHeader(stream, onBack)
+            
+            Spacer(Modifier.weight(1f))
+            
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // Left: Comments & Pinned Product
+                Column(Modifier.weight(1f)) {
+                    // Comments list (floating)
+                    Box(Modifier.height(200.dp).fillMaxWidth()) {
+                        LazyColumn(
+                            reverseLayout = true,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(comments.reversed()) { comment ->
+                                CommentItem(
+                                    comment,
+                                    onClickLike = { commentId ->
+                                        scope.launch {
+                                            if (ApiClient.likeLiveComment(commentId, streamId)) {
+                                                // Refresh to get updated likes_count and liked_by_me
+                                                comments = ApiClient.fetchLiveComments(streamId)
+                                            }
+                                        }
+                                    },
+                                    onLongClick = { commentId ->
+                                        // Show context menu or delete option
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(12.dp))
+                    
+                    // Pinned Product (Alibaba Style)
+                    pinnedProduct?.let { product ->
+                        PinnedProductCard(product, onProductClick)
+                    }
+                }
+                
+                // Right: Actions (Like, Share, etc.)
+                LiveActions(
+                    onLike = { hearts++ },
+                    onShare = { com.tik_market.utils.shareText("Regardez ce direct sur TiK-Market !", "Partager le direct") }
+                )
+            }
+            
+            // Bottom Input
+            CommentInput(
+
+            // Bottom Input
+            LiveInputRow(
+                value = commentText,
+                onValueChange = { commentText = it },
+                onSend = {
+                    if (commentText.isNotBlank()) {
+                        scope.launch {
+                            if (ApiClient.postLiveComment(streamId, commentText)) {
+                                commentText = ""
+                                comments = ApiClient.fetchLiveComments(streamId)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+        
+        // Floating Hearts Animation
+        repeat(hearts % 10) {
+            FloatingHeart()
+        }
     }
+}
 
 @Composable
 private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
@@ -174,7 +254,7 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { /* Suivre */ },
+                    onClick = { /* Follow */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Green),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     modifier = Modifier.height(28.dp),
@@ -184,10 +264,34 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.width(16.dp))
-        // Close button
-        IconButton(onClick = onBack) {
-            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(24.dp))
+        
+        Spacer(Modifier.weight(1f))
+        
+        // Live Badge
+        Surface(
+            color = RedAccent,
+            shape = RoundedCornerShape(4.dp),
+            modifier = Modifier.padding(end = 12.dp)
+        ) {
+            Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+        }
+        
+        IconButton(onClick = onBack, modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
+            Icon(Icons.Default.Close, null, tint = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun CommentBubble(comment: ApiLiveComment) {
+    Surface(
+        color = Color.Black.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Text(comment.userName, color = Amber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(comment.text, color = Color.White, fontSize = 12.sp)
         }
     }
 }
@@ -236,6 +340,45 @@ private fun ActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, 
     }
 }
 
+@Composable
+private fun LiveInputRow(value: String, onValueChange: (String) -> Unit, onSend: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(16.dp).navigationBarsPadding(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text("Dites quelque chose...", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp) },
+            modifier = Modifier.weight(1f).height(44.dp),
+            shape = RoundedCornerShape(22.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White.copy(alpha = 0.2f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            )
+        )
+        Spacer(Modifier.width(12.dp))
+        IconButton(onClick = onSend, enabled = value.isNotBlank()) {
+            Icon(Icons.AutoMirrored.Filled.Send, null, tint = if (value.isNotBlank()) GreenAccent else Color.White.copy(alpha = 0.3f))
+        }
+    }
+}
+
+@Composable
+private fun FloatingHeart() {
+    // Basic heart animation (just a placeholder for now)
+    var visible by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(2000)
+        visible = false
+    }
+    if (visible) {
+        Icon(Icons.Default.Favorite, null, tint = Color.Red, modifier = Modifier.offset(x = 300.dp, y = 500.dp).size(30.dp))
+    }
 
 @Composable
 private fun CommentInput(
@@ -283,10 +426,10 @@ private fun CommentInput(
     }
 }
 
-private fun formatTimeAgo(createdAt: String?, timezone: String = "UTC"): String {
+private fun formatTimeAgo(createdAt: String?): String {
     if (createdAt.isNullOrEmpty()) return ""
     return try {
-        val created = createdAt.toLocalDateTime(TimeZone.of(timezone))
+        val created = createdAt.toLocalDateTime(TimeZone.UTC)
         val now = Clock.System.now()
         val diffMs = now.toEpochMilliseconds() - created.toEpochMilliseconds()
         val diffSec = diffMs / 1000
@@ -304,15 +447,12 @@ private fun formatTimeAgo(createdAt: String?, timezone: String = "UTC"): String 
     }
 }
 
-@Composable
-private fun FloatingHeart() {
-    // Basic heart animation (just a placeholder for now)
-    var visible by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        delay(2000)
-        visible = false
+suspend fun ApiClient.likeLiveComment(commentId: Int, streamId: Int): Boolean {
+    return try {
+        post("/live/comment-like.php", """{"stream_id":$streamId,"comment_id":$commentId}""")
+        true
+    } catch (_: Exception) {
+        false
     }
-    if (visible) {
-        Icon(Icons.Default.Favorite, null, tint = Color.Red, modifier = Modifier.offset(x = 300.dp, y = 500.dp).size(30.dp))
-    }
-
+}
+}

@@ -23,7 +23,11 @@ data class ApiLiveComment(
     @SerialName("user_id") val userId: Int,
     @SerialName("user_name") val userName: String,
     val text: String,
-    @SerialName("created_at") val createdAt: String = ""
+    @SerialName("created_at") val createdAt: String = "",
+    val likes_count: Int = 0,
+    val liked_by_me: Boolean = false,
+    val city: String = "",
+    val country: String = ""
 )
 
 @Serializable
@@ -63,4 +67,19 @@ data class ApiLiveAudioChunk(
 data class ApiLiveAudioResponse(
     val success: Boolean = false,
     val chunks: List<ApiLiveAudioChunk> = emptyList()
+)
+
+@Serializable
+data class ApiLiveKitTokenResponse(
+    val success: Boolean = false,
+    val token: String = "",
+    val url: String = "",
+    val room: String = "",
+    val identity: String = ""
+)
+
+@Serializable
+data class ApiLiveKitTokenBody(
+    val room: String,
+    val identity: String? = null
 )

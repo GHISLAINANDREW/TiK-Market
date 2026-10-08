@@ -33,6 +33,23 @@ suspend fun ApiClient.uploadImage(dataUrl: String, fileName: String): String {
 }
 
 /**
+ * Uploads a video (base64 data URL) to the FFmpeg-optimized endpoint.
+ * The server compresses it into 2 quality versions (HD + SD) and stores them
+ * locally (replacing Cloudinary for videos).
+ *
+ * @return ApiVideoUploadResponse with hd_url and sd_url, or null on failure.
+ */
+suspend fun ApiClient.uploadVideo(dataUrl: String, fileName: String): ApiVideoUploadResponse? {
+    return try {
+        val base64Data = dataUrl.substringAfter(",", dataUrl)
+        val body = json.encodeToString(ApiVideoUploadBody(base64Data, fileName))
+        safeRequest<ApiVideoUploadResponse>("POST", "/uploads/video.php", body)
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
  * Uploads a media file (base64 data URL) in chunks, reporting progress via
  * onProgress(0.0..1.0). Returns the uploaded URL. This gives a real progress
  * bar for large files (videos) instead of a single blocking POST.

@@ -40,6 +40,7 @@ import com.tik_market.ui.shop.ShopsListScreen
 import com.tik_market.ui.story.StoryViewerScreen
 import com.tik_market.ui.live.LiveShoppingScreen
 import com.tik_market.ui.live.LiveStreamingScreen
+import com.tik_market.ui.call.CallScreen
 import com.tik_market.ui.reels.ReelsScreen
 import com.tik_market.ui.search.ImageSearchScreen
 import com.tik_market.ui.vendor.CreateReelScreen
@@ -112,7 +113,14 @@ fun MainFlow(
                         }
                         if (shop != null) {
                             val uploadedUrl = if (dataUrl.startsWith("data:")) {
-                                ApiClient.uploadImage(dataUrl, name)
+                                // Use the FFmpeg-optimized video endpoint for videos,
+                                // the standard image endpoint otherwise.
+                                val isVideo = name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov")
+                                if (isVideo) {
+                                    ApiClient.uploadVideo(dataUrl, name)?.videoUrl ?: ""
+                                } else {
+                                    ApiClient.uploadImage(dataUrl, name)
+                                }
                             } else {
                                 dataUrl // it might be a color code or already uploaded URL
                             }
@@ -229,7 +237,18 @@ fun MainFlow(
             productImage = appState.chatProductImage,
             productPrice = appState.chatProductPrice,
             vendorId = appState.chatVendorId,
-            vendorIsOnline = appState.chatVendorIsOnline
+            vendorIsOnline = appState.chatVendorIsOnline,
+            onCall = {
+                // Build a deterministic room name from the two user ids.
+                val myId = ApiClient.getCurrentUserId()
+                val peerId = appState.chatVendorId
+                val a = minOf(myId, peerId)
+                val b = maxOf(myId, peerId)
+                appState.callRoomName = "call_${a}_${b}"
+                appState.callPeerName = appState.chatVendorName
+                appState.callIsOutgoing = true
+                appState.navigateTo(NavScreen.Call)
+            }
         )
         NavScreen.Conversations -> ConversationsScreen(
             onBack = { appState.goBack() },
@@ -478,6 +497,12 @@ fun MainFlow(
                 appState.selectedShopId = id
                 appState.navigateTo(NavScreen.ShopPage)
             }
+        )
+        NavScreen.Call -> CallScreen(
+            roomName = appState.callRoomName,
+            peerName = appState.callPeerName,
+            isOutgoing = appState.callIsOutgoing,
+            onEnd = { appState.goBack() }
         )
         else -> {}
     }

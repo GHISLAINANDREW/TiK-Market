@@ -86,6 +86,11 @@ class AppState(
     var storyItems by mutableStateOf<List<StoryItem>>(emptyList())
     var storyIndex by mutableStateOf(0)
 
+    // LiveKit Call
+    var callRoomName by mutableStateOf("")
+    var callPeerName by mutableStateOf("")
+    var callIsOutgoing by mutableStateOf(true)
+
     fun toggleComparison(product: Product) {
         comparisonList = if (comparisonList.any { it.id == product.id }) {
             comparisonList.filter { it.id != product.id }

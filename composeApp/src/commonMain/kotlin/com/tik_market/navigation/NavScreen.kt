@@ -42,4 +42,5 @@ sealed class NavScreen(val route: String, val title: String) {
     object LiveStreaming : NavScreen("live-streaming", "Lancer un Live")
     object Reels : NavScreen("reels", "Reels")
     object CreateReel : NavScreen("create-reel", "Publier un Reel")
+    object Call : NavScreen("call", "Appel")
 }

@@ -32,6 +32,24 @@ suspend fun ApiClient.postLiveComment(streamId: Int, text: String): Boolean {
     }
 }
 
+suspend fun ApiClient.likeLiveComment(streamId: Int, commentId: Int): Boolean {
+    return try {
+        post("/live/comment-like.php", """{"stream_id":$streamId,"comment_id":$commentId}""")
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+suspend fun ApiClient.fetchLiveComments(streamId: Int, offset: Int = 0, limit: Int = 50): List<ApiLiveComment> {
+    return try {
+        safeRequest<Map<String, Any>>("GET", "/live/comments.php?stream_id=$streamId&limit=$limit&offset=$offset")
+            .get("comments") as? List<ApiLiveComment> ?: emptyList()
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 suspend fun ApiClient.startLiveStream(title: String, pinnedProductId: Int?): ApiStartLiveResponse {
     val body = json.encodeToString(ApiStartLiveBody.serializer(), ApiStartLiveBody(title, pinnedProductId))
     return safeRequest("POST", "/live/start.php", body)
@@ -94,6 +112,22 @@ suspend fun ApiClient.fetchLiveAudio(streamId: Int, afterSeq: Int): List<ApiLive
         safeRequest<ApiLiveAudioResponse>("GET", "/live/audio.php?stream_id=$streamId&after_seq=$afterSeq").chunks
     } catch (_: Exception) {
         emptyList()
+    }
+}
+
+/**
+ * Requests a LiveKit access token from the backend for a given room.
+ * Used for real-time video/audio calls and live streaming.
+ */
+suspend fun ApiClient.getLiveKitToken(room: String, identity: String? = null): ApiLiveKitTokenResponse? {
+    return try {
+        val body = json.encodeToString(
+            ApiLiveKitTokenBody.serializer(),
+            ApiLiveKitTokenBody(room, identity)
+        )
+        safeRequest<ApiLiveKitTokenResponse>("POST", "/live/token.php", body)
+    } catch (_: Exception) {
+        null
     }
 }
 

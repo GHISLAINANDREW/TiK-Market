@@ -64,6 +64,21 @@ data class ApiUploadResponse(
 )
 
 @Serializable
+data class ApiVideoUploadBody(
+    val video: String, // base64 data
+    val filename: String
+)
+
+@Serializable
+data class ApiVideoUploadResponse(
+    val success: Boolean = false,
+    @SerialName("video_url") val videoUrl: String = "",
+    @SerialName("hd_url") val hdUrl: String = "",
+    @SerialName("sd_url") val sdUrl: String = "",
+    val filename: String = ""
+)
+
+@Serializable
 data class ApiSuccessResponse(
     val success: Boolean = false,
     val message: String? = null,

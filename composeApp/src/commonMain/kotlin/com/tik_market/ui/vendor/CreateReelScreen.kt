@@ -186,20 +186,23 @@ fun CreateReelScreen(
                             uploadProgress = 0f
                             try {
                                 if (videoDataUrl != null) {
-                                    val uploadedUrl = ApiClient.uploadImageChunked(
+                                    // Use the FFmpeg-optimized video endpoint (HD + SD versions).
+                                    val uploaded = ApiClient.uploadVideo(
                                         dataUrl = videoDataUrl!!,
-                                        fileName = videoFileName ?: "reel.mp4",
-                                        onProgress = { uploadProgress = it }
+                                        fileName = videoFileName ?: "reel.mp4"
                                     )
-                                    val shop = ApiClient.fetchShopByVendor()
-                                    if (shop != null) {
-                                        ApiClient.createReel(
-                                            shopId = shop.id,
-                                            videoUrl = uploadedUrl,
-                                            description = description,
-                                            productId = selectedProductId
-                                        )
-                                        onBack()
+                                    val videoUrl = uploaded?.videoUrl
+                                    if (videoUrl != null) {
+                                        val shop = ApiClient.fetchShopByVendor()
+                                        if (shop != null) {
+                                            ApiClient.createReel(
+                                                shopId = shop.id,
+                                                videoUrl = videoUrl,
+                                                description = description,
+                                                productId = selectedProductId
+                                            )
+                                            onBack()
+                                        }
                                     }
                                 }
                             } catch (_: Exception) {}

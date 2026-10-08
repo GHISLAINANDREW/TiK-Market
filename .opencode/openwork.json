@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "Tik-Market",
+    "createdAt": 1791371992572,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "D:\\aaaaaaaaa\\workspace\\Tik-Market"
+  ],
+  "reload": null
+}

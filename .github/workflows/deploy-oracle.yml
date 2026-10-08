@@ -1,0 +1,74 @@
+name: Deploy Backend to Oracle Cloud
+# v1.0.0 - Auto-deploy PHP backend to Oracle Cloud VM via SSH.
+#
+# Triggered when backend (api/) files change on main. SSHes into the Oracle VM,
+# pulls the latest code, and restarts the web server. Replicates Render's
+# auto-deploy behavior on the self-hosted Oracle Cloud server.
+#
+# Required repository secrets:
+#   ORACLE_HOST      — Oracle VM public IP or DuckDNS hostname
+#   ORACLE_USER      — SSH user (e.g. ubuntu or opc)
+#   ORACLE_SSH_KEY   — Private SSH key (PEM) for the Oracle VM
+#   ORACLE_PORT      — SSH port (default 22)
+#   ORACLE_APP_DIR   — Absolute path to the app dir on the VM (e.g. /var/www/tik-market)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - '.github/workflows/deploy-oracle.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Oracle Cloud via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          port: ${{ secrets.ORACLE_PORT }}
+          script: |
+            set -e
+            echo "=== TiK-Market backend deploy to Oracle ==="
+            APP_DIR="${{ secrets.ORACLE_APP_DIR }}"
+            if [ -z "$APP_DIR" ]; then
+              echo "ERROR: ORACLE_APP_DIR secret not set"
+              exit 1
+            fi
+
+            # 1. Pull latest code (assumes the repo is already cloned on the VM).
+            cd "$APP_DIR"
+            if [ -d .git ]; then
+              git fetch --all
+              git reset --hard origin/main
+            else
+              echo "WARNING: $APP_DIR is not a git repo. Skipping pull."
+            fi
+
+            # 2. Ensure uploads directory exists and is writable.
+            mkdir -p api/uploads/videos api/uploads/stories api/uploads/voices
+            chmod -R 775 api/uploads
+
+            # 3. Ensure FFmpeg is available (used for video optimization).
+            if ! command -v ffmpeg >/dev/null 2>&1; then
+              echo "WARNING: ffmpeg not found. Video optimization will fall back to original."
+            else
+              echo "ffmpeg: $(ffmpeg -version 2>/dev/null | head -n1)"
+            fi
+
+            # 4. Restart the web server (Nginx + PHP-FPM).
+            #    Adjust the service names to match your Oracle setup.
+            if command -v systemctl >/dev/null 2>&1; then
+              sudo systemctl reload nginx 2>/dev/null || sudo systemctl restart nginx 2>/dev/null || true
+              sudo systemctl reload php8.1-fpm 2>/dev/null || \
+              sudo systemctl reload php8.2-fpm 2>/dev/null || \
+              sudo systemctl reload php8.3-fpm 2>/dev/null || true
+            fi
+
+            echo "=== Deploy complete ==="

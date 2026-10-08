@@ -41,8 +41,6 @@ try {
         // Verify stream exists and is live
         $stmt = $db->prepare("SELECT id FROM live_streams WHERE id = ? AND is_live = 1");
         $stmt->execute([$streamId]);
-        if (!$stmt->fetch()) json(404, ['error' => 'Direct introuvable ou termine']);
-
         // Sanitize text: remove HTML tags and control characters
         $text = strip_tags($text);
         $text = preg_replace('/\s+/', ' ', $text);
@@ -53,9 +51,10 @@ try {
             $text = substr($text, 0, 500);
         }
 
+        // Remove extra whitespace and verify text is not empty
         if ($text === '') json(400, ['error' => 'Texte requis']);
+        if (!$stmt->fetch()) json(404, ['error' => 'Direct introuvable ou terminé']);
 
-        // Insert comment
         $stmt = $db->prepare("INSERT INTO live_comments (stream_id, user_id, text) VALUES (?, ?, ?)");
         $stmt->execute([$streamId, $userId, $text]);
         $commentId = (int)$db->lastInsertId();

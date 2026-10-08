@@ -78,7 +78,8 @@ fun ChatScreen(
     productImage: String? = null,
     productPrice: String? = null,
     vendorId: Int = 0,
-    vendorIsOnline: Boolean = false
+    vendorIsOnline: Boolean = false,
+    onCall: () -> Unit = {}
 ) {
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
@@ -376,6 +377,8 @@ fun ChatScreen(
                     },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
+                        // Video call button (LiveKit)
+                        IconButton(onClick = onCall) { Icon(Icons.Default.Videocam, null, tint = Color.White) }
                         IconButton(onClick = {}) { Icon(Icons.Outlined.MoreVert, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
