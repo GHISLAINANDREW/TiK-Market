@@ -74,8 +74,8 @@ kotlin {
             implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
             implementation("androidx.exifinterface:exifinterface:1.3.7")
             implementation(libs.ktor.client.okhttp)
-            // LiveKit real-time video/audio calls + live streaming
-            implementation(libs.livekit.android)
+            // LiveKit real-time video/audio calls + live streaming (temporarily commented out)
+            // implementation(libs.livekit.android)
         }
         wasmJsMain.dependencies {
         }

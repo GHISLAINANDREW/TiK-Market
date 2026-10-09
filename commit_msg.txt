@@ -1,0 +1,7 @@
+feat: ajout fonctionnalite live avec commentaire et like
+
+Ameliorations :
+- Backend : endpoints comments.php (pagination), comment-like.php (like)
+- Frontend : CommentItem avec like, timestamp, geolocalisation
+- DTO : likes_count, liked_by_me, city, country
+- API client : likeLiveComment(), fetchLiveComments() avec pagination

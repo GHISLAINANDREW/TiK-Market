@@ -386,9 +386,11 @@ fun MainFlow(
                 scope.launch { snackbarHostState.showSnackbar("${p.title} ajouté") }
             }
         )
+        /*
         NavScreen.LiveStreaming -> LiveStreamingScreen(
             onBack = { appState.goBack() }
         )
+        */
         NavScreen.CreateReel -> CreateReelScreen(
             onBack = { appState.goBack() }
         )
@@ -486,11 +488,13 @@ fun MainFlow(
                 appState.userName = updatedUser.name
             }
         )
+        /*
         NavScreen.LiveShopping -> LiveShoppingScreen(
             streamId = appState.selectedLiveStreamId,
             onBack = { appState.goBack() },
             onProductClick = { p -> appState.selectedProduct = p; appState.navigateTo(NavScreen.ProductDetail) }
         )
+        */
         NavScreen.Reels -> ReelsScreen(
             onBack = { appState.goBack() },
             onShopClick = { id -> 

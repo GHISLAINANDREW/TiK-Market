@@ -1,6 +1,5 @@
 package com.tik_market.ui.live
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -16,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -29,7 +27,6 @@ import com.tik_market.api.dto.*
 import com.tik_market.data.models.Product
 import com.tik_market.theme.*
 import com.tik_market.ui.components.decodeDataUrlToImageBitmap
-import com.tik_market.utils.LocalAppStrings
 import com.tik_market.utils.playLiveAudioChunk
 import com.tik_market.utils.shareText
 import kotlinx.coroutines.delay
@@ -61,13 +58,11 @@ fun LiveShoppingScreen(
         try {
             val streams = ApiClient.fetchLiveStreams()
             stream = streams.firstOrNull { it.id == streamId }
-            // If the stream is no longer listed as live (orphaned/ended), show "ended".
             if (stream == null) {
                 streamEnded = true
             }
         } catch (_: Exception) {}
 
-        // Load pinned product if exists
         stream?.pinnedProductId?.let { id ->
             try {
                 pinnedProduct = ApiClient.fetchProduct(id).toProduct()
@@ -96,7 +91,6 @@ fun LiveShoppingScreen(
                         streamEnded = false
                     }
                 }
-                // If we had frames but none for 15s, the streamer is gone.
                 if (lastFrameAt > 0 && Clock.System.now().toEpochMilliseconds() - lastFrameAt > 15000) {
                     streamEnded = true
                 }
@@ -123,7 +117,6 @@ fun LiveShoppingScreen(
     }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        // ── 1. Live Frame Background (frame-based stream) ──
         frameBitmap?.let { bmp ->
             Image(
                 bitmap = bmp,
@@ -132,13 +125,12 @@ fun LiveShoppingScreen(
                 contentScale = ContentScale.Crop
             )
         } ?: run {
-            // Fallback: loading placeholder, or "stream ended" if the streamer is gone.
             Box(Modifier.fillMaxSize().background(Color(0xFF1A1A1A)), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (streamEnded) {
                         Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
                         Spacer(Modifier.height(12.dp))
-                        Text("Le direct est termine", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                        Text("Le direct est terminé", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
                     } else {
                         CircularProgressIndicator(color = Color.White)
                         Spacer(Modifier.height(12.dp))
@@ -147,7 +139,69 @@ fun LiveShoppingScreen(
                 }
             }
         }
+
+        // ── 2. Overlay UI ──
+        Column(Modifier.fillMaxSize()) {
+            LiveHeader(stream, onBack)
+            
+            Spacer(Modifier.weight(1f))
+            
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Box(Modifier.height(200.dp).fillMaxWidth()) {
+                        LazyColumn(
+                            reverseLayout = true,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(comments.reversed()) { comment ->
+                                CommentBubble(comment)
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(12.dp))
+                    
+                    pinnedProduct?.let { product ->
+                        PinnedProductCard(product, onProductClick)
+                    }
+                }
+                
+                LiveActions(
+                    onLike = { 
+                        hearts++ 
+                        scope.launch {
+                            ApiClient.likeLiveComment(streamId, 0)
+                        }
+                    },
+                    onShare = { shareText("Regardez ce direct sur TiK-Market !", "Partager le direct") }
+                )
+            }
+            
+            LiveInputRow(
+                value = commentText,
+                onValueChange = { commentText = it },
+                onSend = {
+                    if (commentText.isNotBlank()) {
+                        scope.launch {
+                            if (ApiClient.postLiveComment(streamId, commentText)) {
+                                commentText = ""
+                                comments = ApiClient.fetchLiveComments(streamId)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        repeat(hearts % 10) {
+            FloatingHeart()
+        }
     }
+}
 
 @Composable
 private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
@@ -155,7 +209,6 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
         Modifier.fillMaxWidth().padding(top = 48.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Shop Profile
         Surface(
             color = Color.Black.copy(alpha = 0.4f),
             shape = RoundedCornerShape(24.dp)
@@ -164,9 +217,7 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
                 Modifier.padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.size(32.dp).clip(CircleShape).background(Color.White)) {
-                    // Load logo if available
-                }
+                Box(Modifier.size(32.dp).clip(CircleShape).background(Color.White)) {}
                 Spacer(Modifier.width(8.dp))
                 Column {
                     Text(stream?.shopName ?: "Chargement...", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -174,7 +225,7 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
-                    onClick = { /* Suivre */ },
+                    onClick = { },
                     colors = ButtonDefaults.buttonColors(containerColor = Green),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     modifier = Modifier.height(28.dp),
@@ -184,10 +235,33 @@ private fun LiveHeader(stream: ApiLiveStream?, onBack: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.width(16.dp))
-        // Close button
-        IconButton(onClick = onBack) {
-            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(24.dp))
+        
+        Spacer(Modifier.weight(1f))
+        
+        Surface(
+            color = Color.Red,
+            shape = RoundedCornerShape(4.dp),
+            modifier = Modifier.padding(end = 12.dp)
+        ) {
+            Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+        }
+        
+        IconButton(onClick = onBack, modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)) {
+            Icon(Icons.Default.Close, null, tint = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun CommentBubble(comment: ApiLiveComment) {
+    Surface(
+        color = Color.Black.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Text(comment.userName, color = Amber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(comment.text, color = Color.White, fontSize = 12.sp)
         }
     }
 }
@@ -201,10 +275,7 @@ private fun PinnedProductCard(product: Product, onClick: (Product) -> Unit) {
         modifier = Modifier.width(220.dp).height(70.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Product Image
-            Box(Modifier.size(70.dp).background(Color(0xFFF5F5F5))) {
-                // Load image
-            }
+            Box(Modifier.size(70.dp).background(Color(0xFFF5F5F5))) {}
             Column(Modifier.padding(8.dp).weight(1f)) {
                 Text(product.title, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${product.price.toInt()} FCFA", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Orange)
@@ -236,77 +307,36 @@ private fun ActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, 
     }
 }
 
-
 @Composable
-private fun CommentInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onSend: () -> Unit,
-    isLoading: Boolean
-) {
-    val s = LocalAppStrings.current
+private fun LiveInputRow(value: String, onValueChange: (String) -> Unit, onSend: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(12.dp).navigationBarsPadding(),
+        Modifier.fillMaxWidth().padding(16.dp).navigationBarsPadding(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
+        TextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(s.commentPlaceholder, color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp) },
+            placeholder = { Text("Dites quelque chose...", color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp) },
             modifier = Modifier.weight(1f).height(44.dp),
             shape = RoundedCornerShape(22.dp),
-            colors = OutlinedTextFieldDefaults.colors(
+            colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White.copy(alpha = 0.2f),
                 unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
-                focusedBorderColor = Color.White.copy(alpha = 0.3f),
-                unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White
-            ),
-            maxLines = 1,
-            textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+            )
         )
         Spacer(Modifier.width(12.dp))
-        Button(
-            onClick = onSend,
-            enabled = value.isNotBlank() && !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = CircleShape,
-            modifier = Modifier.size(44.dp)
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-            } else {
-                Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color.White)
-            }
+        IconButton(onClick = onSend, enabled = value.isNotBlank()) {
+            Icon(Icons.AutoMirrored.Filled.Send, null, tint = if (value.isNotBlank()) Green else Color.White.copy(alpha = 0.3f))
         }
-    }
-}
-
-private fun formatTimeAgo(createdAt: String?, timezone: String = "UTC"): String {
-    if (createdAt.isNullOrEmpty()) return ""
-    return try {
-        val created = createdAt.toLocalDateTime(TimeZone.of(timezone))
-        val now = Clock.System.now()
-        val diffMs = now.toEpochMilliseconds() - created.toEpochMilliseconds()
-        val diffSec = diffMs / 1000
-        val diffMin = diffSec / 60
-        val diffHour = diffMin / 60
-        val diffDay = diffHour / 24
-        when {
-            diffSec < 60 -> "il y a ${diffSec}s"
-            diffMin < 60 -> "il y a ${diffMin}m"
-            diffHour < 24 -> "il y a ${diffHour}h"
-            else -> "il y a ${diffDay}j"
-        }
-    } catch (_: Exception) {
-        ""
     }
 }
 
 @Composable
 private fun FloatingHeart() {
-    // Basic heart animation (just a placeholder for now)
     var visible by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         delay(2000)
@@ -315,4 +345,4 @@ private fun FloatingHeart() {
     if (visible) {
         Icon(Icons.Default.Favorite, null, tint = Color.Red, modifier = Modifier.offset(x = 300.dp, y = 500.dp).size(30.dp))
     }
-
+}

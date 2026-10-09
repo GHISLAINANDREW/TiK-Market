@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.tik_market.api.dto.ApiMessageReaction
 import com.tik_market.api.*
 import com.tik_market.api.dto.*
@@ -87,6 +89,7 @@ fun ChatScreen(
     var isSending by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     val s = LocalAppStrings.current
     val currentUserId = remember { ApiClient.getCurrentUser()?.id ?: 0 }
 
@@ -321,11 +324,11 @@ fun ChatScreen(
         }
     }
 
-    // Smart polling every 2s: only fetches NEW messages since maxMessageId
+    // Smart polling every 1s (instant messaging): only fetches NEW messages since maxMessageId
     LaunchedEffect(Unit) {
-        delay(500) // initial delay to let first load complete
+        delay(300) // initial delay to let first load complete
         while (true) {
-            delay(2000)
+            delay(1000)
             refreshMessages()
         }
     }
@@ -377,8 +380,8 @@ fun ChatScreen(
                     },
                     navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
                     actions = {
-                        // Video call button (LiveKit)
-                        IconButton(onClick = onCall) { Icon(Icons.Default.Videocam, null, tint = Color.White) }
+                        // Video call button (LiveKit) - temporarily commented out
+                        // IconButton(onClick = onCall) { Icon(Icons.Default.Videocam, null, tint = Color.White) }
                         IconButton(onClick = {}) { Icon(Icons.Outlined.MoreVert, null, tint = Color.White) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -618,6 +621,7 @@ fun ChatScreen(
                                         if (messageText.isBlank()) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     isRecording = true
                                                     startVoiceRecording()
                                                 },

@@ -10,7 +10,7 @@ $location = trim($input['location'] ?? '');
 if (!$idToken) json(400, ['error' => 'id_token requis']);
 
 // Config Google (via variables d'environnement — jamais en dur dans le code)
-$google_client_id = getenv('GOOGLE_CLIENT_ID') ?: '';
+$google_client_id = getenv('GOOGLE_CLIENT_ID') ?: '475182630624-icq419iobiuheb21e0u73rflvju4ccia.apps.googleusercontent.com';
 $google_client_secret = getenv('GOOGLE_CLIENT_SECRET') ?: '';
 
 // 1. Vérifier le token avec Google
@@ -21,8 +21,15 @@ if (!$response) json(401, ['error' => 'Token Google invalide ou expiré']);
 $payload = json_decode($response, true);
 if (!isset($payload['email'])) json(401, ['error' => 'Données Google incomplètes']);
 
-// Vérification de l'audience (sécurité supplémentaire)
-if ($payload['aud'] !== $google_client_id) {
+// Liste des audiences (aud) valides pour le projet (Web et Android)
+$allowed_auds = [
+    $google_client_id,
+    '475182630624-icq419iobiuheb21e0u73rflvju4ccia.apps.googleusercontent.com', // Web Client ID
+    '475182630624-211f24e1cbvbu257lglr62k0m5utqod6.apps.googleusercontent.com', // Android Client ID
+];
+
+// Vérification de l'audience
+if (!in_array($payload['aud'], $allowed_auds, true)) {
     json(401, ['error' => 'Token destiné à une autre application']);
 }
 

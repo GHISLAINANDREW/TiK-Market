@@ -6,7 +6,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 actual class GoogleAuthManager {
-    private val webClientId = "706844801362-57gso395t542iducvv1rdvp12rohsd3i.apps.googleusercontent.com"
+    private val webClientId = "475182630624-icq419iobiuheb21e0u73rflvju4ccia.apps.googleusercontent.com"
 
     actual suspend fun signIn(): GoogleUserData? = suspendCancellableCoroutine { continuation ->
         try {

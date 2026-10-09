@@ -14,8 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 actual class GoogleAuthManager(private val context: Context) {
-    // IMPORTANT: Remplacer par votre Client ID Web depuis la Console Google Cloud
-    private val webClientId = "706844801362-57gso395t542iducvv1rdvp12rohsd3i.apps.googleusercontent.com"
+    // Web Client ID (requis par GetGoogleIdOption / Credential Manager)
+    private val webClientId = "475182630624-icq419iobiuheb21e0u73rflvju4ccia.apps.googleusercontent.com"
+    // Note: Android Client ID = 475182630624-211f24e1cbvbu257lglr62k0m5utqod6.apps.googleusercontent.com
 
     private fun findActivity(context: Context): Activity? {
         var currentContext = context

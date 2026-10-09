@@ -25,10 +25,12 @@ data class ApiLiveComment(
     val text: String,
     @SerialName("created_at") val createdAt: String = "",
     val likes_count: Int = 0,
-    val liked_by_me: Boolean = false,
+    @SerialName("liked_by_me") val liked_by_me: Boolean = false,
     val city: String = "",
     val country: String = ""
-)
+) {
+    val likedByMe: Boolean get() = liked_by_me
+}
 
 @Serializable
 data class ApiLiveStreamsResponse(

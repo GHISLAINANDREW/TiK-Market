@@ -6,8 +6,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,9 +15,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tik_market.api.dto.ApiLiveComment
-import com.tik_market.utils.LocalAppStrings
-import kotlinx.coroutines.Clock
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 @Composable
@@ -27,15 +28,15 @@ fun CommentItem(
     onClickLike: (Int) -> Unit = {},
     onLongClick: (Int) -> Unit = {}
 ) {
-    val s = LocalAppStrings.current
-    val createdAt = try {
-        val instant = comment.createdAt.toLocalDateTime(TimeZone.UTC)
-        instant
-    } catch (_: Exception) {
-        null
+    val createdAt = remember(comment.createdAt) {
+        try {
+            Instant.parse(comment.createdAt).toLocalDateTime(TimeZone.UTC)
+        } catch (_: Exception) {
+            null
+        }
     }
 
-    val timeAgo by remember { mutableStateOf(computeTimeAgo(createdAt)) }
+    val timeAgo by remember(createdAt) { mutableStateOf(computeTimeAgo(createdAt)) }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -65,7 +66,7 @@ fun CommentItem(
                                 tint = Color.White.copy(alpha = 0.6f)
                             )
                             Text(
-                                s.commentsCity.replace("%s", comment.city),
+                                comment.city,
                                 fontSize = 11.sp,
                                 color = Color.White.copy(alpha = 0.7f)
                             )
@@ -128,20 +129,25 @@ fun CommentItem(
     }
 }
 
-private fun computeTimeAgo(createdAt: kotlinx.datetime.LocalDateTime?): String {
+private fun computeTimeAgo(createdAt: LocalDateTime?): String {
     if (createdAt == null) return ""
-    val now = Clock.System.now()
-    val diffMs = now.toEpochMilliseconds() - createdAt.toEpochMilliseconds()
+    return try {
+        val now = Clock.System.now()
+        val createdInstant = createdAt.toInstant(TimeZone.UTC)
+        val diffMs = now.toEpochMilliseconds() - createdInstant.toEpochMilliseconds()
 
-    val diffSec = diffMs / 1000
-    val diffMin = diffSec / 60
-    val diffHour = diffMin / 60
-    val diffDay = diffHour / 24
+        val diffSec = diffMs / 1000
+        val diffMin = diffSec / 60
+        val diffHour = diffMin / 60
+        val diffDay = diffHour / 24
 
-    return when {
-        diffSec < 60 -> "il y a ${diffSec}s"
-        diffMin < 60 -> "il y a ${diffMin}m"
-        diffHour < 24 -> "il y a ${diffHour}h"
-        else -> "il y a ${diffDay}j"
+        when {
+            diffSec < 60 -> "il y a ${diffSec}s"
+            diffMin < 60 -> "il y a ${diffMin}m"
+            diffHour < 24 -> "il y a ${diffHour}h"
+            else -> "il y a ${diffDay}j"
+        }
+    } catch (_: Exception) {
+        ""
     }
 }

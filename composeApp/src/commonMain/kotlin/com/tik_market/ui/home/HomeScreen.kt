@@ -199,17 +199,19 @@ fun HomeScreen(
                 state = pullRefreshState,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 indicator = {
-                    Surface(
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 4.dp
-                    ) {
-                        RotatingRefreshIcon(
-                            modifier = Modifier.padding(8.dp).size(24.dp),
-                            isRefreshing = state.isRefreshing,
-                            tint = primary
-                        )
+                    if (pullRefreshState.distanceFraction > 0f || state.isRefreshing) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 4.dp
+                        ) {
+                            RotatingRefreshIcon(
+                                modifier = Modifier.padding(8.dp).size(24.dp),
+                                isRefreshing = state.isRefreshing,
+                                tint = primary
+                            )
+                        }
                     }
                 }
             ) {
@@ -236,12 +238,12 @@ fun HomeScreen(
                         )
                     }
 
-                    item {
-                        HomeLiveShopping(
-                            streams = state.liveStreams,
-                            onStreamClick = onLiveClick
-                        )
-                    }
+                    // item {
+                    //     HomeLiveShopping(
+                    //         streams = state.liveStreams,
+                    //         onStreamClick = onLiveClick
+                    //     )
+                    // }
 
                     item {
                         HomeHero(
@@ -422,16 +424,6 @@ private fun HomeTopBar(
                         IconButton(onClick = onCartClick, modifier = Modifier.size(36.dp)) {
                             Icon(Icons.Default.ShoppingCart, "Panier", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
-                    }
-
-                    Spacer(Modifier.width(6.dp))
-
-                    IconButton(onClick = onRefresh, modifier = Modifier.size(36.dp)) {
-                        RotatingRefreshIcon(
-                            isRefreshing = isRefreshing,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
             }
