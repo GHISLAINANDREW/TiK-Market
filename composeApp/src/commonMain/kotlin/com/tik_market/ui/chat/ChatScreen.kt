@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -100,6 +101,8 @@ fun ChatScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteTargetMsg by remember { mutableStateOf<ChatMessage?>(null) }
     var replyToMsg by remember { mutableStateOf<ChatMessage?>(null) }
+
+    var isLockedRecording by remember { mutableStateOf(false) }
 
     // Product share message (WhatsApp style — appears as first message)
     val sharedProduct = remember(productTitle) {
@@ -368,12 +371,12 @@ fun ChatScreen(
                             Column {
                                 Text(vendorName, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(Modifier.size(7.dp).background(if (vendorIsOnline) Color(0xFF25D366) else Color.Gray, CircleShape))
+                                    Box(Modifier.size(7.dp).background(if (messageText.isNotBlank()) Color(0xFF25D366) else if (vendorIsOnline) Color(0xFF25D366) else Color.Gray, CircleShape))
                                     Spacer(Modifier.width(5.dp))
                                     Text(
-                                        if (vendorIsOnline) "En ligne" else "Hors ligne",
+                                        if (messageText.isNotBlank()) "en train d'écrire..." else if (vendorIsOnline) "En ligne" else "Hors ligne",
                                         fontSize = 12.sp,
-                                        color = if (vendorIsOnline) Color(0xFF25D366) else Color.Gray
+                                        color = if (messageText.isNotBlank()) Color(0xFF25D366) else if (vendorIsOnline) Color(0xFF25D366) else Color.Gray
                                     )
                                 }
                             }
@@ -518,6 +521,48 @@ fun ChatScreen(
                             )
                         }
 
+                        // ── WhatsApp Locked Voice Review Bar ──
+                        if (isLockedRecording) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color.White,
+                                shape = RoundedCornerShape(24.dp),
+                                shadowElevation = 4.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    IconButton(onClick = {
+                                        isRecording = false
+                                        isLockedRecording = false
+                                        recordingTime = 0
+                                        stopVoiceRecording { _, _ -> }
+                                    }) {
+                                        Icon(Icons.Default.Delete, null, tint = Color.Red)
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Box(Modifier.size(10.dp).background(Color.Red, CircleShape))
+                                        Text(formatDuration(recordingTime), fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                                        Text("Verrouillé", fontSize = 11.sp, color = Color.Gray)
+                                    }
+                                    IconButton(onClick = {
+                                        isRecording = false
+                                        isLockedRecording = false
+                                        recordingTime = 0
+                                        stopVoiceRecording { dataUrl, duration ->
+                                            if (dataUrl != null) {
+                                                sendMessage("[Vocal]", dataUrl, duration)
+                                            }
+                                        }
+                                    }) {
+                                        Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color(0xFF25D366))
+                                    }
+                                }
+                            }
+                        }
+
                         // ── Main input row ──
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 5.dp),
@@ -617,31 +662,39 @@ fun ChatScreen(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(if (isRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
+                                    .background(if (isRecording || isLockedRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
                                     .pointerInput(messageText) {
                                         if (messageText.isBlank()) {
-                                            awaitPointerEventScope {
-                                                while (true) {
-                                                    val event = awaitPointerEvent()
-                                                    val down = event.changes.firstOrNull { it.pressed && !it.previousPressed }
-                                                    if (down != null && !isRecording) {
-                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                        isRecording = true
-                                                        startVoiceRecording()
-                                                        down.consume()
+                                            detectDragGestures(
+                                                onDragStart = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    isRecording = true
+                                                    recordingTime = 0
+                                                    startVoiceRecording()
+                                                },
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    if (dragAmount.y < -25f) {
+                                                        isLockedRecording = true
                                                     }
-                                                    val up = event.changes.firstOrNull { !it.pressed && it.previousPressed }
-                                                    if (up != null && isRecording) {
+                                                },
+                                                onDragEnd = {
+                                                    if (!isLockedRecording && isRecording) {
                                                         isRecording = false
-                                                        up.consume()
                                                         stopVoiceRecording { dataUrl, duration ->
                                                             if (dataUrl != null) {
                                                                 sendMessage("[Vocal]", dataUrl, duration)
                                                             }
                                                         }
                                                     }
+                                                },
+                                                onDragCancel = {
+                                                    if (!isLockedRecording && isRecording) {
+                                                        isRecording = false
+                                                        stopVoiceRecording { _, _ -> }
+                                                    }
                                                 }
-                                            }
+                                            )
                                         }
                                     }
                                     .clickable(enabled = messageText.isNotBlank()) {
