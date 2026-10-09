@@ -108,8 +108,6 @@ fun ChatScreen(
     var deleteTargetMsg by remember { mutableStateOf<ChatMessage?>(null) }
     var replyToMsg by remember { mutableStateOf<ChatMessage?>(null) }
 
-    var isLockedRecording by remember { mutableStateOf(false) }
-
     // Product share message (WhatsApp style — appears as first message)
     val sharedProduct = remember(productTitle) {
         if (productTitle != null) ProductShare(
@@ -296,6 +294,8 @@ fun ChatScreen(
     }
 
     var isRecording by remember { mutableStateOf(false) }
+    var isLockedRecording by remember { mutableStateOf(false) }
+    var isPausedRecording by remember { mutableStateOf(false) }
     var recordingTime by remember { mutableStateOf(0) }
 
     var showLocationDialog by remember { mutableStateOf(false) }
@@ -303,12 +303,13 @@ fun ChatScreen(
     var locationLng by remember { mutableStateOf<Double?>(null) }
     var locationName by remember { mutableStateOf("") }
 
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            recordingTime = 0
-            while (isRecording) {
+    LaunchedEffect(isRecording, isLockedRecording, isPausedRecording) {
+        if (isRecording || isLockedRecording) {
+            while (isRecording || isLockedRecording) {
                 delay(1000)
-                recordingTime++
+                if (!isPausedRecording) {
+                    recordingTime++
+                }
             }
         }
     }
@@ -530,40 +531,72 @@ fun ChatScreen(
                         // ── WhatsApp Locked Voice Review Bar ──
                         if (isLockedRecording) {
                             Surface(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                color = Color.White,
-                                shape = RoundedCornerShape(24.dp),
-                                shadowElevation = 4.dp
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
+                                color = Color(0xFF1F2C34),
+                                shape = RoundedCornerShape(32.dp),
+                                shadowElevation = 8.dp
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    IconButton(onClick = {
-                                        isRecording = false
-                                        isLockedRecording = false
-                                        recordingTime = 0
-                                        stopVoiceRecording { _, _ -> }
-                                    }) {
-                                        Icon(Icons.Default.Delete, null, tint = Color.Red)
+                                    Surface(
+                                        modifier = Modifier.size(40.dp),
+                                        shape = CircleShape,
+                                        color = Color(0xFFE53935)
+                                    ) {
+                                        IconButton(onClick = {
+                                            isRecording = false
+                                            isLockedRecording = false
+                                            isPausedRecording = false
+                                            recordingTime = 0
+                                            stopVoiceRecording { _, _ -> }
+                                        }) {
+                                            Icon(Icons.Default.Delete, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        }
                                     }
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Box(Modifier.size(10.dp).background(Color.Red, CircleShape))
-                                        Text(formatDuration(recordingTime), fontWeight = FontWeight.Bold, color = Color.DarkGray)
-                                        Text("Verrouillé", fontSize = 11.sp, color = Color.Gray)
-                                    }
+
+                                    // Pause / Resume button
                                     IconButton(onClick = {
-                                        isRecording = false
-                                        isLockedRecording = false
-                                        recordingTime = 0
-                                        stopVoiceRecording { dataUrl, duration ->
-                                            if (dataUrl != null) {
-                                                sendMessage("[Vocal]", dataUrl, duration)
-                                            }
+                                        isPausedRecording = !isPausedRecording
+                                        if (isPausedRecording) {
+                                            pauseVoiceRecording()
+                                        } else {
+                                            resumeVoiceRecording()
                                         }
                                     }) {
-                                        Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color(0xFF25D366))
+                                        Icon(
+                                            if (isPausedRecording) Icons.Default.PlayArrow else Icons.Default.Pause,
+                                            null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Box(Modifier.size(10.dp).background(if (isPausedRecording) Color.Gray else Color.Red, CircleShape))
+                                        Text(formatDuration(recordingTime), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
+                                    }
+
+                                    Surface(
+                                        modifier = Modifier.size(44.dp),
+                                        shape = CircleShape,
+                                        color = Color(0xFF25D366)
+                                    ) {
+                                        IconButton(onClick = {
+                                            isRecording = false
+                                            isLockedRecording = false
+                                            isPausedRecording = false
+                                            recordingTime = 0
+                                            stopVoiceRecording { dataUrl, duration ->
+                                                if (dataUrl != null) {
+                                                    sendMessage("[Vocal]", dataUrl, duration)
+                                                }
+                                            }
+                                        }) {
+                                            Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                        }
                                     }
                                 }
                             }
@@ -1448,9 +1481,22 @@ private fun formatDateHeader(dateStr: String): String {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val msgDate = LocalDate.parse(datePart)
         
-        when (msgDate) {
-            today -> "Aujourd'hui"
-            today.minus(1, DateTimeUnit.DAY) -> "Hier"
+        val daysBetween = today.toEpochDays() - msgDate.toEpochDays()
+        when {
+            daysBetween == 0 -> "Aujourd'hui"
+            daysBetween == 1 -> "Hier"
+            daysBetween in 2..6 -> {
+                when (msgDate.dayOfWeek) {
+                    kotlinx.datetime.DayOfWeek.MONDAY -> "lundi"
+                    kotlinx.datetime.DayOfWeek.TUESDAY -> "mardi"
+                    kotlinx.datetime.DayOfWeek.WEDNESDAY -> "mercredi"
+                    kotlinx.datetime.DayOfWeek.THURSDAY -> "jeudi"
+                    kotlinx.datetime.DayOfWeek.FRIDAY -> "vendredi"
+                    kotlinx.datetime.DayOfWeek.SATURDAY -> "samedi"
+                    kotlinx.datetime.DayOfWeek.SUNDAY -> "dimanche"
+                    else -> "récent"
+                }
+            }
             else -> "${msgDate.dayOfMonth} ${getMonthName(msgDate.monthNumber)} ${msgDate.year}"
         }
     } catch (_: Exception) {

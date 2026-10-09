@@ -6,7 +6,8 @@ expect fun playAudio(url: String, onProgress: (Float) -> Unit = {}, onCompletion
 expect fun stopAudio()
 
 expect fun startVoiceRecording()
-
+expect fun pauseVoiceRecording()
+expect fun resumeVoiceRecording()
 expect fun stopVoiceRecording(onResult: (String?, Int) -> Unit) // returns base64 and duration
 
 expect fun pickImage(onResult: (String?) -> Unit)

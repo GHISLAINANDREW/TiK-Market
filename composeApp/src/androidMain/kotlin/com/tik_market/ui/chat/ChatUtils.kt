@@ -160,6 +160,22 @@ actual fun startVoiceRecording() {
     }
 }
 
+actual fun pauseVoiceRecording() {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            mediaRecorder?.pause()
+        }
+    } catch (_: Exception) {}
+}
+
+actual fun resumeVoiceRecording() {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            mediaRecorder?.resume()
+        }
+    } catch (_: Exception) {}
+}
+
 actual fun stopVoiceRecording(onResult: (String?, Int) -> Unit) {
     try {
         mediaRecorder?.apply {

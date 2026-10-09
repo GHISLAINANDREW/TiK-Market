@@ -65,6 +65,9 @@ actual fun startVoiceRecording() {
     }
 }
 
+actual fun pauseVoiceRecording() {}
+actual fun resumeVoiceRecording() {}
+
 actual fun stopVoiceRecording(onResult: (String?, Int) -> Unit) {
     val stopFunc = window.asDynamic().stopVoiceRecordingJs
     if (stopFunc != null) {

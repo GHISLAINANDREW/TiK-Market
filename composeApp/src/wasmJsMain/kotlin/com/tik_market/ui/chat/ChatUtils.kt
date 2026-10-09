@@ -17,6 +17,9 @@ actual fun startVoiceRecording() {
     startVoiceRecordingJs()
 }
 
+actual fun pauseVoiceRecording() {}
+actual fun resumeVoiceRecording() {}
+
 actual fun stopVoiceRecording(onResult: (String?, Int) -> Unit) {
     stopVoiceRecordingJs(onResult)
 }
