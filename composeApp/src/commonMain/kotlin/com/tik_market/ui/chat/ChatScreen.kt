@@ -665,33 +665,24 @@ fun ChatScreen(
                                     .background(if (isRecording || isLockedRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
                                     .pointerInput(messageText) {
                                         if (messageText.isBlank()) {
-                                            detectDragGestures(
-                                                onDragStart = {
+                                            detectTapGestures(
+                                                onPress = {
                                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     isRecording = true
                                                     recordingTime = 0
                                                     startVoiceRecording()
-                                                },
-                                                onDrag = { change, dragAmount ->
-                                                    change.consume()
-                                                    if (dragAmount.y < -25f) {
-                                                        isLockedRecording = true
-                                                    }
-                                                },
-                                                onDragEnd = {
-                                                    if (!isLockedRecording && isRecording) {
+                                                    
+                                                    try {
+                                                        tryAwaitRelease()
+                                                    } catch (_: Exception) {}
+
+                                                    if (isRecording && !isLockedRecording) {
                                                         isRecording = false
                                                         stopVoiceRecording { dataUrl, duration ->
                                                             if (dataUrl != null) {
                                                                 sendMessage("[Vocal]", dataUrl, duration)
                                                             }
                                                         }
-                                                    }
-                                                },
-                                                onDragCancel = {
-                                                    if (!isLockedRecording && isRecording) {
-                                                        isRecording = false
-                                                        stopVoiceRecording { _, _ -> }
                                                     }
                                                 }
                                             )
@@ -815,7 +806,7 @@ private fun ChatBubble(
         }
 
         // Bubble container
-        val bubbleColor = if (isMe) Color(0xFFDCF8C6) else Color.White
+        val bubbleColor = if (isMe) Color(0xFF7C4DFF) else Color(0xFF263238)
         Column(
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
@@ -947,7 +938,7 @@ private fun ChatBubble(
                                 }
                             }
                         } else {
-                            Text(msg.text, fontSize = 15.sp, color = if (isMe) Color(0xFF1C1C1C) else Color.Black, lineHeight = 21.sp)
+                            Text(msg.text, fontSize = 15.sp, color = Color.White, lineHeight = 21.sp)
                         }
                     }
 
@@ -959,7 +950,7 @@ private fun ChatBubble(
                         Text(
                             formatOnlyTime(msg.timestamp),
                             fontSize = 11.sp,
-                            color = if (isMe) Color(0xFF1C1C1C).copy(alpha = 0.55f) else Color.Gray
+                            color = Color.White.copy(alpha = 0.7f)
                         )
                         Spacer(Modifier.width(3.dp))
                         if (isMe) {
@@ -967,7 +958,7 @@ private fun ChatBubble(
                                 if (msg.isRead) Icons.Default.DoneAll else Icons.Default.Done,
                                 null,
                                 Modifier.size(16.dp),
-                                tint = if (msg.isRead) Color(0xFF53BDEB) else Color(0xFF1C1C1C).copy(alpha = 0.45f)
+                                tint = if (msg.isRead) Color(0xFF53BDEB) else Color.White.copy(alpha = 0.5f)
                             )
                         }
                     }
