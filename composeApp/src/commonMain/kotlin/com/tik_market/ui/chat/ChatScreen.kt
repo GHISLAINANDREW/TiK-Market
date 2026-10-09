@@ -195,9 +195,9 @@ fun ChatScreen(
                     val hasNewFromOther = trulyNew.any { it.senderId != currentUserId }
                     if (hasNewFromOther) playChatSound()
 
-                    messages = cleaned + trulyNew
+                    messages = (cleaned + trulyNew).distinctBy { it.id }
                 } else {
-                    messages = chatMsgs
+                    messages = chatMsgs.distinctBy { it.id }
                     hasInitialLoad = true
                 }
 
@@ -620,18 +620,20 @@ fun ChatScreen(
                                     .background(if (isRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
                                     .pointerInput(messageText) {
                                         if (messageText.isBlank()) {
-                                            detectTapGestures(
-                                                onPress = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    isRecording = true
-                                                    startVoiceRecording()
-                                                    
-                                                    try {
-                                                        tryAwaitRelease()
-                                                    } catch (_: Exception) {}
-
-                                                    if (isRecording) {
+                                            awaitPointerEventScope {
+                                                while (true) {
+                                                    val event = awaitPointerEvent()
+                                                    val down = event.changes.firstOrNull { it.pressed && !it.previousPressed }
+                                                    if (down != null && !isRecording) {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        isRecording = true
+                                                        startVoiceRecording()
+                                                        down.consume()
+                                                    }
+                                                    val up = event.changes.firstOrNull { !it.pressed && it.previousPressed }
+                                                    if (up != null && isRecording) {
                                                         isRecording = false
+                                                        up.consume()
                                                         stopVoiceRecording { dataUrl, duration ->
                                                             if (dataUrl != null) {
                                                                 sendMessage("[Vocal]", dataUrl, duration)
@@ -639,7 +641,7 @@ fun ChatScreen(
                                                         }
                                                     }
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                     .clickable(enabled = messageText.isNotBlank()) {
