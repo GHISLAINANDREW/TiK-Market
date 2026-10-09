@@ -812,7 +812,8 @@ private fun ChatBubble(
         }
 
         // Bubble container
-        val bubbleColor = if (isMe) Color(0xFF7C4DFF) else Color(0xFF263238)
+        val cityColor = LocalCityColors.current.topBar
+        val bubbleColor = if (isMe) cityColor else Color(0xFF263238)
         Column(
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
@@ -960,12 +961,16 @@ private fun ChatBubble(
                         )
                         Spacer(Modifier.width(3.dp))
                         if (isMe) {
-                            Icon(
-                                if (msg.isRead) Icons.Default.DoneAll else Icons.Default.Done,
-                                null,
-                                Modifier.size(16.dp),
-                                tint = if (msg.isRead) Color(0xFF53BDEB) else Color.White.copy(alpha = 0.5f)
-                            )
+                            if (msg.id < 0) {
+                                // 1 tick (sending)
+                                Icon(Icons.Default.Done, null, Modifier.size(14.dp), tint = Color.White.copy(alpha = 0.5f))
+                            } else if (!msg.isRead) {
+                                // 3 white ticks (received, not opened)
+                                Text("✓✓✓", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            } else {
+                                // 2 ticks in city color (opened)
+                                Icon(Icons.Default.DoneAll, null, Modifier.size(16.dp), tint = cityColor)
+                            }
                         }
                     }
 
