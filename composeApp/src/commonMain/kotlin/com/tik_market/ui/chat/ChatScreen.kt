@@ -47,6 +47,12 @@ import com.tik_market.utils.getPlaceName
 import com.tik_market.utils.LocalAppStrings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 data class ChatMessage(
     val id: Int = 0,
@@ -1434,8 +1440,38 @@ private fun formatDuration(seconds: Int): String {
 }
 
 private fun formatDateHeader(dateStr: String): String {
-    if (dateStr.isBlank()) return ""
-    return dateStr.substringBefore(" ")
+    if (dateStr.isBlank() || dateStr == "Maintenant") return "Aujourd'hui"
+    return try {
+        val datePart = dateStr.substringBefore(" ")
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val msgDate = LocalDate.parse(datePart)
+        
+        when (msgDate) {
+            today -> "Aujourd'hui"
+            today.minus(1, DateTimeUnit.DAY) -> "Hier"
+            else -> "${msgDate.dayOfMonth} ${getMonthName(msgDate.monthNumber)} ${msgDate.year}"
+        }
+    } catch (_: Exception) {
+        dateStr.substringBefore(" ")
+    }
+}
+
+private fun getMonthName(month: Int): String {
+    return when (month) {
+        1 -> "Janvier"
+        2 -> "Février"
+        3 -> "Mars"
+        4 -> "Avril"
+        5 -> "Mai"
+        6 -> "Juin"
+        7 -> "Juillet"
+        8 -> "Août"
+        9 -> "Septembre"
+        10 -> "Octobre"
+        11 -> "Novembre"
+        12 -> "Décembre"
+        else -> ""
+    }
 }
 
 private fun formatOnlyTime(dateStr: String): String {
