@@ -199,20 +199,11 @@ fun HomeScreen(
                 state = pullRefreshState,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 indicator = {
-                    if (pullRefreshState.distanceFraction > 0f || state.isRefreshing) {
-                        Surface(
-                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface,
-                            shadowElevation = 4.dp
-                        ) {
-                            RotatingRefreshIcon(
-                                modifier = Modifier.padding(8.dp).size(24.dp),
-                                isRefreshing = state.isRefreshing,
-                                tint = primary
-                            )
-                        }
-                    }
+                    PullToRefreshDefaults.Indicator(
+                        state = pullRefreshState,
+                        isRefreshing = state.isRefreshing,
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
                 }
             ) {
                 LazyColumn(Modifier.fillMaxSize().background(BackgroundViolet)) {

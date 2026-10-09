@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -228,7 +229,7 @@ fun ChatScreen(
                         audioUrl = dataUrl,
                         duration = duration,
                         timestamp = "Maintenant",
-                        isRead = true,
+                        isRead = false,
                         repliedToId = replyToMsg?.id,
                         repliedText = replyToMsg?.text
                     )
@@ -619,14 +620,16 @@ fun ChatScreen(
                                     .background(if (isRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
                                     .pointerInput(messageText) {
                                         if (messageText.isBlank()) {
-                                            detectDragGesturesAfterLongPress(
-                                                onDragStart = {
+                                            detectTapGestures(
+                                                onPress = {
                                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     isRecording = true
                                                     startVoiceRecording()
-                                                },
-                                                onDrag = { _, _ -> },
-                                                onDragEnd = {
+                                                    
+                                                    try {
+                                                        tryAwaitRelease()
+                                                    } catch (_: Exception) {}
+
                                                     if (isRecording) {
                                                         isRecording = false
                                                         stopVoiceRecording { dataUrl, duration ->
@@ -635,10 +638,6 @@ fun ChatScreen(
                                                             }
                                                         }
                                                     }
-                                                },
-                                                onDragCancel = {
-                                                    isRecording = false
-                                                    stopVoiceRecording { _, _ -> }
                                                 }
                                             )
                                         }
