@@ -1,4 +1,9 @@
 <?php
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+if (!ob_get_level()) {
+    ob_start();
+}
 date_default_timezone_set('Africa/Douala');
 
 /**
@@ -113,6 +118,9 @@ function rewriteUrls($data) {
 
 function json(int $code, $data): void {
     http_response_code($code);
+    if (ob_get_length()) {
+        ob_clean();
+    }
     echo json_encode(rewriteUrls($data), JSON_UNESCAPED_UNICODE);
     exit;
 }
