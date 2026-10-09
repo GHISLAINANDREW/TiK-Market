@@ -669,38 +669,41 @@ fun ChatScreen(
                                     .size(48.dp)
                                     .clip(CircleShape)
                                     .background(if (isRecording || isLockedRecording) Color(0xFFE53935) else LocalCityColors.current.topBar)
-                                    .pointerInput(messageText) {
+                                    .then(
                                         if (messageText.isBlank()) {
-                                            detectTapGestures(
-                                                onPress = {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    isRecording = true
-                                                    recordingTime = 0
-                                                    startVoiceRecording()
-                                                    
-                                                    try {
-                                                        tryAwaitRelease()
-                                                    } catch (_: Exception) {}
+                                            Modifier.pointerInput(Unit) {
+                                                detectTapGestures(
+                                                    onPress = {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        isRecording = true
+                                                        recordingTime = 0
+                                                        startVoiceRecording()
+                                                        
+                                                        try {
+                                                            tryAwaitRelease()
+                                                        } catch (_: Exception) {}
 
-                                                    if (isRecording && !isLockedRecording) {
-                                                        isRecording = false
-                                                        stopVoiceRecording { dataUrl, duration ->
-                                                            if (dataUrl != null) {
-                                                                sendMessage("[Vocal]", dataUrl, duration)
+                                                        if (isRecording && !isLockedRecording) {
+                                                            isRecording = false
+                                                            stopVoiceRecording { dataUrl, duration ->
+                                                                if (dataUrl != null) {
+                                                                    sendMessage("[Vocal]", dataUrl, maxOf(1, duration))
+                                                                }
                                                             }
                                                         }
                                                     }
+                                                )
+                                            }
+                                        } else {
+                                            Modifier.clickable {
+                                                if (!isSending) {
+                                                    isSending = true
+                                                    sendMessage(messageText)
+                                                    isSending = false
                                                 }
-                                            )
+                                            }
                                         }
-                                    }
-                                    .clickable(enabled = messageText.isNotBlank()) {
-                                        if (!isSending) {
-                                            isSending = true
-                                            sendMessage(messageText)
-                                            isSending = false
-                                        }
-                                    },
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 AnimatedContent(targetState = messageText.isNotBlank() || isRecording) { isAction ->
