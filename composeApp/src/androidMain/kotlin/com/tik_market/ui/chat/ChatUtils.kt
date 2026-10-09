@@ -136,6 +136,7 @@ actual fun startVoiceRecording() {
             arrayOf(Manifest.permission.RECORD_AUDIO),
             200
         )
+        android.widget.Toast.makeText(activity, "Veuillez autoriser l'accès au microphone", android.widget.Toast.LENGTH_SHORT).show()
         return
     }
 
@@ -155,6 +156,7 @@ actual fun startVoiceRecording() {
         }
     } catch (e: Exception) {
         mediaRecorder = null
+        android.widget.Toast.makeText(activity, "Erreur micro: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 
