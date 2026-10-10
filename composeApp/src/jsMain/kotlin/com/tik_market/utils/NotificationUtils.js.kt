@@ -16,7 +16,7 @@ actual object NotificationUtils {
         """)
     }
 
-    actual fun showNotification(title: String, message: String) {
+    actual fun showNotification(title: String, message: String, type: String, relatedId: Int) {
         js("""
         if ("Notification" in window && Notification.permission === "granted") {
             new Notification(title, { body: message, icon: "/favicon.svg" });

@@ -234,7 +234,7 @@ try {
         } else {
             $notifMessage = mb_strlen($text) > 80 ? mb_substr($text, 0, 80) . '...' : $text;
         }
-        sendNotification($receiver_id, $senderName, $notifMessage, 'message', null);
+        sendNotification($receiver_id, $senderName, $notifMessage, 'message', $userId);
 
         $stmt = $db->prepare('SELECT m.*, u.name AS sender_name, r.text AS replied_text FROM messages m JOIN users u ON m.sender_id = u.id LEFT JOIN messages r ON m.replied_to_id = r.id WHERE m.id = ?');
         $stmt->execute([$messageId]);

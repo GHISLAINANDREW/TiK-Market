@@ -51,20 +51,19 @@ actual object NotificationUtils {
         _navigationEvents.tryEmit(Unit)
     }
 
-    actual fun showNotification(title: String, message: String, type: String) {
+    actual fun showNotification(title: String, message: String, type: String, relatedId: Int) {
         val context = appContext ?: return
         
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
-        // Click on notification opens the app
+        // Click on notification opens the app and navigates directly to chat/conversation
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            // Add custom data for navigation
             putExtra("notif_type", type)
-            putExtra("notif_id", 0)
+            putExtra("notif_id", relatedId)
         }
         val pendingIntent = if (intent != null) {
-            PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            PendingIntent.getActivity(context, relatedId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         } else null
 
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
