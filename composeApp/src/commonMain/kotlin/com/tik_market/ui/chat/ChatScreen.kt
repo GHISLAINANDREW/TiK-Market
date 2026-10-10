@@ -705,28 +705,39 @@ fun ChatScreen(
                                     .then(
                                         if (messageText.isBlank()) {
                                             Modifier.pointerInput(Unit) {
-                                                detectTapGestures(
-                                                    onPress = {
-                                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                        isRecording = true
-                                                        recordingTime = 0
-                                                        startVoiceRecording()
-                                                        
-                                                        try {
-                                                            tryAwaitRelease()
-                                                        } catch (_: Exception) {}
-
-                                                        if (isRecording && !isLockedRecording) {
-                                                            isRecording = false
-                                                            stopVoiceRecording { dataUrl, duration ->
-                                                                if (dataUrl != null) {
-                                                                    sendMessage("[Vocal]", dataUrl, maxOf(1, duration))
-                                                                }
+                                            detectDragGestures(
+                                                onDragStart = {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    isRecording = true
+                                                    isLockedRecording = false
+                                                    isPausedRecording = false
+                                                    recordingTime = 0
+                                                    startVoiceRecording()
+                                                },
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    if (dragAmount.y < -20f) {
+                                                        isLockedRecording = true
+                                                    }
+                                                },
+                                                onDragEnd = {
+                                                    if (!isLockedRecording && isRecording) {
+                                                        isRecording = false
+                                                        stopVoiceRecording { dataUrl, duration ->
+                                                            if (dataUrl != null) {
+                                                                sendMessage("[Vocal]", dataUrl, maxOf(1, duration))
                                                             }
                                                         }
                                                     }
-                                                )
-                                            }
+                                                },
+                                                onDragCancel = {
+                                                    if (!isLockedRecording && isRecording) {
+                                                        isRecording = false
+                                                        stopVoiceRecording { _, _ -> }
+                                                    }
+                                                }
+                                            )
+                                        }
                                         } else {
                                             Modifier.clickable {
                                                 if (!isSending) {
