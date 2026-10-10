@@ -29,10 +29,11 @@ try {
             ');
             $stmt->execute();
         } else {
-            // Get user notifications + global broadcasts (user_id IS NULL)
+            // Get user notifications + global broadcasts (user_id IS NULL), excluding chat messages
             $stmt = $db->prepare('
                 SELECT * FROM notifications
-                WHERE user_id = ? OR user_id IS NULL
+                WHERE (user_id = ? OR user_id IS NULL)
+                  AND (type IS NULL OR type != "message")
                 ORDER BY created_at DESC
                 LIMIT 50
             ');

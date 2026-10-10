@@ -279,7 +279,9 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                                 com.tik_market.utils.setStartupParameter("notif_type", null)
                                 com.tik_market.utils.setStartupParameter("notif_id", null)
 
-                                if (notifType == "notification" || notifType == "story") {
+                                if (notifType == "message" || notifType == "chat") {
+                                    appState.navigateTo(NavScreen.Conversations)
+                                } else if (notifType == "notification" || notifType == "story") {
                                     appState.navigateTo(NavScreen.Notifications)
                                 } else if (notifType == "product") {
                                     if (relatedId != null) {

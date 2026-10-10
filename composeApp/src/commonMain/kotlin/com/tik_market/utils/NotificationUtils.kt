@@ -10,10 +10,10 @@ expect object NotificationUtils {
     fun requestPermission()
 
     /**
-     * Shows a local notification with a title and message.
+     * Shows a local notification with a title, message, and type.
      * Also plays a notification sound.
      */
-    fun showNotification(title: String, message: String)
+    fun showNotification(title: String, message: String, type: String = "notification")
 
     /**
      * Triggered when a notification is clicked.

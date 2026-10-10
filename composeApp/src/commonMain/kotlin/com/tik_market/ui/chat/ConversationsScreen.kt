@@ -320,9 +320,11 @@ private fun ConversationItem(conv: Conversation, onClick: () -> Unit, onDelete: 
                 }
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val rawMsg = conv.lastMessage
+                    val displayMsg = if (rawMsg == "[Vocal]" || rawMsg.startsWith("[Vocal]")) "Message vocal" else rawMsg
                     val prefix = if (conv.isLastMessageFromMe) "Moi: " else ""
                     Text(
-                        "$prefix${conv.lastMessage}",
+                        "$prefix$displayMsg",
                         fontSize = 13.sp,
                         color = if (conv.unreadCount > 0) Color.Black else Color.Gray,
                         fontWeight = if (conv.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,

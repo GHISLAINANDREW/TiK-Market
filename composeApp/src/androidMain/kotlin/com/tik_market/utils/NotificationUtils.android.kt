@@ -51,7 +51,7 @@ actual object NotificationUtils {
         _navigationEvents.tryEmit(Unit)
     }
 
-    actual fun showNotification(title: String, message: String) {
+    actual fun showNotification(title: String, message: String, type: String) {
         val context = appContext ?: return
         
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -60,7 +60,7 @@ actual object NotificationUtils {
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             // Add custom data for navigation
-            putExtra("notif_type", "notification")
+            putExtra("notif_type", type)
             putExtra("notif_id", 0)
         }
         val pendingIntent = if (intent != null) {
