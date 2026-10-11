@@ -59,6 +59,27 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showOnboarding by remember { mutableStateOf(OnboardingManager.isFirstLaunch()) }
 
+    // Handle cold-start startup parameters (notifications, deep links)
+    remember {
+        val notifType = com.tik_market.utils.getStartupParameter("notif_type")
+        if (notifType != null) {
+            val relatedId = com.tik_market.utils.getStartupParameter("notif_id")?.toIntOrNull()
+            com.tik_market.utils.setStartupParameter("notif_type", null)
+            com.tik_market.utils.setStartupParameter("notif_id", null)
+            if (notifType == "message" || notifType == "chat") {
+                if (relatedId != null && relatedId > 0) {
+                    appState.chatVendorId = relatedId
+                    appState.chatVendorName = "Discussion"
+                    appState.navigateTo(NavScreen.Chat)
+                } else {
+                    appState.navigateTo(NavScreen.Conversations)
+                }
+            } else if (notifType == "notification" || notifType == "story") {
+                appState.navigateTo(NavScreen.Notifications)
+            }
+        }
+    }
+
     var userCity by remember { mutableStateOf<String?>(null) }
     // Ville de l'app choisie manuellement ou via redirection (prioritaire sur la position GPS/profil)
     var manualCity by remember { mutableStateOf<String?>(null) }

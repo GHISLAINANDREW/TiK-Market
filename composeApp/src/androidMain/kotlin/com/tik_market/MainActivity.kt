@@ -46,18 +46,20 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
-        val type = intent?.getStringExtra("notif_type") ?: intent?.getStringExtra("type")
-        val relatedId = intent?.getIntExtra("notif_id", -1).takeIf { it != -1 } 
-            ?: intent?.getIntExtra("related_id", -1).takeIf { it != -1 }
-            ?: -1
+        if (intent == null) return
+        val type = intent.getStringExtra("notif_type") 
+            ?: intent.getStringExtra("type") 
+            ?: if (intent.hasExtra("notif_id") || intent.hasExtra("related_id")) "message" else "notification"
         
-        if (type != null && relatedId != -1) {
-            // Store parameter for App.kt to consume
-            com.tik_market.utils.setStartupParameter("notif_type", type)
-            com.tik_market.utils.setStartupParameter("notif_id", relatedId.toString())
-            // Trigger signal
-            com.tik_market.utils.NotificationUtils.onNotificationClicked()
-        }
+        val relatedIdStr = intent.getStringExtra("notif_id") 
+            ?: intent.getIntExtra("notif_id", -1).takeIf { it != -1 }?.toString()
+            ?: intent.getStringExtra("related_id")
+            ?: intent.getIntExtra("related_id", -1).takeIf { it != -1 }?.toString()
+            ?: "0"
+
+        com.tik_market.utils.setStartupParameter("notif_type", type)
+        com.tik_market.utils.setStartupParameter("notif_id", relatedIdStr)
+        com.tik_market.utils.NotificationUtils.onNotificationClicked()
     }
 
     @Deprecated("Deprecated in Activity, but needed for API < 30 compatibility")

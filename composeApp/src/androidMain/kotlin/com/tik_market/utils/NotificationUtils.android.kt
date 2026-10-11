@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -57,17 +58,22 @@ actual object NotificationUtils {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
         // Click on notification opens the app and navigates directly to chat/conversation
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val intent = Intent(context, Class.forName("com.tik_market.MainActivity")).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("notif_type", type)
             putExtra("notif_id", relatedId)
         }
-        val pendingIntent = if (intent != null) {
-            PendingIntent.getActivity(context, relatedId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        } else null
+        val pendingIntent = PendingIntent.getActivity(context, System.currentTimeMillis().toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val largeIcon = try {
+            BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+        } catch (_: Exception) { null }
 
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .apply {
+                if (largeIcon != null) setLargeIcon(largeIcon)
+            }
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

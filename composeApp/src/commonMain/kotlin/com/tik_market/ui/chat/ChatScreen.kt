@@ -708,6 +708,7 @@ fun ChatScreen(
                                             detectDragGestures(
                                                 onDragStart = {
                                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    playChatSound()
                                                     isRecording = true
                                                     isLockedRecording = false
                                                     isPausedRecording = false
