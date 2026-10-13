@@ -7,6 +7,7 @@ import com.tik_market.api.*
 import com.tik_market.navigation.AppState
 import com.tik_market.navigation.NavScreen
 import com.tik_market.ui.auth.AuthScreen
+import com.tik_market.ui.auth.WelcomeRoleScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -17,6 +18,20 @@ fun AuthFlow(
     snackbarHostState: SnackbarHostState
 ) {
     when (appState.currentScreen) {
+        NavScreen.WelcomeRole -> WelcomeRoleScreen(
+            onBuyerClick = {
+                appState.isRegisterMode = true
+                appState.navigateTo(NavScreen.Auth)
+            },
+            onVendorClick = {
+                appState.isRegisterMode = true
+                appState.navigateTo(NavScreen.CreateShop)
+            },
+            onLoginClick = {
+                appState.isRegisterMode = false
+                appState.navigateTo(NavScreen.Auth)
+            }
+        )
         NavScreen.Auth -> AuthScreen(
             onBack = { appState.goBack(); appState.isRegisterMode = false },
             initialModeRegister = appState.isRegisterMode,

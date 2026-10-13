@@ -74,8 +74,7 @@ fun MainFlow(
                     else if (appState.userRole == "admin" || appState.userRole == "super_admin") appState.navigateTo(NavScreen.AdminDashboard)
                     else appState.navigateTo(NavScreen.Profile)
                 } else {
-                    appState.isRegisterMode = true
-                    appState.navigateTo(NavScreen.Auth)
+                    appState.navigateTo(NavScreen.WelcomeRole)
                 }
             },
             onShopsClick = { appState.navigateTo(NavScreen.ShopsList) },
@@ -207,7 +206,7 @@ fun MainFlow(
             userName = appState.userName,
             userRole = appState.userRole,
             onBack = { appState.goBack() },
-            onLoginClick = { appState.navigateTo(NavScreen.Auth) },
+            onLoginClick = { appState.navigateTo(NavScreen.WelcomeRole) },
             onEditProfileClick = { appState.navigateTo(NavScreen.EditProfile) },
             onOrdersClick = { appState.navigateTo(NavScreen.Orders) },
             onMessagesClick = { appState.navigateTo(NavScreen.Conversations) },

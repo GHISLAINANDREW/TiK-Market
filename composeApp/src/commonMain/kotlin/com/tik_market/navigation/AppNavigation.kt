@@ -103,7 +103,7 @@ fun MainContent(appState: AppState, onExit: () -> Unit, scope: kotlinx.coroutine
     )
 
     val hideBottomBar = appState.currentScreen in listOf(
-        NavScreen.ProductDetail, NavScreen.Chat, NavScreen.Auth, NavScreen.Payment,
+        NavScreen.ProductDetail, NavScreen.Chat, NavScreen.Auth, NavScreen.WelcomeRole, NavScreen.Payment,
         NavScreen.ImageSearch, NavScreen.Checkout, NavScreen.AddProduct,
         NavScreen.Compare, NavScreen.VendorDashboard, NavScreen.ShopPage,
         NavScreen.StoryViewer, NavScreen.AdminDashboard, NavScreen.LiveShopping,
@@ -195,7 +195,7 @@ fun AppNavigation(appState: AppState, scope: kotlinx.coroutines.CoroutineScope, 
         println("AppNavigation: showing screen ${screen.route}")
         when (screen) {
             NavScreen.Splash -> SplashScreen(onFinished = { appState.navigateTo(NavScreen.Home) })
-            NavScreen.Auth, NavScreen.Terms, NavScreen.Legal -> AuthFlow(appState, scope, snackbarHostState)
+            NavScreen.Auth, NavScreen.WelcomeRole, NavScreen.Terms, NavScreen.Legal -> AuthFlow(appState, scope, snackbarHostState)
 
             NavScreen.Home, NavScreen.ProductDetail, NavScreen.Cart, NavScreen.Profile,
             NavScreen.Chat, NavScreen.Conversations, NavScreen.Orders, NavScreen.Notifications,

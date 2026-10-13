@@ -38,18 +38,40 @@ import com.tik_market.utils.observeConnectivity
 import com.tik_market.utils.updateUnreadBadge
 
 @Composable
-private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash) = remember {
-    AppState(
-        currentScreenInitial = initialScreen,
-        cartItemsInitial = emptyList(),
-        isLoggedInInitial = false,
-        userNameInitial = "",
-        userRoleInitial = "buyer",
-        userTokenInitial = null,
-        vendorShopNameInitial = "",
-        unreadMessagesInitial = 0,
-        isDarkModeInitial = false,
-    )
+private fun rememberAppState(initialScreen: NavScreen = NavScreen.Splash): AppState {
+    val notifType = com.tik_market.utils.getStartupParameter("notif_type")
+    val relatedId = com.tik_market.utils.getStartupParameter("notif_id")?.toIntOrNull()
+    
+    val startScreen = if (notifType != null) {
+        com.tik_market.utils.setStartupParameter("notif_type", null)
+        com.tik_market.utils.setStartupParameter("notif_id", null)
+        when (notifType) {
+            "message", "chat" -> NavScreen.Chat
+            "notification", "story" -> NavScreen.Notifications
+            else -> initialScreen
+        }
+    } else {
+        initialScreen
+    }
+
+    return remember {
+        AppState(
+            currentScreenInitial = startScreen,
+            cartItemsInitial = emptyList(),
+            isLoggedInInitial = false,
+            userNameInitial = "",
+            userRoleInitial = "buyer",
+            userTokenInitial = null,
+            vendorShopNameInitial = "",
+            unreadMessagesInitial = 0,
+            isDarkModeInitial = false,
+        ).apply {
+            if (startScreen == NavScreen.Chat && relatedId != null && relatedId > 0) {
+                chatVendorId = relatedId
+                chatVendorName = "Discussion"
+            }
+        }
+    }
 }
 
 @Composable

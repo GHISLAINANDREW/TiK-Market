@@ -8,6 +8,23 @@ $vendor_id = isset($_GET['vendor_id']) ? (int)$_GET['vendor_id'] : 0;
 try {
     $db = getDB();
 
+    // Auto-migration for KYC and GPS columns in shops table
+    $shopCols = [
+        'cni_front' => 'TEXT NULL AFTER category',
+        'cni_back' => 'TEXT NULL AFTER cni_front',
+        'latitude' => 'DECIMAL(10,8) DEFAULT 0 AFTER cni_back',
+        'longitude' => 'DECIMAL(11,8) DEFAULT 0 AFTER latitude',
+        'kyc_status' => 'VARCHAR(30) DEFAULT "pending" AFTER longitude'
+    ];
+    foreach ($shopCols as $col => $def) {
+        try {
+            $check = $db->query("SHOW COLUMNS FROM shops LIKE '$col'")->fetch();
+            if (!$check) {
+                $db->exec("ALTER TABLE shops ADD COLUMN $col $def");
+            }
+        } catch (Exception $e) {}
+    }
+
     if ($method === 'GET') {
         if ($id) {
             $stmt = $db->prepare('
@@ -152,13 +169,17 @@ try {
         $phone = trim($input['phone'] ?? '');
         $location = trim($input['location'] ?? '');
         $category = trim($input['category'] ?? '');
+        $cni_front = trim($input['cni_front'] ?? '');
+        $cni_back = trim($input['cni_back'] ?? '');
+        $latitude = isset($input['latitude']) ? (float)$input['latitude'] : 0.0;
+        $longitude = isset($input['longitude']) ? (float)$input['longitude'] : 0.0;
 
         if ($name === '' || $phone === '' || $location === '') {
             json(400, ['error' => 'Champs obligatoires manquants (name, phone, location)']);
         }
 
-        $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category]);
+        $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category, cni_front, cni_back, latitude, longitude, kyc_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending")');
+        $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category, $cni_front ?: null, $cni_back ?: null, $latitude, $longitude]);
         $shopId = (int)$db->lastInsertId();
 
         // Return the full shop object
@@ -194,7 +215,7 @@ try {
 
         $fields = [];
         $params = [];
-        foreach (['name', 'description', 'logo', 'phone', 'location', 'category'] as $f) {
+        foreach (['name', 'description', 'logo', 'phone', 'location', 'category', 'cni_front', 'cni_back', 'latitude', 'longitude', 'kyc_status'] as $f) {
             if (array_key_exists($f, $input)) {
                 $fields[] = "$f = ?";
                 $params[] = $input[$f];

@@ -42,23 +42,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        setIntent(intent) // Crucial: updates activity intent so new notification extras are read
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
         if (intent == null) return
+        
         val type = intent.getStringExtra("notif_type") 
             ?: intent.getStringExtra("type") 
-            ?: if (intent.hasExtra("notif_id") || intent.hasExtra("related_id")) "message" else "notification"
+            ?: if (intent.hasExtra("notif_id") || intent.hasExtra("sender_id") || intent.hasExtra("user_id") || intent.hasExtra("related_id")) "message" else null
         
         val relatedIdStr = intent.getStringExtra("notif_id") 
             ?: intent.getIntExtra("notif_id", -1).takeIf { it != -1 }?.toString()
+            ?: intent.getStringExtra("sender_id") 
+            ?: intent.getIntExtra("sender_id", -1).takeIf { it != -1 }?.toString()
+            ?: intent.getStringExtra("user_id") 
+            ?: intent.getIntExtra("user_id", -1).takeIf { it != -1 }?.toString()
             ?: intent.getStringExtra("related_id")
             ?: intent.getIntExtra("related_id", -1).takeIf { it != -1 }?.toString()
-            ?: "0"
 
-        com.tik_market.utils.setStartupParameter("notif_type", type)
-        com.tik_market.utils.setStartupParameter("notif_id", relatedIdStr)
+        // If neither type nor relatedId is present, this is a normal app launch from home screen. Ignore!
+        if (type == null && relatedIdStr == null) return
+
+        val finalType = type ?: "message"
+        val finalId = relatedIdStr ?: "0"
+
+        com.tik_market.utils.setStartupParameter("notif_type", finalType)
+        com.tik_market.utils.setStartupParameter("notif_id", finalId)
         com.tik_market.utils.NotificationUtils.onNotificationClicked()
     }
 

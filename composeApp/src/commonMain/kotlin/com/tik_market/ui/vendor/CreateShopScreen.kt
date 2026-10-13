@@ -202,6 +202,62 @@ fun CreateShopScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            Spacer(Modifier.height(12.dp))
+
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Vérification KYC (Pièce d'identité)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Fournissez une photo de votre CNI (Recto et Verso) pour certifier votre boutique (immédiat ou plus tard dans les paramètres).", fontSize = 12.sp, color = Color.Gray)
+                    Spacer(Modifier.height(16.dp))
+
+                    var cniFrontLoaded by remember { mutableStateOf(false) }
+                    var cniBackLoaded by remember { mutableStateOf(false) }
+
+                    val cniFrontPicker = rememberImagePickerLauncher { res ->
+                        if (res != null) cniFrontLoaded = true
+                    }
+                    val cniBackPicker = rememberImagePickerLauncher { res ->
+                        if (res != null) cniBackLoaded = true
+                    }
+
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(
+                            onClick = { cniFrontPicker() },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Badge, null, tint = Green)
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (cniFrontLoaded) "CNI Recto (OK)" else "CNI Recto", fontSize = 12.sp)
+                        }
+                        OutlinedButton(
+                            onClick = { cniBackPicker() },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Badge, null, tint = Green)
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (cniBackLoaded) "CNI Verso (OK)" else "CNI Verso", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = GreenSurface) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.GpsFixed, null, tint = Green, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("Géolocalisation certifiée sur place", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
+                        Text("La position GPS exacte de votre boutique est capturée pour garantir des livraisons précises.", fontSize = 12.sp, color = Color.DarkGray)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
             errorMessage?.let {
                 Text(it, color = Color.Red, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(Modifier.height(8.dp))

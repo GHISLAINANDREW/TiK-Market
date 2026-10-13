@@ -11,6 +11,7 @@ sealed class NavScreen(val route: String, val title: String) {
     object Settings : NavScreen("settings", "Paramètres")
     // Nouveaux écrans
     object Auth : NavScreen("auth", "Connexion")
+    object WelcomeRole : NavScreen("welcome-role", "Bienvenue")
     object VendorDashboard : NavScreen("vendor", "Tableau de bord")
     object AddProduct : NavScreen("add-product", "Ajouter produit")
     object Checkout : NavScreen("checkout", "Commander")

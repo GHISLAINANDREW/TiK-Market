@@ -62,6 +62,9 @@ actual object NotificationUtils {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("notif_type", type)
             putExtra("notif_id", relatedId)
+            putExtra("sender_id", relatedId)
+            putExtra("user_id", relatedId)
+            putExtra("related_id", relatedId)
         }
         val pendingIntent = PendingIntent.getActivity(context, System.currentTimeMillis().toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
