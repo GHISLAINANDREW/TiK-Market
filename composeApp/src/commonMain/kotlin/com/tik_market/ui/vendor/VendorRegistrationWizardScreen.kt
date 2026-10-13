@@ -49,6 +49,7 @@ fun VendorRegistrationWizardScreen(
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
     
     // Step 1: Personal Info
     var name by remember { mutableStateOf("") }
@@ -69,9 +70,13 @@ fun VendorRegistrationWizardScreen(
     var shopLogoBase64 by remember { mutableStateOf<String?>(null) }
     var shopLogoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
-    // Step 3: KYC & Merchant Payment
-    var cniLoaded by remember { mutableStateOf(false) }
-    var shopPhotosLoaded by remember { mutableStateOf(false) }
+    // Step 3: KYC (5 photo fields) & Merchant Payment
+    var cniFrontLoaded by remember { mutableStateOf(false) }
+    var cniBackLoaded by remember { mutableStateOf(false) }
+    var interiorLoaded by remember { mutableStateOf(false) }
+    var exteriorLoaded by remember { mutableStateOf(false) }
+    var signPlateLoaded by remember { mutableStateOf(false) }
+
     var niuNumber by remember { mutableStateOf("") }
     var merchantAccountName by remember { mutableStateOf("") }
     var merchantAccountNumber by remember { mutableStateOf("") }
@@ -122,6 +127,16 @@ fun VendorRegistrationWizardScreen(
                     color = Color(0xFFFFEBEE)
                 ) {
                     Text(it, color = Color(0xFFC62828), fontSize = 13.sp, modifier = Modifier.padding(16.dp))
+                }
+            }
+
+            successMessage?.let {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFE8F5E9)
+                ) {
+                    Text(it, color = Color(0xFF2E7D32), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
                 }
             }
 
@@ -395,31 +410,43 @@ fun VendorRegistrationWizardScreen(
                             )
 
                             Spacer(Modifier.height(24.dp))
-                            Text("Photos requises pour le KYC", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("5 Photos KYC Requises (Optionnel pour l'instant)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(8.dp))
 
-                            val kycPicker = rememberImagePickerLauncher { res -> if (res != null) cniLoaded = true }
+                            val p1 = rememberImagePickerLauncher { if (it != null) cniFrontLoaded = true }
+                            val p2 = rememberImagePickerLauncher { if (it != null) cniBackLoaded = true }
+                            val p3 = rememberImagePickerLauncher { if (it != null) interiorLoaded = true }
+                            val p4 = rememberImagePickerLauncher { if (it != null) exteriorLoaded = true }
+                            val p5 = rememberImagePickerLauncher { if (it != null) signPlateLoaded = true }
 
-                            OutlinedButton(
-                                onClick = { kycPicker() },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
+                            OutlinedButton(onClick = { p1() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
                                 Icon(Icons.Default.Badge, null, tint = Orange)
                                 Spacer(Modifier.width(8.dp))
-                                Text(if (cniLoaded) "Pièce d'identité (CNI) chargée ✅" else "Téléverser pièce d'identité (CNI Recto/Verso)")
+                                Text(if (cniFrontLoaded) "1. CNI Recto ✅" else "1. CNI Recto")
                             }
-
-                            Spacer(Modifier.height(12.dp))
-
-                            OutlinedButton(
-                                onClick = { kycPicker() },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(onClick = { p2() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                                Icon(Icons.Default.Badge, null, tint = Orange)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (cniBackLoaded) "2. CNI Verso ✅" else "2. CNI Verso")
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(onClick = { p3() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                                Icon(Icons.Default.Store, null, tint = Orange)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (interiorLoaded) "3. Intérieur de la boutique ✅" else "3. Intérieur de la boutique")
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(onClick = { p4() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
+                                Icon(Icons.Default.Store, null, tint = Orange)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (exteriorLoaded) "4. Extérieur de la boutique ✅" else "4. Extérieur de la boutique")
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(onClick = { p5() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
                                 Icon(Icons.Default.PhotoLibrary, null, tint = Orange)
                                 Spacer(Modifier.width(8.dp))
-                                Text(if (shopPhotosLoaded) "3 photos (Intérieur, Extérieur, Plaque) ✅" else "Téléverser 3 photos (Intérieur, Extérieur, Plaque)")
+                                Text(if (signPlateLoaded) "5. Plaque / Enseigne de la boutique ✅" else "5. Plaque / Enseigne de la boutique")
                             }
 
                             Spacer(Modifier.height(40.dp))
@@ -435,6 +462,8 @@ fun VendorRegistrationWizardScreen(
                                                 logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
                                             }
                                             ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl)
+                                            successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
+                                            kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)
                                         } catch (e: Exception) {
                                             errorMessage = e.message ?: "Erreur lors de la création"
@@ -467,6 +496,8 @@ fun VendorRegistrationWizardScreen(
                                                 logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
                                             }
                                             ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl)
+                                            successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
+                                            kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)
                                         } catch (e: Exception) {
                                             errorMessage = e.message ?: "Erreur lors de la création"
