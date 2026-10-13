@@ -11,6 +11,7 @@ import com.tik_market.navigation.NavScreen
 import com.tik_market.ui.profile.FollowedShopsScreen
 import com.tik_market.ui.vendor.AddProductScreen
 import com.tik_market.ui.vendor.CreateShopScreen
+import com.tik_market.ui.vendor.VendorRegistrationWizardScreen
 import com.tik_market.ui.vendor.ManageOrdersScreen
 import com.tik_market.ui.vendor.ManageShopScreen
 import com.tik_market.ui.vendor.ProductForm
@@ -181,11 +182,21 @@ fun VendorFlow(
                 appState.navigateTo(NavScreen.ShopPage)
             }
         )
-        NavScreen.CreateShop -> CreateShopScreen(
+        NavScreen.CreateShop -> VendorRegistrationWizardScreen(
             onBack = { appState.goBack() },
-            onShopCreated = { name ->
+            onLoginSuccess = { token, name, role ->
+                scope.launch {
+                    ApiClient.setToken(token)
+                    appState.isLoggedIn = true
+                    appState.userName = name
+                    appState.userRole = role
+                    appState.currentUser = ApiClient.getCurrentUser()
+                }
+            },
+            onRegistrationComplete = { name ->
                 appState.vendorShopName = name
-                appState.goBack()
+                appState.userRole = "vendor"
+                appState.goHome()
             }
         )
         else -> {}

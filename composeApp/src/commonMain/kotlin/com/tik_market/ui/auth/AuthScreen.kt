@@ -66,6 +66,7 @@ fun AuthScreen(
     onBack: () -> Unit,
     onTermsClick: () -> Unit = {},
     onLegalClick: () -> Unit = {},
+    onGoToWelcome: () -> Unit = {},
     initialModeRegister: Boolean = false
 ) {
     println("[Auth] AuthScreen chargé (initialModeRegister=$initialModeRegister)")
@@ -209,7 +210,13 @@ fun AuthScreen(
                             if (!form.isOtpStep && authMode == AuthMode.Email) {
                                 Spacer(Modifier.height(12.dp))
                                 TextButton(
-                                    onClick = { isLogin = !isLogin },
+                                    onClick = {
+                                        if (isLogin) {
+                                            onGoToWelcome()
+                                        } else {
+                                            isLogin = !isLogin
+                                        }
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(

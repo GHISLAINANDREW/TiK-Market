@@ -20,6 +20,8 @@ data class ApiShop(
     @SerialName("product_count") val productCount: Int = 0,
     @SerialName("total_sales") val totalSales: Int = 0,
     val rating: Float = 0f,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
     val products: List<ApiProduct>? = null
 )
 

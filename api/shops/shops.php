@@ -165,21 +165,35 @@ try {
 
         $name = trim($input['name'] ?? '');
         $description = trim($input['description'] ?? '');
-        $logo = trim($input['logo'] ?? '');
+        $logo = trim($input['logo'] ?? $input['image_url'] ?? '');
         $phone = trim($input['phone'] ?? '');
         $location = trim($input['location'] ?? '');
         $category = trim($input['category'] ?? '');
-        $cni_front = trim($input['cni_front'] ?? '');
-        $cni_back = trim($input['cni_back'] ?? '');
-        $latitude = isset($input['latitude']) ? (float)$input['latitude'] : 0.0;
-        $longitude = isset($input['longitude']) ? (float)$input['longitude'] : 0.0;
 
         if ($name === '' || $phone === '' || $location === '') {
             json(400, ['error' => 'Champs obligatoires manquants (name, phone, location)']);
         }
 
-        $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category, cni_front, cni_back, latitude, longitude, kyc_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending")');
-        $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category, $cni_front ?: null, $cni_back ?: null, $latitude, $longitude]);
+        // Check if optional columns exist in shops table to prevent server error
+        $hasCniFront = false;
+        $hasLat = false;
+        try {
+            $hasCniFront = (bool)$db->query("SHOW COLUMNS FROM shops LIKE 'cni_front'")->fetch();
+            $hasLat = (bool)$db->query("SHOW COLUMNS FROM shops LIKE 'latitude'")->fetch();
+        } catch (Exception $e) {}
+
+        if ($hasCniFront && $hasLat) {
+            $cni_front = trim($input['cni_front'] ?? '');
+            $cni_back = trim($input['cni_back'] ?? '');
+            $latitude = isset($input['latitude']) ? (float)$input['latitude'] : 0.0;
+            $longitude = isset($input['longitude']) ? (float)$input['longitude'] : 0.0;
+
+            $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category, cni_front, cni_back, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category, $cni_front ?: null, $cni_back ?: null, $latitude, $longitude]);
+        } else {
+            $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category]);
+        }
         $shopId = (int)$db->lastInsertId();
 
         // Return the full shop object

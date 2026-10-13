@@ -37,6 +37,7 @@ fun AuthFlow(
             initialModeRegister = appState.isRegisterMode,
             onTermsClick = { appState.navigateTo(NavScreen.Terms) },
             onLegalClick = { appState.navigateTo(NavScreen.Legal) },
+            onGoToWelcome = { appState.navigateTo(NavScreen.WelcomeRole) },
             onLoginSuccess = { token, name, role ->
                 appState.isRegisterMode = false
                 scope.launch {
