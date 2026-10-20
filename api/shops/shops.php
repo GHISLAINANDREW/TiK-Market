@@ -10,14 +10,14 @@ try {
 
     // Auto-migration for KYC and GPS columns in shops table
     $shopCols = [
-        'cni_front' => 'TEXT NULL AFTER category',
-        'cni_back' => 'TEXT NULL AFTER cni_front',
-        'interior_photo' => 'TEXT NULL AFTER cni_back',
-        'exterior_photo' => 'TEXT NULL AFTER interior_photo',
-        'sign_photo' => 'TEXT NULL AFTER exterior_photo',
-        'latitude' => 'DECIMAL(10,8) DEFAULT 0 AFTER sign_photo',
-        'longitude' => 'DECIMAL(11,8) DEFAULT 0 AFTER latitude',
-        'kyc_status' => 'VARCHAR(30) DEFAULT "pending" AFTER longitude'
+        'cni_front' => 'TEXT NULL',
+        'cni_back' => 'TEXT NULL',
+        'interior_photo' => 'TEXT NULL',
+        'exterior_photo' => 'TEXT NULL',
+        'sign_photo' => 'TEXT NULL',
+        'latitude' => 'DECIMAL(10,8) DEFAULT 0',
+        'longitude' => 'DECIMAL(11,8) DEFAULT 0',
+        'kyc_status' => 'VARCHAR(30) DEFAULT "pending"'
     ];
     foreach ($shopCols as $col => $def) {
         try {
