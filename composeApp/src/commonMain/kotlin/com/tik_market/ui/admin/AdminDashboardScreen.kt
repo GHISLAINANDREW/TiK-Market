@@ -1209,7 +1209,7 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.tik_
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.VerifiedUser, null, tint = Orange, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) { Text(ts.pendingVerifyShops.replace("%d", "$kpis.pendingShops"), style = MaterialTheme.typography.bodyMedium); Text(ts.goToShopsVerify, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                        Column(Modifier.weight(1f)) { Text(ts.pendingVerifyShops.replace("%d", "${kpis.pendingShops}"), style = MaterialTheme.typography.bodyMedium); Text(ts.goToShopsVerify, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
@@ -1219,7 +1219,7 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.tik_
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Block, null, tint = RedAccent, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) { Text(ts.bannedShopsLabel.replace("%d", "$kpis.bannedShops"), style = MaterialTheme.typography.bodyMedium); Text(ts.checkShopsDetails, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
+                        Column(Modifier.weight(1f)) { Text(ts.bannedShopsLabel.replace("%d", "${kpis.bannedShops}"), style = MaterialTheme.typography.bodyMedium); Text(ts.checkShopsDetails, style = MaterialTheme.typography.bodySmall, color = TextSecondary) }
                     }
                 }
             }
@@ -1227,7 +1227,7 @@ fun AdminDashboardContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.tik_
         }
 
         Text(ts.registrations30, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
-        Text(ts.newUsersMonth.replace("%d", "$kpis.newUsers30d"), style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(bottom = 8.dp))
+        Text(ts.newUsersMonth.replace("%d", "${kpis.newUsers30d}"), style = MaterialTheme.typography.bodySmall, color = TextSecondary, modifier = Modifier.padding(bottom = 8.dp))
         TiKCard(elevation = TiKCardElevation.Low) { SimpleBarChart(data = d.registrations.map { it.count }, modifier = Modifier.fillMaxWidth().height(80.dp)) }
         Spacer(Modifier.height(16.dp))
 
@@ -1341,7 +1341,7 @@ fun AdminOnlineUsersContent(scope: kotlinx.coroutines.CoroutineScope, ts: com.ti
         Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), shape = RoundedCornerShape(12.dp), color = Green.copy(alpha = 0.1f)) {
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).background(Green, CircleShape)); Spacer(Modifier.width(8.dp))
-                Text(ts.onlineUsersNow.replace("%d", "$d.totalOnline"), fontWeight = FontWeight.SemiBold, color = GreenDark)
+                Text(ts.onlineUsersNow.replace("%d", "${d.totalOnline}"), fontWeight = FontWeight.SemiBold, color = GreenDark)
             }
         }
 
