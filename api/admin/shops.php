@@ -58,9 +58,9 @@ if ($method === 'GET') {
                 s.logo,
                 s.location,
                 s.phone,
-                u.name AS vendor_name,
-                u.email AS vendor_email,
-                u.phone AS vendor_phone,
+                COALESCE(u.name, 'Inconnu') AS vendor_name,
+                COALESCE(u.email, '') AS vendor_email,
+                COALESCE(u.phone, '') AS vendor_phone,
                 s.category,
                 s.status,
                 s.is_featured,
@@ -76,7 +76,7 @@ if ($method === 'GET') {
                 s.created_at,
                 s.updated_at
             FROM shops s
-            JOIN users u ON s.vendor_id = u.id
+            LEFT JOIN users u ON s.vendor_id = u.id
             LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
             $whereClause
             GROUP BY s.id
