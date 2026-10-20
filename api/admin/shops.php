@@ -9,11 +9,11 @@ $db = getDB();
 $stmt = $db->prepare('SELECT role, managed_city FROM users WHERE id = ?');
 $stmt->execute([$userId]);
 $currentUser = $stmt->fetch();
-if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin'])) {
+if (!$currentUser || !in_array($currentUser['role'], ['admin', 'super_admin', 'super'])) {
     json(403, ['error' => 'Accès refusé. Seuls les administrateurs peuvent accéder à cette ressource.']);
 }
 
-$isSuperAdmin = ($currentUser['role'] === 'super_admin');
+$isSuperAdmin = ($currentUser['role'] === 'super_admin' || $currentUser['role'] === 'super');
 $managedCity = $currentUser['managed_city'];
 
 if ($method === 'GET') {

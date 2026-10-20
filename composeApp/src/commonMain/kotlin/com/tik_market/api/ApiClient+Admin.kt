@@ -21,13 +21,25 @@ suspend fun ApiClient.fetchAdminUsers(): List<ApiAdminUser> {
 
 suspend fun ApiClient.fetchAdminShops(): List<ApiAdminShop> {
     return try {
-        safeRequest<ApiAdminShopsResponse>("GET", ApiClient.Endpoints.ADMIN_SHOPS).shops
-    } catch (e: Exception) {
+        val respStr = get(ApiClient.Endpoints.ADMIN_SHOPS)
         try {
-            safeRequest<List<ApiAdminShop>>("GET", ApiClient.Endpoints.ADMIN_SHOPS)
-        } catch (e2: Exception) {
-            emptyList()
+            json.decodeFromString<ApiAdminShopsResponse>(respStr).shops
+        } catch (_: Exception) {
+            try {
+                json.decodeFromString<List<ApiAdminShop>>(respStr)
+            } catch (_: Exception) {
+                val element = json.parseToJsonElement(respStr)
+                if (element is kotlinx.serialization.json.JsonObject && element.containsKey("shops")) {
+                    val arr = element["shops"]
+                    if (arr is kotlinx.serialization.json.JsonArray) {
+                        json.decodeFromJsonElement(kotlinx.serialization.builtins.ListSerializer(ApiAdminShop.serializer()), arr)
+                    } else emptyList()
+                } else emptyList()
+            }
         }
+    } catch (e: Exception) {
+        println("fetchAdminShops error: ${e.message}")
+        emptyList()
     }
 }
 
