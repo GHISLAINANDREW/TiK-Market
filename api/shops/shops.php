@@ -12,7 +12,10 @@ try {
     $shopCols = [
         'cni_front' => 'TEXT NULL AFTER category',
         'cni_back' => 'TEXT NULL AFTER cni_front',
-        'latitude' => 'DECIMAL(10,8) DEFAULT 0 AFTER cni_back',
+        'interior_photo' => 'TEXT NULL AFTER cni_back',
+        'exterior_photo' => 'TEXT NULL AFTER interior_photo',
+        'sign_photo' => 'TEXT NULL AFTER exterior_photo',
+        'latitude' => 'DECIMAL(10,8) DEFAULT 0 AFTER sign_photo',
         'longitude' => 'DECIMAL(11,8) DEFAULT 0 AFTER latitude',
         'kyc_status' => 'VARCHAR(30) DEFAULT "pending" AFTER longitude'
     ];
@@ -174,15 +177,23 @@ try {
             json(400, ['error' => 'Champs obligatoires manquants (name, phone, location)']);
         }
 
-        // Check if optional columns exist in shops table to prevent server error
-        $hasCniFront = false;
-        $hasLat = false;
+        $hasInterior = false;
         try {
-            $hasCniFront = (bool)$db->query("SHOW COLUMNS FROM shops LIKE 'cni_front'")->fetch();
-            $hasLat = (bool)$db->query("SHOW COLUMNS FROM shops LIKE 'latitude'")->fetch();
+            $hasInterior = (bool)$db->query("SHOW COLUMNS FROM shops LIKE 'interior_photo'")->fetch();
         } catch (Exception $e) {}
 
-        if ($hasCniFront && $hasLat) {
+        if ($hasInterior) {
+            $cni_front = trim($input['cni_front'] ?? '');
+            $cni_back = trim($input['cni_back'] ?? '');
+            $interior_photo = trim($input['interior_photo'] ?? '');
+            $exterior_photo = trim($input['exterior_photo'] ?? '');
+            $sign_photo = trim($input['sign_photo'] ?? '');
+            $latitude = isset($input['latitude']) ? (float)$input['latitude'] : 0.0;
+            $longitude = isset($input['longitude']) ? (float)$input['longitude'] : 0.0;
+
+            $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category, cni_front, cni_back, interior_photo, exterior_photo, sign_photo, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category, $cni_front ?: null, $cni_back ?: null, $interior_photo ?: null, $exterior_photo ?: null, $sign_photo ?: null, $latitude, $longitude]);
+        } else {
             $cni_front = trim($input['cni_front'] ?? '');
             $cni_back = trim($input['cni_back'] ?? '');
             $latitude = isset($input['latitude']) ? (float)$input['latitude'] : 0.0;
@@ -190,9 +201,6 @@ try {
 
             $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category, cni_front, cni_back, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category, $cni_front ?: null, $cni_back ?: null, $latitude, $longitude]);
-        } else {
-            $stmt = $db->prepare('INSERT INTO shops (vendor_id, name, description, logo, phone, location, category) VALUES (?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$userId, $name, $description, $logo, $phone, $location, $category]);
         }
         $shopId = (int)$db->lastInsertId();
 
@@ -213,6 +221,20 @@ try {
         $shop['is_verified'] = (bool)$shop['is_verified'];
         $shop['is_featured'] = (bool)($shop['is_featured'] ?? false);
 
+        // Notify admin of the city or global admins
+        try {
+            $stmtAdmins = $db->prepare('SELECT id FROM users WHERE role IN ("admin", "super_admin") AND (managed_city IS NULL OR managed_city = ? OR ? LIKE CONCAT("%", managed_city, "%"))');
+            $stmtAdmins->execute([$location, $location]);
+            $adminIds = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+            if (empty($adminIds)) {
+                $stmtGlobal = $db->query('SELECT id FROM users WHERE role IN ("admin", "super_admin")');
+                $adminIds = $stmtGlobal->fetchAll(PDO::FETCH_COLUMN);
+            }
+            foreach ($adminIds as $admId) {
+                sendNotification((int)$admId, "Nouveau KYC / Boutique soumis 📋", "La boutique '{$name}' a été soumise par un vendeur à {$location}. Veuillez vérifier et valider.", 'system', $shopId);
+            }
+        } catch (Exception $e) {}
+
         json(201, ['shop' => $shop]);
     }
 
@@ -229,7 +251,7 @@ try {
 
         $fields = [];
         $params = [];
-        foreach (['name', 'description', 'logo', 'phone', 'location', 'category', 'cni_front', 'cni_back', 'latitude', 'longitude', 'kyc_status'] as $f) {
+        foreach (['name', 'description', 'logo', 'phone', 'location', 'category', 'cni_front', 'cni_back', 'interior_photo', 'exterior_photo', 'sign_photo', 'latitude', 'longitude', 'kyc_status'] as $f) {
             if (array_key_exists($f, $input)) {
                 $fields[] = "$f = ?";
                 $params[] = $input[$f];
@@ -240,6 +262,22 @@ try {
         $params[] = $id;
         $stmt = $db->prepare('UPDATE shops SET ' . implode(', ', $fields) . ' WHERE id = ?');
         $stmt->execute($params);
+
+        if (isset($input['kyc_status']) && $input['kyc_status'] === 'pending') {
+            try {
+                $stmtShop = $db->prepare('SELECT name, location FROM shops WHERE id = ?');
+                $stmtShop->execute([$id]);
+                $sInfo = $stmtShop->fetch();
+                if ($sInfo) {
+                    $stmtAdmins = $db->prepare('SELECT id FROM users WHERE role IN ("admin", "super_admin") AND (managed_city IS NULL OR managed_city = ?)');
+                    $stmtAdmins->execute([$sInfo['location']]);
+                    $adminIds = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+                    foreach ($adminIds as $admId) {
+                        sendNotification((int)$admId, "Mise à jour KYC / Nouvelle soumission 📋", "Le vendeur de la boutique '{$sInfo['name']}' a mis à jour ses photos KYC. Veuillez vérifier.", 'system', $id);
+                    }
+                }
+            } catch (Exception $e) {}
+        }
 
         json(200, ['message' => 'Boutique mise à jour']);
     }

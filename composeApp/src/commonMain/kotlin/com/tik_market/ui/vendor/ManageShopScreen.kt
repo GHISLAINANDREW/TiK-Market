@@ -78,6 +78,16 @@ fun ManageShopScreen(
     var interactionLoading by remember { mutableStateOf(false) }
     var interactionTab by remember { mutableStateOf(0) }
 
+    var isVerifiedShop by remember { mutableStateOf(false) }
+    var kycStatusShop by remember { mutableStateOf("pending") }
+    var cniFrontBase64 by remember { mutableStateOf<String?>(null) }
+    var cniBackBase64 by remember { mutableStateOf<String?>(null) }
+    var interiorBase64 by remember { mutableStateOf<String?>(null) }
+    var exteriorBase64 by remember { mutableStateOf<String?>(null) }
+    var signBase64 by remember { mutableStateOf<String?>(null) }
+    var kycResubmitting by remember { mutableStateOf(false) }
+    var kycResubmitMsg by remember { mutableStateOf<String?>(null) }
+
     // Load shop products and details
     LaunchedEffect(refreshSignal) {
         isLoading = true
@@ -91,6 +101,8 @@ fun ManageShopScreen(
                 editLocation = shop.location
                 editCategory = shop.category
                 editLogoUrl = shop.logo
+                isVerifiedShop = shop.isVerified
+                kycStatusShop = shop.kycStatus ?: "pending"
                 
                 // Load logo bitmap if exists
                 if (!shop.logo.isNullOrBlank()) {
@@ -331,6 +343,111 @@ fun ManageShopScreen(
                                         Text(ts.save, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // KYC Status & Re-upload Card for Vendor
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("État du KYC & Validation Boutique", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                color = if (isVerifiedShop) Green.copy(alpha = 0.15f) else Orange.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    if (isVerifiedShop) "✅ Boutique Validée & Certifiée" else "⏳ KYC en attente de validation admin",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isVerifiedShop) Green else Orange,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        if (!isVerifiedShop) {
+                            Spacer(Modifier.height(12.dp))
+                            Text("Si votre KYC a été rejeté ou si vous souhaitez mettre à jour vos 5 photos justificatives (CNI Recto/Verso, Intérieur, Extérieur, Pancarte), vous pouvez les renvoyer ci-dessous :", fontSize = 12.sp, color = Color.Gray)
+                            Spacer(Modifier.height(12.dp))
+
+                            var cniF by remember { mutableStateOf(false) }
+                            var cniB by remember { mutableStateOf(false) }
+                            var intP by remember { mutableStateOf(false) }
+                            var extP by remember { mutableStateOf(false) }
+                            var sgnP by remember { mutableStateOf(false) }
+
+                            val pk1 = rememberImagePickerLauncher { if (it != null) { cniF = true; cniFrontBase64 = it.dataUrl } }
+                            val pk2 = rememberImagePickerLauncher { if (it != null) { cniB = true; cniBackBase64 = it.dataUrl } }
+                            val pk3 = rememberImagePickerLauncher { if (it != null) { intP = true; interiorBase64 = it.dataUrl } }
+                            val pk4 = rememberImagePickerLauncher { if (it != null) { extP = true; exteriorBase64 = it.dataUrl } }
+                            val pk5 = rememberImagePickerLauncher { if (it != null) { sgnP = true; signBase64 = it.dataUrl } }
+
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { pk1() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (cniF) "Recto OK" else "1. CNI Recto", fontSize = 11.sp) }
+                                OutlinedButton(onClick = { pk2() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (cniB) "Verso OK" else "2. CNI Verso", fontSize = 11.sp) }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { pk3() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (intP) "Intérieur OK" else "3. Intérieur", fontSize = 11.sp) }
+                                OutlinedButton(onClick = { pk4() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (extP) "Extérieur OK" else "4. Extérieur", fontSize = 11.sp) }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            OutlinedButton(onClick = { pk5() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (sgnP) "Pancarte OK" else "5. Pancarte / Enseigne", fontSize = 11.sp) }
+
+                            Spacer(Modifier.height(12.dp))
+                            if (kycResubmitMsg != null) {
+                                Text(kycResubmitMsg!!, color = if (kycResubmitMsg!!.startsWith("✅")) Green else Color.Red, fontSize = 12.sp)
+                                Spacer(Modifier.height(6.dp))
+                            }
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        kycResubmitting = true
+                                        kycResubmitMsg = null
+                                        try {
+                                            val shopInfo = ApiClient.fetchShopByVendor()
+                                            var fUrl = shopInfo?.cniFront
+                                            var bUrl = shopInfo?.cniBack
+                                            var iUrl = shopInfo?.interiorPhoto
+                                            var eUrl = shopInfo?.exteriorPhoto
+                                            var sUrl = shopInfo?.signPhoto
+
+                                            if (cniFrontBase64 != null) fUrl = ApiClient.uploadImage(cniFrontBase64!!, "cni_front.jpg")
+                                            if (cniBackBase64 != null) bUrl = ApiClient.uploadImage(cniBackBase64!!, "cni_back.jpg")
+                                            if (interiorBase64 != null) iUrl = ApiClient.uploadImage(interiorBase64!!, "interior.jpg")
+                                            if (exteriorBase64 != null) eUrl = ApiClient.uploadImage(exteriorBase64!!, "exterior.jpg")
+                                            if (signBase64 != null) sUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
+
+                                            ApiClient.updateShop(
+                                                shopId = shopId,
+                                                cniFront = fUrl,
+                                                cniBack = bUrl,
+                                                interiorPhoto = iUrl,
+                                                exteriorPhoto = eUrl,
+                                                signPhoto = sUrl,
+                                                kycStatus = "pending"
+                                            )
+                                            kycResubmitMsg = "✅ Photos renvoyées avec succès pour validation !"
+                                        } catch (e: Exception) {
+                                            kycResubmitMsg = "❌ Erreur: ${e.message}"
+                                        }
+                                        kycResubmitting = false
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                enabled = !kycResubmitting,
+                                colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                            ) {
+                                if (kycResubmitting) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else Text("Renvoyer les photos pour validation", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }

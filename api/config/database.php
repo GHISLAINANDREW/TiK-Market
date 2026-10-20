@@ -247,12 +247,27 @@ function uploadToCloudinary(string $fileData, string $mimeType = 'audio/mp4', st
 
     $subDir = $folder;
     $targetDir = __DIR__ . '/../uploads/' . $subDir . '/';
-    if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
-    $extMap = [ 'audio/mp4' => 'mp4', 'audio/mpeg' => 'mp3', 'video/mp4' => 'mp4', 'image/jpeg' => 'jpg', 'image/png' => 'png' ];
-    $extension = $extMap[$mimeType] ?? 'bin';
+    if (!is_dir($targetDir)) {
+        @mkdir($targetDir, 0777, true);
+        @chmod($targetDir, 0777);
+    }
+    $extMap = [
+        'audio/mp4' => 'mp4',
+        'audio/mpeg' => 'mp3',
+        'video/mp4' => 'mp4',
+        'image/jpeg' => 'jpg',
+        'image/jpg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/heic' => 'heic',
+        'image/heif' => 'heif'
+    ];
+    $extension = $extMap[$mimeType] ?? (str_starts_with($mimeType, 'image/') ? 'jpg' : 'bin');
     $filename = $prefix . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
-    if (file_put_contents($targetDir . $filename, $fileData)) {
-        $protocol = 'https';
+    $filePath = $targetDir . $filename;
+    if (@file_put_contents($filePath, $fileData) !== false) {
+        @chmod($filePath, 0666);
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https" : "http";
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return "$protocol://$host/uploads/$subDir/$filename";
     }

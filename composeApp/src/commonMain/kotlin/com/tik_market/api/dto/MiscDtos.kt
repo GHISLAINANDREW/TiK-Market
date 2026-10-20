@@ -24,7 +24,12 @@ data class ApiCreateShopBody(
     val phone: String,
     val location: String,
     val category: String,
-    @SerialName("image_url") val imageUrl: String? = null
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("cni_front") val cniFront: String? = null,
+    @SerialName("cni_back") val cniBack: String? = null,
+    @SerialName("interior_photo") val interiorPhoto: String? = null,
+    @SerialName("exterior_photo") val exteriorPhoto: String? = null,
+    @SerialName("sign_photo") val signPhoto: String? = null
 )
 
 @Serializable

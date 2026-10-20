@@ -32,20 +32,34 @@ if (!$fileData || strlen($fileData) > $maxSize) {
     json(400, ['error' => "Fichier trop volumineux: {$sizeMb}MB (Max 15MB)"]);
 }
 
-// Get MIME type
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mimeType = finfo_buffer($finfo, $fileData);
-finfo_close($finfo);
+// Get MIME type robustly
+$mimeType = 'image/jpeg';
+if (function_exists('finfo_open')) {
+    $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo) {
+        $detected = @finfo_buffer($finfo, $fileData);
+        @finfo_close($finfo);
+        if ($detected) $mimeType = $detected;
+    }
+}
+if ($mimeType === 'application/octet-stream' || !$mimeType) {
+    if (str_starts_with($fileData, "\xFF\xD8\xFF")) $mimeType = 'image/jpeg';
+    elseif (str_starts_with($fileData, "\x89PNG\r\n\x1a\n")) $mimeType = 'image/png';
+    elseif (str_starts_with($fileData, "RIFF") && substr($fileData, 8, 4) === 'WEBP') $mimeType = 'image/webp';
+}
 
 // Upload using helper
-$url = uploadToCloudinary($fileData, $mimeType, 'stories', 'story_');
-
-if ($url) {
-    json(200, [
-        'success' => true,
-        'image_url' => $url,
-        'filename' => basename($url)
-    ]);
-} else {
-    json(500, ['error' => 'Échec de l\'upload du média']);
+try {
+    $url = uploadToCloudinary($fileData, $mimeType, 'stories', 'story_');
+    if ($url) {
+        json(200, [
+            'success' => true,
+            'image_url' => $url,
+            'filename' => basename($url)
+        ]);
+    } else {
+        json(500, ['error' => 'Échec de l\'upload du média (Stockage local échoué)']);
+    }
+} catch (Exception $e) {
+    json(500, ['error' => 'Erreur serveur upload: ' . $e->getMessage()]);
 }

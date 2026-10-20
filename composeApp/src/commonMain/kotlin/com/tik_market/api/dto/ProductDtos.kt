@@ -22,6 +22,12 @@ data class ApiShop(
     val rating: Float = 0f,
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
+    @SerialName("cni_front") val cniFront: String? = null,
+    @SerialName("cni_back") val cniBack: String? = null,
+    @SerialName("interior_photo") val interiorPhoto: String? = null,
+    @SerialName("exterior_photo") val exteriorPhoto: String? = null,
+    @SerialName("sign_photo") val signPhoto: String? = null,
+    @SerialName("kyc_status") val kycStatus: String? = "pending",
     val products: List<ApiProduct>? = null
 )
 

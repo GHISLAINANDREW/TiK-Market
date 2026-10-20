@@ -54,6 +54,12 @@ data class ApiAdminShop(
     @SerialName("product_count") val productCount: Int = 0,
     @SerialName("total_sales") val totalSales: Int = 0,
     @SerialName("is_verified") val isVerified: Boolean = false,
+    @SerialName("cni_front") val cniFront: String? = null,
+    @SerialName("cni_back") val cniBack: String? = null,
+    @SerialName("interior_photo") val interiorPhoto: String? = null,
+    @SerialName("exterior_photo") val exteriorPhoto: String? = null,
+    @SerialName("sign_photo") val signPhoto: String? = null,
+    @SerialName("kyc_status") val kycStatus: String? = "pending",
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = ""
 )

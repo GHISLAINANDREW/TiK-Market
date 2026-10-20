@@ -45,6 +45,12 @@ if ($method === 'GET') {
             COUNT(p.id) AS product_count,
             COALESCE(SUM(p.total_sales), 0) AS total_sales,
             s.is_verified, 
+            s.cni_front,
+            s.cni_back,
+            s.interior_photo,
+            s.exterior_photo,
+            s.sign_photo,
+            s.kyc_status,
             s.created_at,
             s.updated_at
         FROM shops s
@@ -87,6 +93,20 @@ if ($method === 'GET') {
         $v = filter_var($_GET['verified'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
         $updates[] = 'is_verified = ?';
         $params[] = $v;
+        $updates[] = 'kyc_status = ?';
+        $params[] = $v ? 'verified' : 'rejected';
+
+        // Notify vendor when validated
+        if ($v) {
+            try {
+                $stmtV = $db->prepare('SELECT vendor_id, name FROM shops WHERE id = ?');
+                $stmtV->execute([$shopId]);
+                $sData = $stmtV->fetch();
+                if ($sData) {
+                    sendNotification((int)$sData['vendor_id'], "Boutique validée avec succès 🎉", "Votre boutique '{$sData['name']}' a été validée par l'administration ! Vous pouvez commencer à vendre.", 'system', $shopId);
+                }
+            } catch (Exception $e) {}
+        }
     }
 
     // 2. Ban / Unban

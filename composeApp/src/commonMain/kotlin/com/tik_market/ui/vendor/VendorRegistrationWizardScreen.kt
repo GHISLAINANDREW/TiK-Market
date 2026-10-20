@@ -77,6 +77,12 @@ fun VendorRegistrationWizardScreen(
     var exteriorLoaded by remember { mutableStateOf(false) }
     var signPlateLoaded by remember { mutableStateOf(false) }
 
+    var cniFrontBase64 by remember { mutableStateOf<String?>(null) }
+    var cniBackBase64 by remember { mutableStateOf<String?>(null) }
+    var interiorBase64 by remember { mutableStateOf<String?>(null) }
+    var exteriorBase64 by remember { mutableStateOf<String?>(null) }
+    var signBase64 by remember { mutableStateOf<String?>(null) }
+
     var niuNumber by remember { mutableStateOf("") }
     var merchantAccountName by remember { mutableStateOf("") }
     var merchantAccountNumber by remember { mutableStateOf("") }
@@ -413,11 +419,11 @@ fun VendorRegistrationWizardScreen(
                             Text("5 Photos KYC Requises (Optionnel pour l'instant)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Spacer(Modifier.height(8.dp))
 
-                            val p1 = rememberImagePickerLauncher { if (it != null) cniFrontLoaded = true }
-                            val p2 = rememberImagePickerLauncher { if (it != null) cniBackLoaded = true }
-                            val p3 = rememberImagePickerLauncher { if (it != null) interiorLoaded = true }
-                            val p4 = rememberImagePickerLauncher { if (it != null) exteriorLoaded = true }
-                            val p5 = rememberImagePickerLauncher { if (it != null) signPlateLoaded = true }
+                            val p1 = rememberImagePickerLauncher { if (it != null) { cniFrontLoaded = true; cniFrontBase64 = it.dataUrl } }
+                            val p2 = rememberImagePickerLauncher { if (it != null) { cniBackLoaded = true; cniBackBase64 = it.dataUrl } }
+                            val p3 = rememberImagePickerLauncher { if (it != null) { interiorLoaded = true; interiorBase64 = it.dataUrl } }
+                            val p4 = rememberImagePickerLauncher { if (it != null) { exteriorLoaded = true; exteriorBase64 = it.dataUrl } }
+                            val p5 = rememberImagePickerLauncher { if (it != null) { signPlateLoaded = true; signBase64 = it.dataUrl } }
 
                             OutlinedButton(onClick = { p1() }, modifier = Modifier.fillMaxWidth().height(44.dp)) {
                                 Icon(Icons.Default.Badge, null, tint = Orange)
@@ -458,10 +464,19 @@ fun VendorRegistrationWizardScreen(
                                     scope.launch {
                                         try {
                                             var logoUrl: String? = null
-                                            if (shopLogoBase64 != null) {
-                                                logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
-                                            }
-                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl)
+                                            if (shopLogoBase64 != null) logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
+                                            var cniFrontUrl: String? = null
+                                            if (cniFrontBase64 != null) cniFrontUrl = ApiClient.uploadImage(cniFrontBase64!!, "cni_front.jpg")
+                                            var cniBackUrl: String? = null
+                                            if (cniBackBase64 != null) cniBackUrl = ApiClient.uploadImage(cniBackBase64!!, "cni_back.jpg")
+                                            var interiorUrl: String? = null
+                                            if (interiorBase64 != null) interiorUrl = ApiClient.uploadImage(interiorBase64!!, "interior.jpg")
+                                            var exteriorUrl: String? = null
+                                            if (exteriorBase64 != null) exteriorUrl = ApiClient.uploadImage(exteriorBase64!!, "exterior.jpg")
+                                            var signUrl: String? = null
+                                            if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
+
+                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
                                             successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
                                             kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)
@@ -492,10 +507,19 @@ fun VendorRegistrationWizardScreen(
                                     scope.launch {
                                         try {
                                             var logoUrl: String? = null
-                                            if (shopLogoBase64 != null) {
-                                                logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
-                                            }
-                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl)
+                                            if (shopLogoBase64 != null) logoUrl = ApiClient.uploadImage(shopLogoBase64!!, "shop_logo.jpg")
+                                            var cniFrontUrl: String? = null
+                                            if (cniFrontBase64 != null) cniFrontUrl = ApiClient.uploadImage(cniFrontBase64!!, "cni_front.jpg")
+                                            var cniBackUrl: String? = null
+                                            if (cniBackBase64 != null) cniBackUrl = ApiClient.uploadImage(cniBackBase64!!, "cni_back.jpg")
+                                            var interiorUrl: String? = null
+                                            if (interiorBase64 != null) interiorUrl = ApiClient.uploadImage(interiorBase64!!, "interior.jpg")
+                                            var exteriorUrl: String? = null
+                                            if (exteriorBase64 != null) exteriorUrl = ApiClient.uploadImage(exteriorBase64!!, "exterior.jpg")
+                                            var signUrl: String? = null
+                                            if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
+
+                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
                                             successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
                                             kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)

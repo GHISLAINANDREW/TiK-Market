@@ -206,39 +206,88 @@ fun CreateShopScreen(
 
             Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp), color = Color.White) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Vérification KYC (Pièce d'identité)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("5 Photos KYC & Boutique (Obligatoires)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("Fournissez une photo de votre CNI (Recto et Verso) pour certifier votre boutique (immédiat ou plus tard dans les paramètres).", fontSize = 12.sp, color = Color.Gray)
+                    Text("Veuillez fournir les 5 photos requises pour la validation de votre boutique par l'administration.", fontSize = 12.sp, color = Color.Gray)
                     Spacer(Modifier.height(16.dp))
+
+                    var cniFrontBase64 by remember { mutableStateOf<String?>(null) }
+                    var cniBackBase64 by remember { mutableStateOf<String?>(null) }
+                    var interiorBase64 by remember { mutableStateOf<String?>(null) }
+                    var exteriorBase64 by remember { mutableStateOf<String?>(null) }
+                    var signBase64 by remember { mutableStateOf<String?>(null) }
 
                     var cniFrontLoaded by remember { mutableStateOf(false) }
                     var cniBackLoaded by remember { mutableStateOf(false) }
+                    var interiorLoaded by remember { mutableStateOf(false) }
+                    var exteriorLoaded by remember { mutableStateOf(false) }
+                    var signLoaded by remember { mutableStateOf(false) }
 
-                    val cniFrontPicker = rememberImagePickerLauncher { res ->
-                        if (res != null) cniFrontLoaded = true
-                    }
-                    val cniBackPicker = rememberImagePickerLauncher { res ->
-                        if (res != null) cniBackLoaded = true
-                    }
+                    val p1 = rememberImagePickerLauncher { if (it != null) { cniFrontLoaded = true; cniFrontBase64 = it.dataUrl } }
+                    val p2 = rememberImagePickerLauncher { if (it != null) { cniBackLoaded = true; cniBackBase64 = it.dataUrl } }
+                    val p3 = rememberImagePickerLauncher { if (it != null) { interiorLoaded = true; interiorBase64 = it.dataUrl } }
+                    val p4 = rememberImagePickerLauncher { if (it != null) { exteriorLoaded = true; exteriorBase64 = it.dataUrl } }
+                    val p5 = rememberImagePickerLauncher { if (it != null) { signLoaded = true; signBase64 = it.dataUrl } }
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(
-                            onClick = { cniFrontPicker() },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(Icons.Default.Badge, null, tint = Green)
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (cniFrontLoaded) "CNI Recto (OK)" else "CNI Recto", fontSize = 12.sp)
-                        }
-                        OutlinedButton(
-                            onClick = { cniBackPicker() },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(Icons.Default.Badge, null, tint = Green)
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (cniBackLoaded) "CNI Verso (OK)" else "CNI Verso", fontSize = 12.sp)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { p1() }, modifier = Modifier.weight(1f).height(44.dp)) { Text(if (cniFrontLoaded) "1. CNI Recto ✅" else "1. CNI Recto", fontSize = 11.sp) }
+                        OutlinedButton(onClick = { p2() }, modifier = Modifier.weight(1f).height(44.dp)) { Text(if (cniBackLoaded) "2. CNI Verso ✅" else "2. CNI Verso", fontSize = 11.sp) }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { p3() }, modifier = Modifier.weight(1f).height(44.dp)) { Text(if (interiorLoaded) "3. Intérieur ✅" else "3. Intérieur", fontSize = 11.sp) }
+                        OutlinedButton(onClick = { p4() }, modifier = Modifier.weight(1f).height(44.dp)) { Text(if (exteriorLoaded) "4. Extérieur ✅" else "4. Extérieur", fontSize = 11.sp) }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = { p5() }, modifier = Modifier.fillMaxWidth().height(44.dp)) { Text(if (signLoaded) "5. Pancarte / Enseigne ✅" else "5. Pancarte / Enseigne", fontSize = 12.sp) }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            when {
+                                name.isBlank() -> errorMessage = ts.errShopName
+                                phone.isBlank() -> errorMessage = ts.errPhoneField
+                                location.isBlank() -> errorMessage = ts.errLocationField
+                                category.isBlank() -> errorMessage = ts.errCategoryField
+                                else -> {
+                                    loading = true
+                                    errorMessage = null
+                                    scope.launch {
+                                        try {
+                                            var imageUrl: String? = null
+                                            if (shopImageBase64 != null) imageUrl = ApiClient.uploadImage(shopImageBase64!!, shopImageFileName)
+                                            var cniFrontUrl: String? = null
+                                            if (cniFrontBase64 != null) cniFrontUrl = ApiClient.uploadImage(cniFrontBase64!!, "cni_front.jpg")
+                                            var cniBackUrl: String? = null
+                                            if (cniBackBase64 != null) cniBackUrl = ApiClient.uploadImage(cniBackBase64!!, "cni_back.jpg")
+                                            var interiorUrl: String? = null
+                                            if (interiorBase64 != null) interiorUrl = ApiClient.uploadImage(interiorBase64!!, "interior.jpg")
+                                            var exteriorUrl: String? = null
+                                            if (exteriorBase64 != null) exteriorUrl = ApiClient.uploadImage(exteriorBase64!!, "exterior.jpg")
+                                            var signUrl: String? = null
+                                            if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
+
+                                            ApiClient.createShop(name.trim(), description.trim(), phone.trim(), location.trim(), category, imageUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
+                                            onShopCreated(name.trim())
+                                        } catch (e: Exception) {
+                                            errorMessage = e.message ?: ts.errGeneric
+                                        } finally {
+                                            loading = false
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        enabled = !loading,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Green)
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(ts.createMyShop, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }
@@ -253,52 +302,6 @@ fun CreateShopScreen(
                         Text("Géolocalisation certifiée sur place", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Green)
                         Text("La position GPS exacte de votre boutique est capturée pour garantir des livraisons précises.", fontSize = 12.sp, color = Color.DarkGray)
                     }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            errorMessage?.let {
-                Text(it, color = Color.Red, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 16.dp))
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Button(
-                onClick = {
-                    when {
-                        name.isBlank() -> errorMessage = ts.errShopName
-                        phone.isBlank() -> errorMessage = ts.errPhoneField
-                        location.isBlank() -> errorMessage = ts.errLocationField
-                        category.isBlank() -> errorMessage = ts.errCategoryField
-                        else -> {
-                            loading = true
-                            errorMessage = null
-                            scope.launch {
-                                try {
-                                    var imageUrl: String? = null
-                                    if (shopImageBase64 != null) {
-                                        imageUrl = ApiClient.uploadImage(shopImageBase64!!, shopImageFileName)
-                                    }
-                                    ApiClient.createShop(name.trim(), description.trim(), phone.trim(), location.trim(), category, imageUrl)
-                                    onShopCreated(name.trim())
-                                } catch (e: Exception) {
-                                    errorMessage = e.message ?: ts.errGeneric
-                                } finally {
-                                    loading = false
-                                }
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp),
-                enabled = !loading,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Green)
-            ) {
-                if (loading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(ts.createMyShop, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 

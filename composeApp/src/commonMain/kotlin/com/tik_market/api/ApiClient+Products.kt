@@ -165,9 +165,14 @@ suspend fun ApiClient.createShop(
     phone: String,
     location: String,
     category: String,
-    imageUrl: String? = null
+    imageUrl: String? = null,
+    cniFront: String? = null,
+    cniBack: String? = null,
+    interiorPhoto: String? = null,
+    exteriorPhoto: String? = null,
+    signPhoto: String? = null
 ): ApiShop {
-    val body = json.encodeToString(ApiCreateShopBody(name, description, phone, location, category, imageUrl))
+    val body = json.encodeToString(ApiCreateShopBody(name, description, phone, location, category, imageUrl, cniFront, cniBack, interiorPhoto, exteriorPhoto, signPhoto))
     return safeRequest<ApiShopResponse>("POST", ApiClient.Endpoints.SHOPS, body).shop
 }
 
@@ -189,7 +194,13 @@ suspend fun ApiClient.updateShop(
     phone: String? = null,
     location: String? = null,
     category: String? = null,
-    imageUrl: String? = null
+    imageUrl: String? = null,
+    cniFront: String? = null,
+    cniBack: String? = null,
+    interiorPhoto: String? = null,
+    exteriorPhoto: String? = null,
+    signPhoto: String? = null,
+    kycStatus: String? = null
 ) {
     val body = buildJsonObject {
         name?.let { put("name", it) }
@@ -198,6 +209,12 @@ suspend fun ApiClient.updateShop(
         location?.let { put("location", it) }
         category?.let { put("category", it) }
         imageUrl?.let { put("image_url", it) }
+        cniFront?.let { put("cni_front", it) }
+        cniBack?.let { put("cni_back", it) }
+        interiorPhoto?.let { put("interior_photo", it) }
+        exteriorPhoto?.let { put("exterior_photo", it) }
+        signPhoto?.let { put("sign_photo", it) }
+        kycStatus?.let { put("kyc_status", it) }
     }.toString()
 
     if (body == "{}") return
