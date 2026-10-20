@@ -18,25 +18,39 @@ $managedCity = $currentUser['managed_city'];
 
 if ($method === 'GET') {
     try {
-        // Auto-migration for KYC and photo columns in shops table
-        $shopCols = [
-            'cni_front' => 'TEXT NULL',
-            'cni_back' => 'TEXT NULL',
-            'interior_photo' => 'TEXT NULL',
-            'exterior_photo' => 'TEXT NULL',
-            'sign_photo' => 'TEXT NULL',
-            'latitude' => 'DECIMAL(10,8) DEFAULT 0',
-            'longitude' => 'DECIMAL(11,8) DEFAULT 0',
-            'kyc_status' => 'VARCHAR(30) DEFAULT "pending"'
+        $existingCols = [];
+        try {
+            $colsStmt = $db->query("SHOW COLUMNS FROM shops");
+            while ($row = $colsStmt->fetch()) {
+                $existingCols[] = $row['Field'];
+            }
+        } catch (Exception $e) {}
+
+        $selectCols = [
+            's.id',
+            's.name',
+            's.logo',
+            's.location',
+            's.phone',
+            "COALESCE(u.name, 'Inconnu') AS vendor_name",
+            "COALESCE(u.email, '') AS vendor_email",
+            "COALESCE(u.phone, '') AS vendor_phone",
+            's.category',
+            's.status',
+            's.is_featured',
+            'COUNT(p.id) AS product_count',
+            'COALESCE(SUM(p.total_sales), 0) AS total_sales',
+            's.is_verified',
+            in_array('cni_front', $existingCols) ? 's.cni_front' : "'' AS cni_front",
+            in_array('cni_back', $existingCols) ? 's.cni_back' : "'' AS cni_back",
+            in_array('interior_photo', $existingCols) ? 's.interior_photo' : "'' AS interior_photo",
+            in_array('exterior_photo', $existingCols) ? 's.exterior_photo' : "'' AS exterior_photo",
+            in_array('sign_photo', $existingCols) ? 's.sign_photo' : "'' AS sign_photo",
+            in_array('kyc_status', $existingCols) ? 's.kyc_status' : "'pending' AS kyc_status",
+            's.created_at',
+            's.updated_at'
         ];
-        foreach ($shopCols as $col => $def) {
-            try {
-                $check = $db->query("SHOW COLUMNS FROM shops LIKE '$col'")->fetch();
-                if (!$check) {
-                    $db->exec("ALTER TABLE shops ADD COLUMN $col $def");
-                }
-            } catch (Exception $e) {}
-        }
+        $selectClause = implode(', ', $selectCols);
 
         // ── List shops with vendor info ──
         $where = [];
@@ -52,29 +66,7 @@ if ($method === 'GET') {
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
         $stmt = $db->prepare("
-            SELECT
-                s.id,
-                s.name,
-                s.logo,
-                s.location,
-                s.phone,
-                COALESCE(u.name, 'Inconnu') AS vendor_name,
-                COALESCE(u.email, '') AS vendor_email,
-                COALESCE(u.phone, '') AS vendor_phone,
-                s.category,
-                s.status,
-                s.is_featured,
-                COUNT(p.id) AS product_count,
-                COALESCE(SUM(p.total_sales), 0) AS total_sales,
-                s.is_verified,
-                s.cni_front,
-                s.cni_back,
-                s.interior_photo,
-                s.exterior_photo,
-                s.sign_photo,
-                s.kyc_status,
-                s.created_at,
-                s.updated_at
+            SELECT $selectClause
             FROM shops s
             LEFT JOIN users u ON s.vendor_id = u.id
             LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
