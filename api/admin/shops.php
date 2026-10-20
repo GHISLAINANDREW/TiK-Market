@@ -17,62 +17,87 @@ $isSuperAdmin = ($currentUser['role'] === 'super_admin' || $currentUser['role'] 
 $managedCity = $currentUser['managed_city'];
 
 if ($method === 'GET') {
-    // ── List shops with vendor info ──
-    $where = [];
-    $params = [];
+    try {
+        // Auto-migration for KYC and photo columns in shops table
+        $shopCols = [
+            'cni_front' => 'TEXT NULL AFTER category',
+            'cni_back' => 'TEXT NULL AFTER cni_front',
+            'interior_photo' => 'TEXT NULL AFTER cni_back',
+            'exterior_photo' => 'TEXT NULL AFTER interior_photo',
+            'sign_photo' => 'TEXT NULL AFTER exterior_photo',
+            'latitude' => 'DECIMAL(10,8) DEFAULT 0 AFTER sign_photo',
+            'longitude' => 'DECIMAL(11,8) DEFAULT 0 AFTER latitude',
+            'kyc_status' => 'VARCHAR(30) DEFAULT "pending" AFTER longitude'
+        ];
+        foreach ($shopCols as $col => $def) {
+            try {
+                $check = $db->query("SHOW COLUMNS FROM shops LIKE '$col'")->fetch();
+                if (!$check) {
+                    $db->exec("ALTER TABLE shops ADD COLUMN $col $def");
+                }
+            } catch (Exception $e) {}
+        }
 
-    // Un admin de ville ne voit que les boutiques de sa ville
-    if (!$isSuperAdmin && $managedCity && strtolower($managedCity) !== 'global' && strtolower($managedCity) !== 'all') {
-        $where[] = '(s.location LIKE ? OR u.managed_city LIKE ?)';
-        $params[] = "%$managedCity%";
-        $params[] = "%$managedCity%";
+        // ── List shops with vendor info ──
+        $where = [];
+        $params = [];
+
+        // Un admin de ville ne voit que les boutiques de sa ville
+        if (!$isSuperAdmin && $managedCity && strtolower($managedCity) !== 'global' && strtolower($managedCity) !== 'all') {
+            $where[] = '(s.location LIKE ? OR u.managed_city LIKE ?)';
+            $params[] = "%$managedCity%";
+            $params[] = "%$managedCity%";
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $stmt = $db->prepare("
+            SELECT
+                s.id,
+                s.name,
+                s.logo,
+                s.location,
+                s.phone,
+                u.name AS vendor_name,
+                u.email AS vendor_email,
+                u.phone AS vendor_phone,
+                s.category,
+                s.status,
+                s.is_featured,
+                COUNT(p.id) AS product_count,
+                COALESCE(SUM(p.total_sales), 0) AS total_sales,
+                s.is_verified,
+                s.cni_front,
+                s.cni_back,
+                s.interior_photo,
+                s.exterior_photo,
+                s.sign_photo,
+                s.kyc_status,
+                s.created_at,
+                s.updated_at
+            FROM shops s
+            JOIN users u ON s.vendor_id = u.id
+            LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
+            $whereClause
+            GROUP BY s.id
+            ORDER BY s.created_at DESC
+        ");
+        $stmt->execute($params);
+        $shops = $stmt->fetchAll();
+        // Cast types
+        foreach ($shops as &$s) {
+            $s['is_verified'] = (bool)$s['is_verified'];
+            $s['is_featured'] = (bool)$s['is_featured'];
+            $s['id'] = (int)$s['id'];
+            $s['product_count'] = (int)$s['product_count'];
+            $s['total_sales'] = (int)$s['total_sales'];
+        }
+        unset($s);
+        json(200, ['shops' => $shops]);
+    } catch (Exception $e) {
+        json(500, ['error' => 'Erreur serveur admin shops: ' . $e->getMessage()]);
     }
-
-    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-
-    $stmt = $db->prepare("
-        SELECT 
-            s.id, 
-            s.name, 
-            s.logo,
-            s.location,
-            s.phone,
-            u.name AS vendor_name,
-            u.email AS vendor_email,
-            u.phone AS vendor_phone,
-            s.category, 
-            s.status,
-            s.is_featured,
-            COUNT(p.id) AS product_count,
-            COALESCE(SUM(p.total_sales), 0) AS total_sales,
-            s.is_verified, 
-            s.cni_front,
-            s.cni_back,
-            s.interior_photo,
-            s.exterior_photo,
-            s.sign_photo,
-            s.kyc_status,
-            s.created_at,
-            s.updated_at
-        FROM shops s
-        JOIN users u ON s.vendor_id = u.id
-        LEFT JOIN products p ON p.shop_id = s.id AND p.is_active = 1
-        $whereClause
-        GROUP BY s.id
-        ORDER BY s.created_at DESC
-    ");
-    $stmt->execute($params);
-    $shops = $stmt->fetchAll();
-    // Cast types
-    foreach ($shops as &$s) {
-        $s['is_verified'] = (bool)$s['is_verified'];
-        $s['is_featured'] = (bool)$s['is_featured'];
-        $s['id'] = (int)$s['id'];
-        $s['product_count'] = (int)$s['product_count'];
-        $s['total_sales'] = (int)$s['total_sales'];
-    }
-    unset($s);
-    json(200, ['shops' => $shops]);
+}
 
 } elseif ($method === 'PUT') {
     // ── Update shop: verify, ban/unban, feature ──
