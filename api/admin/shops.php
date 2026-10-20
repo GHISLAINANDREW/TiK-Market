@@ -22,8 +22,9 @@ if ($method === 'GET') {
     $params = [];
 
     // Un admin de ville ne voit que les boutiques de sa ville
-    if (!$isSuperAdmin && $managedCity) {
-        $where[] = 's.location LIKE ?';
+    if (!$isSuperAdmin && $managedCity && strtolower($managedCity) !== 'global' && strtolower($managedCity) !== 'all') {
+        $where[] = '(s.location LIKE ? OR u.managed_city LIKE ?)';
+        $params[] = "%$managedCity%";
         $params[] = "%$managedCity%";
     }
 

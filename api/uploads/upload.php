@@ -19,7 +19,11 @@ if (strpos($contentType, 'application/json') !== false) {
     if (!$input || empty($input['image'])) {
         json(400, ['error' => 'Aucune image reçue (JSON)']);
     }
-    $fileData = base64_decode($input['image']);
+    $img = $input['image'];
+    if (str_contains($img, ',')) {
+        $img = explode(',', $img)[1];
+    }
+    $fileData = base64_decode($img);
 } else {
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         json(400, ['error' => 'Aucune image reçue ou erreur d\'upload']);
