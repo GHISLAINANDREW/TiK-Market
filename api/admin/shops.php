@@ -97,8 +97,6 @@ if ($method === 'GET') {
     } catch (Exception $e) {
         json(500, ['error' => 'Erreur serveur admin shops: ' . $e->getMessage()]);
     }
-}
-
 } elseif ($method === 'PUT') {
     // ── Update shop: verify, ban/unban, feature ──
     $shopId = (int)($_GET['id'] ?? 0);
