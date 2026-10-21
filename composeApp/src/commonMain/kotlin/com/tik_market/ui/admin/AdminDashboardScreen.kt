@@ -24,6 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tik_market.utils.BackPressHandler
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import com.tik_market.api.dto.ApiAdminDashboardResponse
 import com.tik_market.api.*
 import com.tik_market.api.dto.ApiOnlineUser
@@ -1032,93 +1037,177 @@ fun AdminShopDetailDialog(
     var exteriorBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var signBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
+    var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(shop.cniFront) { if (!shop.cniFront.isNullOrBlank()) frontBitmap = loadImageFromUrl(shop.cniFront!!) }
     LaunchedEffect(shop.cniBack) { if (!shop.cniBack.isNullOrBlank()) backBitmap = loadImageFromUrl(shop.cniBack!!) }
     LaunchedEffect(shop.interiorPhoto) { if (!shop.interiorPhoto.isNullOrBlank()) interiorBitmap = loadImageFromUrl(shop.interiorPhoto!!) }
     LaunchedEffect(shop.exteriorPhoto) { if (!shop.exteriorPhoto.isNullOrBlank()) exteriorBitmap = loadImageFromUrl(shop.exteriorPhoto!!) }
     LaunchedEffect(shop.signPhoto) { if (!shop.signPhoto.isNullOrBlank()) signBitmap = loadImageFromUrl(shop.signPhoto!!) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Réception & Validation : ${shop.name}") },
-        text = {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(
-                    color = if (shop.isVerified) Green.copy(alpha = 0.15f) else Orange.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(4.dp)
+    Box(Modifier.fillMaxSize()) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Réception & Validation : ${shop.name}") },
+            text = {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        color = if (shop.isVerified) Green.copy(alpha = 0.15f) else Orange.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            if (shop.isVerified) "✅ Boutique Vérifiée & Validée" else "⏳ En attente de validation",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (shop.isVerified) Green else Orange,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+                    Text("Détails de la Boutique", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("• Nom : ${shop.name}")
+                    Text("• Catégorie : ${shop.category}")
+                    Text("• Localisation : ${shop.location}")
+                    Text("• Téléphone : ${shop.phone}")
+                    Text("• Produits : ${shop.productCount} | Ventes : ${shop.totalSales}")
+                    Text("• Créée le : ${shop.createdAt}")
+
+                    Spacer(Modifier.height(4.dp))
+                    Text("Compte Vendeur", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("• Nom : ${shop.vendorName}")
+                    Text("• Email : ${shop.vendorEmail}")
+                    Text("• Téléphone : ${shop.vendorPhone}")
+
+                    Spacer(Modifier.height(4.dp))
+                    Text("5 Photos Obligatoires (Touchez pour agrandir)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PhotoBox("1. CNI Recto", frontBitmap, shop.cniFront, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
+                        PhotoBox("2. CNI Verso", backBitmap, shop.cniBack, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PhotoBox("3. Intérieur", interiorBitmap, shop.interiorPhoto, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
+                        PhotoBox("4. Extérieur", exteriorBitmap, shop.exteriorPhoto, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        PhotoBox("5. Pancarte / Enseigne", signBitmap, shop.signPhoto, Modifier.fillMaxWidth().height(140.dp)) { url -> fullscreenImageUrl = url }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onVerifyToggle(!shop.isVerified)
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (shop.isVerified) RedAccent else Green)
                 ) {
-                    Text(
-                        if (shop.isVerified) "✅ Boutique Vérifiée & Validée" else "⏳ En attente de validation",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (shop.isVerified) Green else Orange,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Text(if (shop.isVerified) "Révoquer la validation" else "Valider la boutique", color = Color.White)
                 }
-
-                Spacer(Modifier.height(4.dp))
-                Text("Détails de la Boutique", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Text("• Nom : ${shop.name}")
-                Text("• Catégorie : ${shop.category}")
-                Text("• Localisation : ${shop.location}")
-                Text("• Téléphone : ${shop.phone}")
-                Text("• Produits : ${shop.productCount} | Ventes : ${shop.totalSales}")
-                Text("• Créée le : ${shop.createdAt}")
-
-                Spacer(Modifier.height(4.dp))
-                Text("Compte Vendeur", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Text("• Nom : ${shop.vendorName}")
-                Text("• Email : ${shop.vendorEmail}")
-                Text("• Téléphone : ${shop.vendorPhone}")
-
-                Spacer(Modifier.height(4.dp))
-                Text("5 Photos Obligatoires (KYC & Boutique)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PhotoBox("1. CNI Recto", frontBitmap, Modifier.weight(1f))
-                    PhotoBox("2. CNI Verso", backBitmap, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(4.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PhotoBox("3. Intérieur", interiorBitmap, Modifier.weight(1f))
-                    PhotoBox("4. Extérieur", exteriorBitmap, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(4.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    PhotoBox("5. Pancarte / Enseigne", signBitmap, Modifier.fillMaxWidth().height(140.dp))
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(ts.cancel)
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onVerifyToggle(!shop.isVerified)
-                    onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = if (shop.isVerified) RedAccent else Green)
-            ) {
-                Text(if (shop.isVerified) "Révoquer la validation" else "Valider la boutique", color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(ts.cancel)
+        )
+
+        if (fullscreenImageUrl != null) {
+            FullscreenImageViewer(imageUrl = fullscreenImageUrl!!) {
+                fullscreenImageUrl = null
             }
         }
-    )
+    }
 }
 
 @Composable
-fun PhotoBox(title: String, bitmap: ImageBitmap?, modifier: Modifier) {
+fun PhotoBox(title: String, bitmap: ImageBitmap?, url: String?, modifier: Modifier, onClick: (String) -> Unit) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(2.dp))
-        Box(Modifier.size(110.dp).background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(110.dp)
+                .fillMaxWidth()
+                .background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp))
+                .clickable(enabled = !url.isNullOrBlank()) { url?.let { onClick(it) } },
+            contentAlignment = Alignment.Center
+        ) {
             if (bitmap != null) {
                 Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)))
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.BottomEnd) {
+                    Icon(Icons.Default.ZoomIn, null, tint = Color.White, modifier = Modifier.padding(4.dp).size(16.dp))
+                }
             } else {
                 Text("Non fourni", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
+        }
+    }
+}
+
+@Composable
+fun FullscreenImageViewer(imageUrl: String, onDismiss: () -> Unit) {
+    var bitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(imageUrl) {
+        bitmap = loadImageFromUrl(imageUrl)
+    }
+
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+
+    BackPressHandler(enabled = true) {
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .zIndex(100f)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 5f)
+                    if (scale == 1f) {
+                        offsetX = 0f
+                        offsetY = 0f
+                    } else {
+                        offsetX += pan.x
+                        offsetY += pan.y
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offsetX,
+                        translationY = offsetY
+                    )
+            )
+        } else {
+            CircularProgressIndicator(color = Color.White)
+        }
+
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(24.dp)
+                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+        ) {
+            Icon(Icons.Default.Close, null, tint = Color.White)
         }
     }
 }
