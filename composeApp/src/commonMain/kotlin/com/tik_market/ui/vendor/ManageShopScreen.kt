@@ -378,29 +378,29 @@ fun ManageShopScreen(
                             Text("Si votre KYC a été rejeté ou si vous souhaitez mettre à jour vos 5 photos justificatives (CNI Recto/Verso, Intérieur, Extérieur, Pancarte), vous pouvez les renvoyer ci-dessous :", fontSize = 12.sp, color = Color.Gray)
                             Spacer(Modifier.height(12.dp))
 
-                            var cniF by remember { mutableStateOf(false) }
-                            var cniB by remember { mutableStateOf(false) }
-                            var intP by remember { mutableStateOf(false) }
-                            var extP by remember { mutableStateOf(false) }
-                            var sgnP by remember { mutableStateOf(false) }
+                            var cniFrontBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            var cniBackBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            var interiorBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            var exteriorBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            var signBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
-                            val pk1 = rememberImagePickerLauncher { if (it != null) { cniF = true; cniFrontBase64 = it.dataUrl } }
-                            val pk2 = rememberImagePickerLauncher { if (it != null) { cniB = true; cniBackBase64 = it.dataUrl } }
-                            val pk3 = rememberImagePickerLauncher { if (it != null) { intP = true; interiorBase64 = it.dataUrl } }
-                            val pk4 = rememberImagePickerLauncher { if (it != null) { extP = true; exteriorBase64 = it.dataUrl } }
-                            val pk5 = rememberImagePickerLauncher { if (it != null) { sgnP = true; signBase64 = it.dataUrl } }
+                            val pk1 = rememberImagePickerLauncher { if (it != null) { cniFrontBase64 = it.dataUrl; cniFrontBitmap = decodeDataUrlToImageBitmap(it.dataUrl) } }
+                            val pk2 = rememberImagePickerLauncher { if (it != null) { cniBackBase64 = it.dataUrl; cniBackBitmap = decodeDataUrlToImageBitmap(it.dataUrl) } }
+                            val pk3 = rememberImagePickerLauncher { if (it != null) { interiorBase64 = it.dataUrl; interiorBitmap = decodeDataUrlToImageBitmap(it.dataUrl) } }
+                            val pk4 = rememberImagePickerLauncher { if (it != null) { exteriorBase64 = it.dataUrl; exteriorBitmap = decodeDataUrlToImageBitmap(it.dataUrl) } }
+                            val pk5 = rememberImagePickerLauncher { if (it != null) { signBase64 = it.dataUrl; signBitmap = decodeDataUrlToImageBitmap(it.dataUrl) } }
 
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(onClick = { pk1() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (cniF) "Recto OK" else "1. CNI Recto", fontSize = 11.sp) }
-                                OutlinedButton(onClick = { pk2() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (cniB) "Verso OK" else "2. CNI Verso", fontSize = 11.sp) }
+                                Box(Modifier.weight(1f)) { VendorPhotoPreviewBox("1. CNI Recto", cniFrontBitmap) { pk1() } }
+                                Box(Modifier.weight(1f)) { VendorPhotoPreviewBox("2. CNI Verso", cniBackBitmap) { pk2() } }
                             }
-                            Spacer(Modifier.height(6.dp))
+                            Spacer(Modifier.height(8.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(onClick = { pk3() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (intP) "Intérieur OK" else "3. Intérieur", fontSize = 11.sp) }
-                                OutlinedButton(onClick = { pk4() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (extP) "Extérieur OK" else "4. Extérieur", fontSize = 11.sp) }
+                                Box(Modifier.weight(1f)) { VendorPhotoPreviewBox("3. Intérieur", interiorBitmap) { pk3() } }
+                                Box(Modifier.weight(1f)) { VendorPhotoPreviewBox("4. Extérieur", exteriorBitmap) { pk4() } }
                             }
-                            Spacer(Modifier.height(6.dp))
-                            OutlinedButton(onClick = { pk5() }, modifier = Modifier.weight(1f).height(38.dp)) { Text(if (sgnP) "Pancarte OK" else "5. Pancarte / Enseigne", fontSize = 11.sp) }
+                            Spacer(Modifier.height(8.dp))
+                            VendorPhotoPreviewBox("5. Pancarte / Enseigne", signBitmap) { pk5() }
 
                             Spacer(Modifier.height(12.dp))
                             if (kycResubmitMsg != null) {
@@ -742,4 +742,31 @@ fun ManageShopScreen(
         )
     }
     } // BoxWithConstraints
+}
+
+@Composable
+fun VendorPhotoPreviewBox(title: String, bitmap: ImageBitmap?, onPick: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFEFEFEF))
+                .border(1.dp, if (bitmap != null) Green else Color.LightGray, RoundedCornerShape(8.dp))
+                .clickable { onPick() },
+            contentAlignment = Alignment.Center
+        ) {
+            if (bitmap != null) {
+                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.AddPhotoAlternate, null, tint = Green, modifier = Modifier.size(24.dp))
+                    Text("Appuyer pour changer", fontSize = 9.sp, color = Green)
+                }
+            }
+        }
+    }
 }
