@@ -1318,64 +1318,117 @@ fun AdminShopDetailScreen(
             }
 
             if (showDocType != null) {
-                val docText = if (showDocType == "fiche") {
-                    "FICHE OFFICIELLE DU VENDEUR - TIK-MARKET\n\n" +
-                    "• Nom de la boutique : ${shop.name}\n" +
+                val isFiche = showDocType == "fiche"
+                val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                var copied by remember { mutableStateOf(false) }
+
+                val docText = if (isFiche) {
+                    "=========================================\n" +
+                    "   TIK-MARKET - FICHE VENDEUR OFFICIELLE\n" +
+                    "   Éditée par AutenTik Soft Solution SARLU\n" +
+                    "=========================================\n\n" +
+                    "1. BOUTIQUE PARTENAIRE\n" +
+                    "• Nom : ${shop.name}\n" +
                     "• Catégorie : ${shop.category}\n" +
-                    "• Gérant / Promoteur : ${shop.vendorName}\n" +
+                    "• Réf. Registre : TM-SHOP-#${shop.id}\n" +
+                    "• Statut KYC : ${if (shop.isVerified) "CERTIFIÉ & VALIDÉ ✅" else "EN COURS DE VALIDATION ⏳"}\n\n" +
+                    "2. GÉRANT / VOYAGEUR & FISCALITÉ\n" +
+                    "• Nom complet : ${shop.vendorName}\n" +
                     "• Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }}\n" +
                     "• Téléphone : ${shop.vendorPhone.ifBlank { shop.phone }}\n" +
-                    "• Numéro NIU (Fiscal) : ${shop.niu?.ifBlank { "En cours" } ?: "En cours"}\n" +
-                    "• Localisation : ${shop.location}\n" +
-                    "• Position GPS : Lat ${shop.latitude}, Lng ${shop.longitude}\n" +
-                    "• Statut KYC : ${if (shop.isVerified) "CERTIFIÉ & VALIDÉ" else "EN ATTENTE DE VALIDATION"}\n" +
+                    "• Numéro NIU (Fiscal) : ${shop.niu?.ifBlank { "En cours d'attribution" } ?: "En cours d'attribution"}\n\n" +
+                    "3. LOCALISATION CERTIFIÉE\n" +
+                    "• Adresse / Quartier : ${shop.location}\n" +
+                    "• Position GPS : Lat ${shop.latitude}, Long ${shop.longitude}\n" +
                     "• Date de création : ${shop.createdAt}\n\n" +
-                    "Certifié conforme par l'Administration TiK-Market."
+                    "-----------------------------------------\n" +
+                    "Document certifié conforme par AutenTik Soft Solution SARLU\n" +
+                    "[Cachet Numérique - TiK-Market Cameroun]"
                 } else {
-                    "CONTRAT D'ADHÉSION ET DE PARTENARIAT COMMERCIAL\n\n" +
-                    "ENTRE : La Société TiK-Market SAS\n" +
-                    "ET : La Boutique ${shop.name}, représentée par M./Mme ${shop.vendorName} (NIU : ${shop.niu?.ifBlank { "En cours" } ?: "En cours"}).\n\n" +
-                    "1. OBJET : Distribution des produits de la boutique ${shop.name} sur TiK-Market.\n" +
-                    "2. CONFORMITÉ KYC : Le vendeur atteste de l'exactitude de sa CNI et de ses 5 photos de boutique.\n" +
-                    "3. GÉOLOCALISATION CERTIFIÉE : Localisation physique certifiée à ${shop.location} (GPS : ${shop.latitude}, ${shop.longitude}).\n" +
-                    "4. VALIDATION : Contrat d'adhésion validé le ${shop.createdAt}.\n\n" +
-                    "[Cachet Officiel & Signature Électronique TiK-Market]"
+                    "=========================================\n" +
+                    " CONTRAT DE PARTENARIAT COMMERCIAL TIK-MARKET\n" +
+                    "   Opéré par AutenTik Soft Solution SARLU\n" +
+                    "=========================================\n\n" +
+                    "ENTRE LES SOUSSIGNÉS :\n\n" +
+                    "1. La Société AutenTik Soft Solution SARLU (SARL Unipersonnelle), " +
+                    "opérateur et représentant légal exclusif de TiK-Market au Cameroun.\n\n" +
+                    "2. La Boutique Partenaire : ${shop.name}\n" +
+                    "• Catégorie : ${shop.category} | Adresse : ${shop.location}\n" +
+                    "• Représentée par : M./Mme ${shop.vendorName} (Gérant)\n" +
+                    "• Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }} | Tél : ${shop.vendorPhone.ifBlank { shop.phone }}\n" +
+                    "• Numéro NIU (Fiscal) : ${shop.niu?.ifBlank { "En cours d'attribution" } ?: "En cours d'attribution"}\n" +
+                    "• Position GPS Certifiée : ${shop.latitude}, ${shop.longitude}\n\n" +
+                    "ARTICLE 1 - OBJET DU PARTENARIAT\n" +
+                    "Le présent contrat régit la mise en ligne, la promotion et la distribution des produits de la boutique ${shop.name} sur TiK-Market.\n\n" +
+                    "ARTICLE 2 - CONFORMITÉ KYC & SÉCURITÉ\n" +
+                    "Le Vendeur Partenaire atteste de l'exactitude de ses pièces d'identité et des 5 photos de boutique fournies.\n\n" +
+                    "ARTICLE 3 - GÉOLOCALISATION CERTIFIÉE\n" +
+                    "Les livraisons s'effectuent à partir de la position géographique physique certifiée à ${shop.location}.\n\n" +
+                    "ARTICLE 4 - VALIDATION & PRISE D'EFFET\n" +
+                    "Prise d'effet enregistrée le ${shop.createdAt}.\n\n" +
+                    "SIGNATURES :\n" +
+                    "Pour AutenTik Soft Solution SARLU : [Signé Électroniquement]\n" +
+                    "Pour La Boutique Partenaire : ${shop.vendorName} [Lu et Approuvé]"
                 }
 
                 AlertDialog(
                     onDismissRequest = { showDocType = null },
-                    title = { Text(docTitle, fontWeight = FontWeight.Bold) },
+                    title = {
+                        Column {
+                            Text(docTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                            Text("AutenTik Soft Solution SARLU", fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+                        }
+                    },
                     text = {
-                        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Surface(
-                                color = Color(0xFFF9F9F9),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color.LightGray)
+                                color = Color(0xFF1E293B),
+                                shape = RoundedCornerShape(10.dp),
                             ) {
                                 Text(
                                     docText,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFF8FAFC),
                                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                    modifier = Modifier.padding(12.dp)
+                                    modifier = Modifier.padding(14.dp),
+                                    lineHeight = 16.sp
                                 )
+                            }
+                            if (copied) {
+                                Text("✅ Document copié dans le presse-papier !", fontSize = 11.sp, color = Green, fontWeight = FontWeight.Bold)
                             }
                         }
                     },
                     confirmButton = {
-                        val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-                        Button(
-                            onClick = {
-                                val htmlContent = if (showDocType == "fiche") generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
-                                try {
-                                    val encoded = htmlContent.replace("\n", "%0A").replace(" ", "%20").replace("#", "%23")
-                                    uriHandler.openUri("data:text/html;charset=utf-8,$encoded")
-                                } catch (_: Exception) {}
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Green)
-                        ) {
-                            Icon(Icons.Default.Print, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Télécharger / Imprimer PDF", color = Color.White)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(docText))
+                                    copied = true
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Copier", fontSize = 12.sp)
+                            }
+
+                            val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                            Button(
+                                onClick = {
+                                    val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
+                                    try {
+                                        val encoded = htmlContent.replace("\n", "%0A").replace(" ", "%20").replace("#", "%23")
+                                        uriHandler.openUri("data:text/html;charset=utf-8,$encoded")
+                                    } catch (_: Exception) {}
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Green),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Print, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Ouvrir HTML", color = Color.White, fontSize = 12.sp)
+                            }
                         }
                     },
                     dismissButton = {
