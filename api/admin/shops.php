@@ -93,69 +93,84 @@ if ($method === 'GET') {
         json(500, ['error' => 'Erreur serveur admin shops: ' . $e->getMessage()]);
     }
 } elseif ($method === 'PUT') {
-    // ── Update shop: verify, ban/unban, feature ──
-    $shopId = (int)($_GET['id'] ?? 0);
-    if ($shopId <= 0) json(400, ['error' => 'ID boutique requis']);
+    try {
+        // ── Update shop: verify, ban/unban, feature ──
+        $shopId = (int)($_GET['id'] ?? 0);
+        if ($shopId <= 0) json(400, ['error' => 'ID boutique requis']);
 
-    // Verify the shop exists
-    $stmt = $db->prepare('SELECT id, name, is_verified, status, is_featured FROM shops WHERE id = ?');
-    $stmt->execute([$shopId]);
-    $shop = $stmt->fetch();
-    if (!$shop) json(404, ['error' => 'Boutique introuvable']);
+        // Verify the shop exists
+        $stmt = $db->prepare('SELECT id, name, is_verified, status, is_featured FROM shops WHERE id = ?');
+        $stmt->execute([$shopId]);
+        $shop = $stmt->fetch();
+        if (!$shop) json(404, ['error' => 'Boutique introuvable']);
 
-    // Build dynamic update
-    $updates = [];
-    $params = [];
+        $existingCols = [];
+        try {
+            $colsStmt = $db->query("SHOW COLUMNS FROM shops");
+            while ($row = $colsStmt->fetch()) {
+                $existingCols[] = $row['Field'];
+            }
+        } catch (Exception $e) {}
 
-    // 1. Toggle verification
-    if (isset($_GET['verified'])) {
-        $v = filter_var($_GET['verified'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-        $updates[] = 'is_verified = ?';
-        $params[] = $v;
-        $updates[] = 'kyc_status = ?';
-        $params[] = $v ? 'verified' : 'rejected';
+        // Build dynamic update
+        $updates = [];
+        $params = [];
 
-        // Notify vendor when validated
-        if ($v) {
-            try {
-                $stmtV = $db->prepare('SELECT vendor_id, name FROM shops WHERE id = ?');
-                $stmtV->execute([$shopId]);
-                $sData = $stmtV->fetch();
-                if ($sData) {
-                    sendNotification((int)$sData['vendor_id'], "Boutique validée avec succès 🎉", "Votre boutique '{$sData['name']}' a été validée par l'administration ! Vous pouvez commencer à vendre.", 'system', $shopId);
-                }
-            } catch (Exception $e) {}
+        // 1. Toggle verification
+        if (isset($_GET['verified'])) {
+            $rawV = $_GET['verified'];
+            $v = ($rawV === 'true' || $rawV === '1' || $rawV === 1 || $rawV === true) ? 1 : 0;
+            $updates[] = 'is_verified = ?';
+            $params[] = $v;
+            if (in_array('kyc_status', $existingCols)) {
+                $updates[] = 'kyc_status = ?';
+                $params[] = $v ? 'verified' : 'rejected';
+            }
+
+            // Notify vendor when validated
+            if ($v) {
+                try {
+                    $stmtV = $db->prepare('SELECT vendor_id, name FROM shops WHERE id = ?');
+                    $stmtV->execute([$shopId]);
+                    $sData = $stmtV->fetch();
+                    if ($sData) {
+                        sendNotification((int)$sData['vendor_id'], "Boutique validée avec succès 🎉", "Votre boutique '{$sData['name']}' a été validée par l'administration ! Vous pouvez commencer à vendre.", 'system', $shopId);
+                    }
+                } catch (Exception $e) {}
+            }
         }
+
+        // 2. Ban / Unban
+        if (isset($_GET['status'])) {
+            $allowed = ['active', 'banned', 'suspended'];
+            $status = $_GET['status'];
+            if (!in_array($status, $allowed)) json(400, ['error' => 'Statut invalide. Utilisez: active, banned, suspended']);
+            $updates[] = 'status = ?';
+            $params[] = $status;
+        }
+
+        // 3. Toggle featured / promote
+        if (isset($_GET['featured'])) {
+            $f = filter_var($_GET['featured'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            $updates[] = 'is_featured = ?';
+            $params[] = $f;
+        }
+
+        if (empty($updates)) {
+            json(400, ['error' => 'Aucune modification spécifiée. Utilisez verified, status, ou featured.']);
+        }
+
+        $updates[] = 'updated_at = NOW()';
+        $params[] = $shopId; // for WHERE id = ?
+
+        $sql = 'UPDATE shops SET ' . implode(', ', $updates) . ' WHERE id = ?';
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+
+        json(200, ['success' => true, 'message' => 'Boutique mise à jour']);
+    } catch (Exception $e) {
+        json(500, ['error' => 'Erreur serveur admin PUT shops: ' . $e->getMessage()]);
     }
-
-    // 2. Ban / Unban
-    if (isset($_GET['status'])) {
-        $allowed = ['active', 'banned', 'suspended'];
-        $status = $_GET['status'];
-        if (!in_array($status, $allowed)) json(400, ['error' => 'Statut invalide. Utilisez: active, banned, suspended']);
-        $updates[] = 'status = ?';
-        $params[] = $status;
-    }
-
-    // 3. Toggle featured / promote
-    if (isset($_GET['featured'])) {
-        $f = filter_var($_GET['featured'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-        $updates[] = 'is_featured = ?';
-        $params[] = $f;
-    }
-
-    if (empty($updates)) {
-        json(400, ['error' => 'Aucune modification spécifiée. Utilisez verified, status, ou featured.']);
-    }
-
-    $updates[] = 'updated_at = NOW()';
-    $params[] = $shopId; // for WHERE id = ?
-
-    $sql = 'UPDATE shops SET ' . implode(', ', $updates) . ' WHERE id = ?';
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-
-    json(200, ['success' => true, 'message' => 'Boutique mise à jour']);
 
 } elseif ($method === 'DELETE') {
     // ── Delete a shop entirely ──

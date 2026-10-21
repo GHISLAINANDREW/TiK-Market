@@ -1083,6 +1083,8 @@ fun AdminShopDetailScreen(
 
     var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDocType by remember { mutableStateOf<String?>(null) }
+    var docTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(shop.logo) { if (shop.logo.isNotBlank()) logoBitmap = loadImageFromUrl(shop.logo) }
     LaunchedEffect(shop.cniFront) { if (!shop.cniFront.isNullOrBlank()) frontBitmap = loadImageFromUrl(shop.cniFront!!) }
@@ -1267,12 +1269,121 @@ fun AdminShopDetailScreen(
                         }
                     }
                 }
+
+                // Official Documents & Contract Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Documents Officiels & Contrat TiK-Market", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                        HorizontalDivider(color = DividerGray.copy(alpha = 0.3f))
+
+                        OutlinedButton(
+                            onClick = {
+                                showDocType = "fiche"
+                                docTitle = "Fiche Officielle du Vendeur"
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Green)
+                        ) {
+                            Icon(Icons.Default.Description, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Générer la Fiche Vendeur", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                showDocType = "contract"
+                                docTitle = "Contrat de Partenariat TiK-Market"
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BlueAccent)
+                        ) {
+                            Icon(Icons.Default.Download, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Télécharger le Contrat TiK-Market", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
             }
 
             if (fullscreenImageUrl != null) {
                 FullscreenImageViewer(imageUrl = fullscreenImageUrl!!) {
                     fullscreenImageUrl = null
                 }
+            }
+
+            if (showDocType != null) {
+                val docText = if (showDocType == "fiche") {
+                    "FICHE OFFICIELLE DU VENDEUR - TIK-MARKET\n\n" +
+                    "• Nom de la boutique : ${shop.name}\n" +
+                    "• Catégorie : ${shop.category}\n" +
+                    "• Gérant / Promoteur : ${shop.vendorName}\n" +
+                    "• Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }}\n" +
+                    "• Téléphone : ${shop.vendorPhone.ifBlank { shop.phone }}\n" +
+                    "• Numéro NIU (Fiscal) : ${shop.niu?.ifBlank { "En cours" } ?: "En cours"}\n" +
+                    "• Localisation : ${shop.location}\n" +
+                    "• Position GPS : Lat ${shop.latitude}, Lng ${shop.longitude}\n" +
+                    "• Statut KYC : ${if (shop.isVerified) "CERTIFIÉ & VALIDÉ" else "EN ATTENTE DE VALIDATION"}\n" +
+                    "• Date de création : ${shop.createdAt}\n\n" +
+                    "Certifié conforme par l'Administration TiK-Market."
+                } else {
+                    "CONTRAT D'ADHÉSION ET DE PARTENARIAT COMMERCIAL\n\n" +
+                    "ENTRE : La Société TiK-Market SAS\n" +
+                    "ET : La Boutique ${shop.name}, représentée par M./Mme ${shop.vendorName} (NIU : ${shop.niu?.ifBlank { "En cours" } ?: "En cours"}).\n\n" +
+                    "1. OBJET : Distribution des produits de la boutique ${shop.name} sur TiK-Market.\n" +
+                    "2. CONFORMITÉ KYC : Le vendeur atteste de l'exactitude de sa CNI et de ses 5 photos de boutique.\n" +
+                    "3. GÉOLOCALISATION CERTIFIÉE : Localisation physique certifiée à ${shop.location} (GPS : ${shop.latitude}, ${shop.longitude}).\n" +
+                    "4. VALIDATION : Contrat d'adhésion validé le ${shop.createdAt}.\n\n" +
+                    "[Cachet Officiel & Signature Électronique TiK-Market]"
+                }
+
+                AlertDialog(
+                    onDismissRequest = { showDocType = null },
+                    title = { Text(docTitle, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                            Surface(
+                                color = Color(0xFFF9F9F9),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, Color.LightGray)
+                            ) {
+                                Text(
+                                    docText,
+                                    fontSize = 12.sp,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                        Button(
+                            onClick = {
+                                val htmlContent = if (showDocType == "fiche") generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
+                                try {
+                                    val encoded = htmlContent.replace("\n", "%0A").replace(" ", "%20").replace("#", "%23")
+                                    uriHandler.openUri("data:text/html;charset=utf-8,$encoded")
+                                } catch (_: Exception) {}
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Green)
+                        ) {
+                            Icon(Icons.Default.Print, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Télécharger / Imprimer PDF", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDocType = null }) {
+                            Text(ts.close)
+                        }
+                    }
+                )
             }
 
             if (showDeleteConfirm) {
@@ -1938,4 +2049,129 @@ private fun SimpleBarChart(data: List<Int>, modifier: Modifier = Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
         data.forEach { v -> Box(Modifier.weight(1f).fillMaxHeight().background(GreenSurface, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))) { Box(Modifier.fillMaxWidth().fillMaxHeight(v.toFloat() / max).background(Green, RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))) } }
     }
+}
+
+fun generateVendorSheetHtml(shop: AdminShop): String {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Fiche Vendeur - ${shop.name}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 30px; color: #333; }
+                .header { border-bottom: 3px solid #2E7D32; padding-bottom: 10px; margin-bottom: 20px; }
+                h1 { color: #2E7D32; margin: 0; }
+                .badge { background: #E8F5E9; color: #2E7D32; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+                .section { margin-top: 20px; padding: 15px; background: #F9F9F9; border-radius: 8px; }
+                .label { font-weight: bold; color: #555; }
+                .footer { margin-top: 40px; font-size: 12px; color: #777; border-top: 1px solid #CCC; padding-top: 10px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>TiK-Market - Fiche Vendeur Officielle</h1>
+                <p>Identifiant Boutique: #${shop.id} | Généré le: ${shop.createdAt}</p>
+            </div>
+            <div class="section">
+                <h3>1. Informations sur la Boutique</h3>
+                <p><span class="label">Nom de la boutique:</span> ${shop.name}</p>
+                <p><span class="label">Catégorie:</span> ${shop.category}</p>
+                <p><span class="label">Localisation:</span> ${shop.location}</p>
+                <p><span class="label">Téléphone Pro:</span> ${shop.phone}</p>
+                <p><span class="label">Statut KYC:</span> <span class="badge">${if (shop.isVerified) "CERTIFIÉ & VALIDÉ" else "EN ATTENTE"}</span></p>
+            </div>
+            <div class="section">
+                <h3>2. Informations du Gérant / Promoteur</h3>
+                <p><span class="label">Nom complet:</span> ${shop.vendorName}</p>
+                <p><span class="label">Email:</span> ${shop.vendorEmail.ifBlank { "Non renseigné" }}</p>
+                <p><span class="label">Téléphone personnel:</span> ${shop.vendorPhone.ifBlank { shop.phone }}</p>
+                <p><span class="label">Numéro NIU (Fiscal):</span> ${shop.niu?.ifBlank { "Non renseigné" } ?: "Non renseigné"}</p>
+            </div>
+            <div class="section">
+                <h3>3. Géolocalisation Certifiée</h3>
+                <p><span class="label">Latitude:</span> ${shop.latitude}</p>
+                <p><span class="label">Longitude:</span> ${shop.longitude}</p>
+            </div>
+            <div class="footer">
+                Document généré par la plateforme d'administration TiK-Market. Fiche officielle certifiée.
+            </div>
+        </body>
+        </html>
+    """.trimIndent()
+}
+
+fun generateVendorContractHtml(shop: AdminShop): String {
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Contrat Vendeur TiK-Market - ${shop.name}</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; margin: 40px; color: #111; line-height: 1.6; }
+                h1 { text-align: center; color: #1B5E20; text-transform: uppercase; font-size: 20px; }
+                h2 { text-align: center; color: #333; font-size: 14px; border-bottom: 2px solid #1B5E20; padding-bottom: 5px; }
+                .party { margin-bottom: 15px; }
+                .article { margin-top: 20px; }
+                .art-title { font-weight: bold; text-decoration: underline; }
+                .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
+                .sig-box { width: 45%; border-top: 1px solid #333; padding-top: 10px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h1>CONTRAT D'ADHÉSION ET DE PARTENARIAT COMMERCIAL</h1>
+            <h2>Plateforme de Vente TiK-Market Cameroun</h2>
+            
+            <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+            
+            <div class="party">
+                <p><strong>1. La Société TiK-Market SAS</strong>, plateforme e-commerce enregistrée au Cameroun, représentée par son Administrateur Légal, ci-après dénommée <em>« TiK-Market »</em>.</p>
+            </div>
+            
+            <div class="party">
+                <p><strong>2. La Boutique :</strong> <strong>${shop.name}</strong><br>
+                Catégorie : ${shop.category}<br>
+                Localisation certifiée : ${shop.location} (GPS : ${shop.latitude}, ${shop.longitude})<br>
+                Représentée par M./Mme : <strong>${shop.vendorName}</strong> (Gérant)<br>
+                Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }} | Tél : ${shop.vendorPhone.ifBlank { shop.phone }}<br>
+                Numéro d'Identifiant Unique (NIU) : <strong>${shop.niu?.ifBlank { "En cours" } ?: "En cours"}</strong><br>
+                ci-après dénommée <em>« Le Vendeur Partenaire »</em>.</p>
+            </div>
+
+            <div class="article">
+                <p class="art-title">Article 1 : Objet du Contrat</p>
+                <p>Le présent contrat a pour objet de définir les conditions dans lesquelles le Vendeur Partenaire distribue ses produits via la plateforme TiK-Market.</p>
+            </div>
+
+            <div class="article">
+                <p class="art-title">Article 2 : Engagement de Conformité et KYC</p>
+                <p>Le Vendeur s'engage à fournir des informations exactes et des justificatifs d'identité conformes (CNI, photos de boutique, enseigne). TiK-Market se réserve le droit de suspendre tout compte ne respectant pas les critères KYC.</p>
+            </div>
+
+            <div class="article">
+                <p class="art-title">Article 3 : Géolocalisation et Livraisons</p>
+                <p>La boutique atteste de l'exactitude de son adresse physique à ${shop.location}. Les livreurs partenaires s'appuient sur les coordonnées GPS certifiées pour l'enlèvement des commandes.</p>
+            </div>
+
+            <div class="article">
+                <p class="art-title">Article 4 : Durée et Résiliation</p>
+                <p>Le présent contrat est conclu pour une durée indéterminée à compter de sa validation officielle le ${shop.createdAt}. Chaque partie peut y mettre fin moyennant un préavis de 15 jours.</p>
+            </div>
+
+            <div class="signatures">
+                <div class="sig-box">
+                    <p><strong>Pour TiK-Market SAS</strong></p>
+                    <p>L'Administration Légale</p>
+                    <p><em>[Cachet Certifié Électroniquement]</em></p>
+                </div>
+                <div class="sig-box">
+                    <p><strong>Pour Le Vendeur Partenaire</strong></p>
+                    <p>${shop.vendorName}</p>
+                    <p><em>Lu et approuvé</em></p>
+                </div>
+            </div>
+        </body>
+        </html>
+    """.trimIndent()
 }
