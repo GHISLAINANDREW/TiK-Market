@@ -45,17 +45,18 @@ fun LegalNoticeScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            LegalSection("1. Éditeur de la Plateforme", "La plateforme TiK-Market est éditée et exploitée par la société AUTENTIK SOFT SOLUTIONS SARLU, immatriculée au Cameroun. Contact support : AdminAutenTiK@gmail.com / +237 600000000.")
-            LegalSection("2. Collecte des Données Personnelles", "Dans le cadre de l'utilisation de TiK-Market, nous collectons les informations que vous nous fournissez directement lors de l'inscription et de la création de boutique : Nom, prénom, adresse email, numéro de téléphone, photos de profil, documents d'identité (KYC pour les vendeurs), et position géographique GPS.")
-            LegalSection("3. Utilisation de la Géolocalisation GPS", "La géolocalisation de votre appareil est utilisée pour deux objectifs principaux : permettre aux acheteurs de découvrir les boutiques situées à proximité (de 5m à 400m) et garantir la précision des livraisons de proximité. La position GPS de la boutique enregistrée lors de sa création est définitive et immuable.")
-            LegalSection("4. Sécurité et Confidentialité des Données", "Vos données personnelles font l'objet d'un traitement informatique rigoureux. Les mots de passe sont cryptés via l'algorithme sécurisé Bcrypt. Vos informations bancaires et numéros de compte marchand Mobile Money sont strictement protégés et ne sont jamais partagés à des tiers non autorisés.")
-            LegalSection("5. Droits des Utilisateurs (RGPD / Lois Locales)", "Conformément aux réglementations en vigueur, vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles. Vous pouvez exercer ces droits à tout moment depuis les paramètres de votre profil ou en contactant notre support technique.")
-            LegalSection("6. Propriété Intellectuelle", "L'ensemble des éléments textuels, graphiques, logiciels, interfaces et logos de TiK-Market sont la propriété exclusive d'AUTENTIK SOFT SOLUTIONS SARLU. Toute reproduction, modification ou exploitation non autorisée est strictement interdite.")
+            LegalSection("1. Éditeur et Opérateur Légal", "La plateforme TiK-Market est éditée, développée et exploitée à titre exclusif par la société AUTENTIK SOFT SOLUTIONS SARLU (Société à Responsabilité Limitée Unipersonnelle), immatriculée au Registre du Commerce du Cameroun. Contact officiel : AdminAutenTiK@gmail.com / +237 600000000.")
+            LegalSection("2. Collecte des Données et Conformité KYC", "Dans le cadre de l'exploitation de TiK-Market, AutenTik Soft Solution SARLU collecte et traite les informations nécessaires au fonctionnement de la marketplace : Nom, prénom, adresse email, numéro de téléphone, documents officiels d'identité (CNI recto/verso, photos de boutique, enseigne pour le KYC des vendeurs/partenaires) et numéro d'identifiant unique fiscal (NIU).")
+            LegalSection("3. Géolocalisation GPS Certifiée", "La position GPS exacte de la boutique capturée lors de sa création constitue la référence officielle pour les livraisons et la découvrabilité par les acheteurs à proximité. Cette position est immuable et certifiée par les serveurs d'AutenTik Soft Solution SARLU.")
+            LegalSection("4. Sécurité des Transactions et Mobile Money", "Toutes les transactions bancaires et Mobile Money (Orange Money, MTN Mobile Money) s'effectuent directement vers les comptes marchands agréés des vendeurs partenaires ou via les systèmes sécurisés d'AutenTik Soft Solution SARLU. Les mots de passe sont cryptés avec Bcrypt et aucune donnée sensible n'est transmise à des tiers sans accord explicite.")
+            LegalSection("5. Droits d'Accès et de Rectification (Lois Locales / RGPD)", "Chaque utilisateur ou partenaire vendeur dispose d'un droit d'accès, de modification, de rectification et de suppression de ses données personnelles. Vous pouvez exercer ce droit à tout moment depuis les paramètres de votre compte ou en adressant une demande écrite à notre service juridique.")
+            LegalSection("6. Propriété Intellectuelle et Droits Réservés", "L'ensemble des logiciels, architectures, interfaces, marques, logos, graphismes et algorithmes de TiK-Market sont la propriété intellectuelle exclusive d'AUTENTIK SOFT SOLUTIONS SARLU. Toute reproduction ou exploitation non autorisée fera l'objet de poursuites judiciaires.")
             
             Spacer(Modifier.height(32.dp))
             Text(
-                "Dernière mise à jour : Août 2026",
+                "Mentions Légales éditées par AutenTik Soft Solution SARLU - Octobre 2026",
                 fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.Gray
             )
         }
@@ -91,17 +92,15 @@ fun TermsOfUseScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            LegalSection("1. Objet et Acceptation des CGU", "Les présentes Conditions Générales d'Utilisation régissent l'accès et l'utilisation de la place de marché TiK-Market. En créant un compte (Acheteur ou Vendeur/Partenaire), vous acceptez sans réserve l'intégralité de ces conditions.")
-            LegalSection("2. Inscription et Validation des Comptes (KYC)", "L'inscription est ouverte aux particuliers et aux professionnels. Pour les marchands (Compte Partenaire), la création de boutique requiert des informations exactes, la capture GPS sur place (immuable) et la soumission optionnelle ou immédiate de pièces justificatives (KYC). TiK-Market se réserve le droit de valider ou de suspendre tout compte ne respectant pas nos critères de sécurité.")
-            LegalSection("3. Commandes, Paiements et Livraisons", "Les transactions s'effectuent entre acheteurs et vendeurs locaux. Les paiements peuvent être réglés à la livraison ou via les comptes marchands Mobile Money configurés par les vendeurs. TiK-Market agit en tant qu'intermédiaire technologique et décline toute responsabilité en cas de litige sur une transaction hors plateforme.")
-            LegalSection("4. Engagements des Vendeurs (Partenaires)", "Le vendeur s'engage à proposer des produits conformes, authentiques et de qualité, à honorer les commandes reçues et à respecter sa position géographique GPS déclarée lors de l'enregistrement initial de sa boutique.")
-            LegalSection("5. Engagements des Acheteurs", "L'acheteur s'engage à fournir des coordonnées de livraison valides, à respecter les commerçants partenaires et à maintenir une conduite courtoise au sein de la messagerie instantanée intégrée.")
-            LegalSection("6. Programme de Fidélité et Parrainage", "Les points de fidélité et bonus de parrainage sont octroyés conformément aux règles du programme en vigueur sur l'application. Ils ne constituent pas une monnaie ayant cours légal et ne sont pas convertibles en espèces.")
-            LegalSection("7. Limitation de Responsabilité et Litiges", "TiK-Market ne saurait être tenu responsable des interruptions de service dues à la maintenance ou à des cas de force majeure. En cas de différend, une résolution amiable sera privilégiée entre les parties.")
+            LegalSection("1. Objet et Portée des CGU", "Les présentes Conditions Générales d'Utilisation définissent les relations contractuelles entre la société AUTENTIK SOFT SOLUTIONS SARLU (opérateur de TiK-Market) et tout utilisateur (Acheteur, Vendeur Partenaire, Livreur). L'utilisation de la plateforme implique l'acceptation sans réserve des présentes CGU.")
+            LegalSection("2. Adhésion des Vendeurs Partenaires & KYC", "L'ouverture d'une boutique partenaire requiert la validation des 5 photos obligatoires (CNI recto/verso, vue intérieure, vue extérieure, enseigne), la saisie du numéro NIU fiscal et la capture GPS certifiée sur site. AutenTik Soft Solution SARLU se réserve le droit de refuser ou de révoquer l'accès à toute boutique non conforme.")
+            LegalSection("3. Contrats de Partenariat et Fiches Vendeurs", "La validation d'un compte marchand donne lieu à l'émission d'une Fiche Officielle du Vendeur et d'un Contrat de Partenariat Commercial téléchargeables sous format certifié par AutenTik Soft Solution SARLU.")
+            LegalSection("4. Obligations des Partenaires et Acheteurs", "Les vendeurs s'engagent à proposer des articles authentiques, à respecter les prix affichés et à honorer rapidement les commandes. Les acheteurs s'engagent à fournir des informations de livraison exactes et à adopter un comportement respectueux.")
+            LegalSection("5. Responsabilité et Résolution des Différends", "AutenTik Soft Solution SARLU met à disposition les outils technologiques de mise en relation. En cas de différend commercial, notre service d'assistance interviendra pour favoriser une résolution amiable.")
             
             Spacer(Modifier.height(32.dp))
             Text(
-                "En vous inscrivant sur TiK-Market, vous reconnaissez avoir lu, compris et accepté les présentes Conditions d'Utilisation.",
+                "En poursuivant la navigation sur TiK-Market, vous confirmez votre adhésion aux présentes Conditions Générales édictées par AutenTik Soft Solution SARLU.",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.DarkGray
