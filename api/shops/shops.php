@@ -249,10 +249,28 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$input) json(400, ['error' => 'Corps de requête invalide']);
 
+        $existingCols = [];
+        try {
+            $colsStmt = $db->query("SHOW COLUMNS FROM shops");
+            while ($row = $colsStmt->fetch()) {
+                $existingCols[] = $row['Field'];
+            }
+        } catch (Exception $e) {}
+
+        foreach (['cni_front', 'cni_back', 'interior_photo', 'exterior_photo', 'sign_photo', 'latitude', 'longitude', 'kyc_status'] as $col) {
+            if (!in_array($col, $existingCols)) {
+                try {
+                    $def = ($col === 'kyc_status') ? 'VARCHAR(30) DEFAULT "pending"' : (($col === 'latitude' || $col === 'longitude') ? 'DECIMAL(10,8) DEFAULT 0' : 'TEXT NULL');
+                    $db->exec("ALTER TABLE shops ADD COLUMN $col $def");
+                    $existingCols[] = $col;
+                } catch (Exception $e) {}
+            }
+        }
+
         $fields = [];
         $params = [];
         foreach (['name', 'description', 'logo', 'phone', 'location', 'category', 'cni_front', 'cni_back', 'interior_photo', 'exterior_photo', 'sign_photo', 'latitude', 'longitude', 'kyc_status'] as $f) {
-            if (array_key_exists($f, $input)) {
+            if (array_key_exists($f, $input) && in_array($f, $existingCols)) {
                 $fields[] = "$f = ?";
                 $params[] = $input[$f];
             }
@@ -269,9 +287,13 @@ try {
                 $stmtShop->execute([$id]);
                 $sInfo = $stmtShop->fetch();
                 if ($sInfo) {
-                    $stmtAdmins = $db->prepare('SELECT id FROM users WHERE role IN ("admin", "super_admin") AND (managed_city IS NULL OR managed_city = ?)');
-                    $stmtAdmins->execute([$sInfo['location']]);
+                    $stmtAdmins = $db->prepare('SELECT id FROM users WHERE role IN ("admin", "super_admin") AND (managed_city IS NULL OR managed_city = ? OR ? LIKE CONCAT("%", managed_city, "%"))');
+                    $stmtAdmins->execute([$sInfo['location'], $sInfo['location']]);
                     $adminIds = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+                    if (empty($adminIds)) {
+                        $stmtGlobal = $db->query('SELECT id FROM users WHERE role IN ("admin", "super_admin")');
+                        $adminIds = $stmtGlobal->fetchAll(PDO::FETCH_COLUMN);
+                    }
                     foreach ($adminIds as $admId) {
                         sendNotification((int)$admId, "Mise à jour KYC / Nouvelle soumission 📋", "Le vendeur de la boutique '{$sInfo['name']}' a mis à jour ses photos KYC. Veuillez vérifier.", 'system', $id);
                     }
@@ -309,5 +331,5 @@ try {
 
     json(405, ['error' => 'Méthode non autorisée']);
 } catch (PDOException $e) {
-    json(500, ['error' => 'Erreur serveur']);
+    json(500, ['error' => 'Erreur serveur: ' . $e->getMessage()]);
 }
