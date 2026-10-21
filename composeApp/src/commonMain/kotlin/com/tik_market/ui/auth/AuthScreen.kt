@@ -503,19 +503,27 @@ private fun EmailAuthStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
-                Column(Modifier.clickable { onTermsClick() }) {
-                    Text(
-                        text = s.acceptTerms,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = s.andPrivacy,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                Column(Modifier.padding(start = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("J'accepte les ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Conditions d'Utilisation",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onTermsClick() }
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("et la ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Politique de Confidentialité",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onLegalClick() }
+                        )
+                    }
                 }
             }
         }
@@ -590,19 +598,27 @@ private fun PhoneStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
-                Column(Modifier.clickable { onTermsClick() }) {
-                    Text(
-                        text = s.acceptTerms,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = s.andPrivacy,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                Column(Modifier.padding(start = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("J'accepte les ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Conditions d'Utilisation",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onTermsClick() }
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("et la ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Politique de Confidentialité",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onLegalClick() }
+                        )
+                    }
                 }
             }
         }
@@ -708,19 +724,27 @@ private fun OtpStep(
                     onCheckedChange = { onFormChange(form.copy(termsAccepted = it, error = null)) },
                     colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
                 )
-                Column(Modifier.clickable { onTermsClick() }) {
-                    Text(
-                        text = s.acceptTerms,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = s.andPrivacy,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                Column(Modifier.padding(start = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("J'accepte les ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Conditions d'Utilisation",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onTermsClick() }
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("et la ", style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        Text(
+                            text = "Politique de Confidentialité",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onLegalClick() }
+                        )
+                    }
                 }
             }
         }

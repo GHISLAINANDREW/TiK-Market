@@ -67,6 +67,9 @@ fun AuthFlow(
                 }
             }
         )
+        NavScreen.Legal -> com.tik_market.ui.misc.LegalNoticeScreen(onBack = { appState.goBack() })
+        NavScreen.Terms -> com.tik_market.ui.misc.TermsOfUseScreen(onBack = { appState.goBack() })
+        NavScreen.About -> com.tik_market.ui.misc.AboutScreen(onBack = { appState.goBack() })
         else -> {}
     }
 }
