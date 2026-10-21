@@ -60,6 +60,9 @@ data class ApiAdminShop(
     @SerialName("exterior_photo") val exteriorPhoto: String? = null,
     @SerialName("sign_photo") val signPhoto: String? = null,
     @SerialName("kyc_status") val kycStatus: String? = "pending",
+    val niu: String? = null,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = ""
 )

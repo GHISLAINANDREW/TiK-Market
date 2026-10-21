@@ -56,6 +56,20 @@ private data class AdminMenuItem(
     val color: Color
 )
 
+data class AdminUser(val id: Int, val name: String, val email: String, val phone: String, val role: String, val status: String = "active", val createdAt: String, val managedCity: String? = null)
+data class AdminShop(
+    val id: Int, val name: String, val logo: String = "", val location: String = "",
+    val phone: String = "", val vendorName: String, val vendorEmail: String = "",
+    val vendorPhone: String = "", val category: String, val status: String = "active",
+    val isFeatured: Boolean = false, val productCount: Int = 0, val totalSales: Int = 0,
+    val isVerified: Boolean = false, val createdAt: String = "", val updatedAt: String = "",
+    val cniFront: String? = null, val cniBack: String? = null,
+    val interiorPhoto: String? = null, val exteriorPhoto: String? = null, val signPhoto: String? = null,
+    val kycStatus: String? = "pending",
+    val latitude: Double = 0.0, val longitude: Double = 0.0,
+    val niu: String? = null
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(onBack: () -> Unit) {
@@ -147,7 +161,8 @@ fun AdminDashboardScreen(onBack: () -> Unit) {
                             isVerified = it.isVerified, createdAt = it.createdAt, updatedAt = it.updatedAt,
                             cniFront = it.cniFront, cniBack = it.cniBack,
                             interiorPhoto = it.interiorPhoto, exteriorPhoto = it.exteriorPhoto, signPhoto = it.signPhoto,
-                            kycStatus = it.kycStatus
+                            kycStatus = it.kycStatus,
+                            latitude = it.latitude, longitude = it.longitude, niu = it.niu
                         )
                     }
                 }
@@ -317,6 +332,8 @@ private fun AdminSubScreen(
     userNotifSending: Boolean, setUserNotifSending: (Boolean) -> Unit,
     userNotifResult: String?, setUserNotifResult: (String?) -> Unit
 ) {
+    var selectedShopForDetail by remember { mutableStateOf<AdminShop?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -343,32 +360,77 @@ private fun AdminSubScreen(
         }
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background)) {
-            when (optionId) {
-                0 -> AdminUsersList(
-                    users = users, isLoading = false, errorMessage = null,
-                    scope = scope, loadData = loadData, ts = ts,
-                    setAddUserError = setAddUserError,
-                    setTargetNotifUser = setTargetNotifUser,
-                    setUserNotifTitle = setUserNotifTitle,
-                    setUserNotifMessage = setUserNotifMessage,
-                    setUserNotifResult = setUserNotifResult,
-                    setShowUserNotifDialog = setShowUserNotifDialog
+            if (selectedShopForDetail != null) {
+                AdminShopDetailScreen(
+                    shop = selectedShopForDetail!!,
+                    ts = ts,
+                    onBack = { selectedShopForDetail = null },
+                    onToggleVerify = {
+                        scope.launch {
+                            try {
+                                ApiClient.toggleShopVerification(selectedShopForDetail!!.id, !selectedShopForDetail!!.isVerified)
+                                loadData()
+                                selectedShopForDetail = selectedShopForDetail!!.copy(isVerified = !selectedShopForDetail!!.isVerified)
+                            } catch (_: Exception) {}
+                        }
+                    },
+                    onPromote = { featured ->
+                        scope.launch {
+                            try {
+                                ApiClient.promoteShop(selectedShopForDetail!!.id, featured)
+                                loadData()
+                                selectedShopForDetail = selectedShopForDetail!!.copy(isFeatured = featured)
+                            } catch (_: Exception) {}
+                        }
+                    },
+                    onBan = { status ->
+                        scope.launch {
+                            try {
+                                ApiClient.banShop(selectedShopForDetail!!.id, status)
+                                loadData()
+                                selectedShopForDetail = selectedShopForDetail!!.copy(status = status)
+                            } catch (_: Exception) {}
+                        }
+                    },
+                    onDelete = {
+                        scope.launch {
+                            try {
+                                ApiClient.deleteShop(selectedShopForDetail!!.id)
+                                loadData()
+                                selectedShopForDetail = null
+                            } catch (_: Exception) {}
+                        }
+                    }
                 )
-                1 -> AdminShopsList(
-                    shops = shops, scope = scope, ts = ts,
-                    setPromoShop = setPromoShop,
-                    setPromoCode = setPromoCode,
-                    setPromoDiscountPct = setPromoDiscountPct,
-                    setPromoDiscountFixed = setPromoDiscountFixed,
-                    setPromoMinAmount = setPromoMinAmount,
-                    setPromoMessage = setPromoMessage,
-                    setShowPromoDialog = setShowPromoDialog
-                )
-                2 -> AdminNotificationsContent(scope = scope, users = users, ts = ts)
-                3 -> AdminDashboardContent(scope = scope, ts = ts)
-                4 -> AdminOnlineUsersContent(scope = scope, ts = ts)
-                5 -> AdminStoriesContent(scope = scope, shops = shops, ts = ts)
-                6 -> AdminHeroContent(scope = scope, shops = shops, ts = ts)
+            } else {
+                when (optionId) {
+                    0 -> AdminUsersList(
+                        users = users, isLoading = false, errorMessage = null,
+                        scope = scope, loadData = loadData, ts = ts,
+                        setAddUserError = setAddUserError,
+                        setTargetNotifUser = setTargetNotifUser,
+                        setUserNotifTitle = setUserNotifTitle,
+                        setUserNotifMessage = setUserNotifMessage,
+                        setUserNotifResult = setUserNotifResult,
+                        setShowUserNotifDialog = setShowUserNotifDialog
+                    )
+                    1 -> AdminShopsList(
+                        shops = shops, scope = scope, ts = ts,
+                        setPromoShop = setPromoShop,
+                        setPromoCode = setPromoCode,
+                        setPromoDiscountPct = setPromoDiscountPct,
+                        setPromoDiscountFixed = setPromoDiscountFixed,
+                        setPromoMinAmount = setPromoMinAmount,
+                        setPromoMessage = setPromoMessage,
+                        setShowPromoDialog = setShowPromoDialog,
+                        onSelectShop = { selectedShopForDetail = it }
+                    )
+                    2 -> AdminNotificationsContent(scope = scope, users = users, ts = ts)
+                    3 -> AdminDashboardContent(scope = scope, ts = ts)
+                    4 -> AdminOnlineUsersContent(scope = scope, ts = ts)
+                    5 -> AdminStoriesContent(scope = scope, shops = shops, ts = ts)
+                    6 -> AdminHeroContent(scope = scope, shops = shops, ts = ts)
+                }
             }
 
             // ─── Promotion Dialog ───
@@ -600,7 +662,8 @@ private fun AdminShopsList(
     setPromoDiscountFixed: (String) -> Unit,
     setPromoMinAmount: (String) -> Unit,
     setPromoMessage: (String?) -> Unit,
-    setShowPromoDialog: (Boolean) -> Unit
+    setShowPromoDialog: (Boolean) -> Unit,
+    onSelectShop: (AdminShop) -> Unit
 ) {
     var filter by remember { mutableStateOf("all") } // "all", "pending", "verified"
     val filteredShops = when (filter) {
@@ -629,6 +692,7 @@ private fun AdminShopsList(
                 val shop = filteredShops[index]
                 AdminShopCard(
                     shop = shop, ts = ts,
+                    onSelectShop = { onSelectShop(shop) },
                     onToggleVerify = {
                         scope.launch { try { ApiClient.toggleShopVerification(shop.id, !shop.isVerified) } catch (_: Exception) {} }
                     },
@@ -856,22 +920,6 @@ private fun AdminNotificationsContent(scope: kotlinx.coroutines.CoroutineScope, 
 }
 
 // ═══════════════════════════════════════════════
-//  DATA CLASSES
-// ═══════════════════════════════════════════════
-
-data class AdminUser(val id: Int, val name: String, val email: String, val phone: String, val role: String, val status: String = "active", val createdAt: String, val managedCity: String? = null)
-data class AdminShop(
-    val id: Int, val name: String, val logo: String = "", val location: String = "",
-    val phone: String = "", val vendorName: String, val vendorEmail: String = "",
-    val vendorPhone: String = "", val category: String, val status: String = "active",
-    val isFeatured: Boolean = false, val productCount: Int = 0, val totalSales: Int = 0,
-    val isVerified: Boolean = false, val createdAt: String = "", val updatedAt: String = "",
-    val cniFront: String? = null, val cniBack: String? = null,
-    val interiorPhoto: String? = null, val exteriorPhoto: String? = null, val signPhoto: String? = null,
-    val kycStatus: String? = "pending"
-)
-
-// ═══════════════════════════════════════════════
 //  USER CARD
 // ═══════════════════════════════════════════════
 
@@ -936,6 +984,7 @@ fun AdminUserCard(user: AdminUser, ts: com.tik_market.utils.AppStrings, onRoleCh
 fun AdminShopCard(
     shop: AdminShop,
     ts: com.tik_market.utils.AppStrings,
+    onSelectShop: () -> Unit,
     onToggleVerify: () -> Unit,
     onPromote: (Boolean) -> Unit,
     onBan: (String) -> Unit,
@@ -947,10 +996,9 @@ fun AdminShopCard(
         if (shop.logo.isNotBlank()) { logoBitmap = loadImageFromUrl(shop.logo) }
     }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showDetailDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { showDetailDialog = true },
+        modifier = Modifier.fillMaxWidth().clickable { onSelectShop() },
         shape = RoundedCornerShape(CardShapeMedium),
         colors = CardDefaults.cardColors(containerColor = CardWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = CardElevation)
@@ -992,7 +1040,7 @@ fun AdminShopCard(
             Box {
                 IconButton(onClick = { showActions = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.MoreVert, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) }
                 DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
-                    DropdownMenuItem(text = { Text("Réception & KYC") }, leadingIcon = { Icon(Icons.Default.Visibility, null, tint = BlueAccent) }, onClick = { showDetailDialog = true; showActions = false })
+                    DropdownMenuItem(text = { Text("Réception & KYC") }, leadingIcon = { Icon(Icons.Default.Visibility, null, tint = BlueAccent) }, onClick = { onSelectShop(); showActions = false })
                     DropdownMenuItem(text = { Text(if (shop.isVerified) ts.unverify else ts.verifyAction) }, leadingIcon = { Icon(if (shop.isVerified) Icons.Default.CheckCircle else Icons.Default.Verified, null, tint = if (shop.isVerified) Green else TextSecondary) }, onClick = { onToggleVerify(); showActions = false })
                     DropdownMenuItem(text = { Text(if (shop.isFeatured) ts.removePromo else ts.featureShop, color = Orange) }, leadingIcon = { Icon(Icons.Default.Star, null, tint = Orange) }, onClick = { onPromote(!shop.isFeatured); showActions = false })
                     DropdownMenuItem(text = { Text(ts.createPromo, color = Green) }, leadingIcon = { Icon(Icons.Default.AddCircle, null, tint = Green) }, onClick = { onAddPromo(); showActions = false })
@@ -1002,15 +1050,6 @@ fun AdminShopCard(
                 }
             }
         }
-    }
-
-    if (showDetailDialog) {
-        AdminShopDetailDialog(
-            shop = shop,
-            ts = ts,
-            onDismiss = { showDetailDialog = false },
-            onVerifyToggle = { onToggleVerify() }
-        )
     }
 
     if (showDeleteConfirm) {
@@ -1024,13 +1063,18 @@ fun AdminShopCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminShopDetailDialog(
+fun AdminShopDetailScreen(
     shop: AdminShop,
     ts: com.tik_market.utils.AppStrings,
-    onDismiss: () -> Unit,
-    onVerifyToggle: (Boolean) -> Unit
+    onBack: () -> Unit,
+    onToggleVerify: () -> Unit,
+    onPromote: (Boolean) -> Unit,
+    onBan: (String) -> Unit,
+    onDelete: () -> Unit
 ) {
+    var logoBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var frontBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var backBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var interiorBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -1038,86 +1082,241 @@ fun AdminShopDetailDialog(
     var signBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
     var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    LaunchedEffect(shop.logo) { if (shop.logo.isNotBlank()) logoBitmap = loadImageFromUrl(shop.logo) }
     LaunchedEffect(shop.cniFront) { if (!shop.cniFront.isNullOrBlank()) frontBitmap = loadImageFromUrl(shop.cniFront!!) }
     LaunchedEffect(shop.cniBack) { if (!shop.cniBack.isNullOrBlank()) backBitmap = loadImageFromUrl(shop.cniBack!!) }
     LaunchedEffect(shop.interiorPhoto) { if (!shop.interiorPhoto.isNullOrBlank()) interiorBitmap = loadImageFromUrl(shop.interiorPhoto!!) }
     LaunchedEffect(shop.exteriorPhoto) { if (!shop.exteriorPhoto.isNullOrBlank()) exteriorBitmap = loadImageFromUrl(shop.exteriorPhoto!!) }
     LaunchedEffect(shop.signPhoto) { if (!shop.signPhoto.isNullOrBlank()) signBitmap = loadImageFromUrl(shop.signPhoto!!) }
 
-    Box(Modifier.fillMaxSize()) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Réception & Validation : ${shop.name}") },
-            text = {
-                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        color = if (shop.isVerified) Green.copy(alpha = 0.15f) else Orange.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            if (shop.isVerified) "✅ Boutique Vérifiée & Validée" else "⏳ En attente de validation",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (shop.isVerified) Green else Orange,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("Détails de la Boutique", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text("• Nom : ${shop.name}")
-                    Text("• Catégorie : ${shop.category}")
-                    Text("• Localisation : ${shop.location}")
-                    Text("• Téléphone : ${shop.phone}")
-                    Text("• Produits : ${shop.productCount} | Ventes : ${shop.totalSales}")
-                    Text("• Créée le : ${shop.createdAt}")
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("Compte Vendeur", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text("• Nom : ${shop.vendorName}")
-                    Text("• Email : ${shop.vendorEmail}")
-                    Text("• Téléphone : ${shop.vendorPhone}")
-
-                    Spacer(Modifier.height(4.dp))
-                    Text("5 Photos Obligatoires (Touchez pour agrandir)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PhotoBox("1. CNI Recto", frontBitmap, shop.cniFront, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
-                        PhotoBox("2. CNI Verso", backBitmap, shop.cniBack, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PhotoBox("3. Intérieur", interiorBitmap, shop.interiorPhoto, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
-                        PhotoBox("4. Extérieur", exteriorBitmap, shop.exteriorPhoto, Modifier.weight(1f)) { url -> fullscreenImageUrl = url }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth()) {
-                        PhotoBox("5. Pancarte / Enseigne", signBitmap, shop.signPhoto, Modifier.fillMaxWidth().height(140.dp)) { url -> fullscreenImageUrl = url }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onVerifyToggle(!shop.isVerified)
-                        onDismiss()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (shop.isVerified) RedAccent else Green)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Évaluation Boutique : ${shop.name}", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Green, titleContentColor = Color.White, navigationIconContentColor = Color.White)
+            )
+        }
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF5F5F5))) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Status Badge Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Text(if (shop.isVerified) "Révoquer la validation" else "Valider la boutique", color = Color.White)
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(56.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                            if (logoBitmap != null) {
+                                Image(bitmap = logoBitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape))
+                            } else {
+                                Icon(Icons.Default.Store, null, tint = Green, modifier = Modifier.size(28.dp))
+                            }
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Catégorie : ${shop.category}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Spacer(Modifier.height(4.dp))
+                            Surface(
+                                color = if (shop.isVerified) Green.copy(alpha = 0.15f) else Orange.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    if (shop.isVerified) "✅ Boutique Validée & Certifiée" else "⏳ En attente de validation",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (shop.isVerified) Green else Orange,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(ts.cancel)
+
+                // Merchant & Manager Info + NIU Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Informations du Gérant & Fiscalité", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                        HorizontalDivider(color = DividerGray.copy(alpha = 0.3f))
+                        Text("• Gérant / Vendeur : ${shop.vendorName}")
+                        Text("• Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }}")
+                        Text("• Téléphone : ${shop.vendorPhone.ifBlank { shop.phone }}")
+                        Text("• Numéro NIU (Fiscal) : ${shop.niu?.ifBlank { "Non renseigné" } ?: "Non renseigné"}")
+                    }
+                }
+
+                // Exact GPS Position Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Localisation & Position GPS", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                        HorizontalDivider(color = DividerGray.copy(alpha = 0.3f))
+                        Text("• Adresse / Quartier : ${shop.location.ifBlank { "Non spécifié" }}")
+                        Text("• Latitude : ${shop.latitude}")
+                        Text("• Longitude : ${shop.longitude}")
+                        
+                        if (shop.latitude != 0.0 && shop.longitude != 0.0) {
+                            val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                            Spacer(Modifier.height(4.dp))
+                            Button(
+                                onClick = {
+                                    uriHandler.openUri("https://www.google.com/maps/search/?api=1&query=${shop.latitude},${shop.longitude}")
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth().height(42.dp)
+                            ) {
+                                Icon(Icons.Default.Map, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Ouvrir la position exacte sur Google Maps", fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+
+                // 5 Photos KYC & Boutique (Full Format Gallery)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("5 Photos KYC & Boutique (Touchez pour agrandir)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                        Text("Appuyez sur n'importe quelle photo pour l'afficher en plein écran avec zoom et panoramique.", fontSize = 12.sp, color = Color.Gray)
+                        HorizontalDivider(color = DividerGray.copy(alpha = 0.3f))
+
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) { AdminPhotoThumbnailBox("1. CNI Recto", frontBitmap, shop.cniFront) { url -> fullscreenImageUrl = url } }
+                            Box(Modifier.weight(1f)) { AdminPhotoThumbnailBox("2. CNI Verso", backBitmap, shop.cniBack) { url -> fullscreenImageUrl = url } }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.weight(1f)) { AdminPhotoThumbnailBox("3. Intérieur", interiorBitmap, shop.interiorPhoto) { url -> fullscreenImageUrl = url } }
+                            Box(Modifier.weight(1f)) { AdminPhotoThumbnailBox("4. Extérieur", exteriorBitmap, shop.exteriorPhoto) { url -> fullscreenImageUrl = url } }
+                        }
+                        AdminPhotoThumbnailBox("5. Pancarte / Enseigne", signBitmap, shop.signPhoto) { url -> fullscreenImageUrl = url }
+                    }
+                }
+
+                // Admin Actions Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Actions Administrateur & Super Admin", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Green)
+                        HorizontalDivider(color = DividerGray.copy(alpha = 0.3f))
+
+                        Button(
+                            onClick = onToggleVerify,
+                            colors = ButtonDefaults.buttonColors(containerColor = if (shop.isVerified) RedAccent else Green),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Icon(if (shop.isVerified) Icons.Default.Cancel else Icons.Default.VerifiedUser, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (shop.isVerified) "Révoquer la validation KYC" else "Valider & Certifier la boutique", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = { onPromote(!shop.isFeatured) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Orange)
+                        ) {
+                            Icon(Icons.Default.Star, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (shop.isFeatured) "Retirer de la mise en avant" else "Mettre en avant (Featured)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = { onBan(if (shop.status == "banned") "active" else "banned") },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = if (shop.status == "banned") Green else RedAccent)
+                        ) {
+                            Icon(if (shop.status == "banned") Icons.Default.CheckCircle else Icons.Default.Block, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (shop.status == "banned") "Réactiver la boutique" else "Bannir / Suspendre la boutique", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+
+                        TextButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Delete, null, tint = RedAccent, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Supprimer définitivement la boutique", color = RedAccent, fontSize = 13.sp)
+                        }
+                    }
                 }
             }
-        )
 
-        if (fullscreenImageUrl != null) {
-            FullscreenImageViewer(imageUrl = fullscreenImageUrl!!) {
-                fullscreenImageUrl = null
+            if (fullscreenImageUrl != null) {
+                FullscreenImageViewer(imageUrl = fullscreenImageUrl!!) {
+                    fullscreenImageUrl = null
+                }
+            }
+
+            if (showDeleteConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text(ts.deleteShopTitle) },
+                    text = { Text(ts.deleteShopConfirm.replace("%s", shop.name)) },
+                    confirmButton = {
+                        Button(onClick = { showDeleteConfirm = false; onDelete(); onBack() }, colors = ButtonDefaults.buttonColors(containerColor = RedAccent)) {
+                            Text(ts.delete, color = Color.White)
+                        }
+                    },
+                    dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(ts.cancel) } }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminPhotoThumbnailBox(title: String, bitmap: ImageBitmap?, url: String?, onClick: (String) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFEFEFEF))
+                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                .clickable(enabled = !url.isNullOrBlank()) { url?.let { onClick(it) } },
+            contentAlignment = Alignment.Center
+        ) {
+            if (bitmap != null) {
+                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)), contentAlignment = Alignment.BottomEnd) {
+                    Icon(Icons.Default.ZoomIn, null, tint = Color.White, modifier = Modifier.padding(6.dp).size(20.dp))
+                }
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.PhotoCamera, null, tint = Color.Gray, modifier = Modifier.size(28.dp))
+                    Text("Non fourni", fontSize = 10.sp, color = Color.Gray)
+                }
             }
         }
     }

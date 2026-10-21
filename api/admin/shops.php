@@ -47,6 +47,9 @@ if ($method === 'GET') {
             in_array('exterior_photo', $existingCols) ? 's.exterior_photo' : "'' AS exterior_photo",
             in_array('sign_photo', $existingCols) ? 's.sign_photo' : "'' AS sign_photo",
             in_array('kyc_status', $existingCols) ? 's.kyc_status' : "'pending' AS kyc_status",
+            in_array('niu', $existingCols) ? 's.niu' : "'' AS niu",
+            in_array('latitude', $existingCols) ? 's.latitude' : '0.0 AS latitude',
+            in_array('longitude', $existingCols) ? 's.longitude' : '0.0 AS longitude',
             's.created_at',
             's.updated_at'
         ];
