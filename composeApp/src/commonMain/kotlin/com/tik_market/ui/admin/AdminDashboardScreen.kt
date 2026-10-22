@@ -384,6 +384,7 @@ private fun AdminSubScreen(
                         }
                     },
                     onBan = { status ->
+
                         scope.launch {
                             try {
                                 ApiClient.banShop(selectedShopForDetail!!.id, status)
@@ -1413,21 +1414,19 @@ fun AdminShopDetailScreen(
                                 Text("Copier", fontSize = 12.sp)
                             }
 
-                            val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                            val pdfPrinter = com.tik_market.utils.rememberPdfPrinter()
                             Button(
                                 onClick = {
                                     val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
-                                    try {
-                                        val encoded = htmlContent.replace("\n", "%0A").replace(" ", "%20").replace("#", "%23")
-                                        uriHandler.openUri("data:text/html;charset=utf-8,$encoded")
-                                    } catch (_: Exception) {}
+                                    val jobName = if (isFiche) "Fiche_Vendeur_${shop.name}" else "Contrat_Vendeur_${shop.name}"
+                                    pdfPrinter(htmlContent, jobName)
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Green),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Icon(Icons.Default.Print, null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.PictureAsPdf, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Ouvrir HTML", color = Color.White, fontSize = 12.sp)
+                                Text("Générer PDF / Imprimer", color = Color.White, fontSize = 12.sp)
                             }
                         }
                     },
@@ -2160,68 +2159,291 @@ fun generateVendorContractHtml(shop: AdminShop): String {
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Contrat Vendeur TiK-Market - ${shop.name}</title>
+            <title>Convention Vendeur Pionnier - TiK-Market</title>
             <style>
-                body { font-family: 'Times New Roman', serif; margin: 40px; color: #111; line-height: 1.6; }
-                h1 { text-align: center; color: #1B5E20; text-transform: uppercase; font-size: 20px; }
-                h2 { text-align: center; color: #333; font-size: 14px; border-bottom: 2px solid #1B5E20; padding-bottom: 5px; }
-                .party { margin-bottom: 15px; }
-                .article { margin-top: 20px; }
-                .art-title { font-weight: bold; text-decoration: underline; }
-                .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
-                .sig-box { width: 45%; border-top: 1px solid #333; padding-top: 10px; text-align: center; }
+                @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600;700&display=swap');
+                
+                @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                }
+
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 15px;
+                    color: #1e293b;
+                    background: #ffffff;
+                    font-size: 11px;
+                    line-height: 1.4;
+                }
+
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    padding: 15px;
+                }
+
+                .banner {
+                    background: #111827;
+                    color: #ffffff;
+                    padding: 12px 18px;
+                    border-radius: 6px;
+                    border-left: 6px solid #f97316;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 16px;
+                }
+
+                .logo-title {
+                    font-family: 'Montserrat', sans-serif;
+                    font-size: 20px;
+                    font-weight: 800;
+                }
+
+                .logo-tik { color: #ffffff; }
+                .logo-market { color: #f97316; }
+
+                .banner-subtitle {
+                    font-size: 9px;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    color: #d1d5db;
+                    margin-top: 2px;
+                    font-weight: 600;
+                }
+
+                .badge-box {
+                    background: #1f2937;
+                    border: 1px solid #374151;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    text-align: right;
+                    font-size: 9px;
+                }
+
+                .badge-title {
+                    font-weight: 700;
+                    color: #f97316;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+
+                .badge-sub {
+                    color: #9ca3af;
+                    margin-top: 2px;
+                }
+
+                .section-header {
+                    font-family: 'Montserrat', sans-serif;
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #111827;
+                    text-transform: uppercase;
+                    border-bottom: 2px solid #f97316;
+                    padding-bottom: 3px;
+                    margin-top: 14px;
+                    margin-bottom: 8px;
+                }
+
+                .grid-2 {
+                    display: flex;
+                    gap: 12px;
+                }
+
+                .grid-2 > div {
+                    flex: 1;
+                }
+
+                .card {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 10px 14px;
+                }
+
+                .card-title {
+                    font-family: 'Montserrat', sans-serif;
+                    font-size: 10px;
+                    font-weight: 700;
+                    color: #ea580c;
+                    text-transform: uppercase;
+                    margin-bottom: 8px;
+                }
+
+                .info-row {
+                    margin-bottom: 4px;
+                    display: flex;
+                }
+
+                .info-label {
+                    font-weight: 600;
+                    color: #475569;
+                    width: 140px;
+                }
+
+                .info-val {
+                    color: #0f172a;
+                    font-weight: 700;
+                    flex: 1;
+                    border-bottom: 1px dotted #cbd5e1;
+                }
+
+                .feature-card {
+                    background: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 10px;
+                    margin-bottom: 8px;
+                }
+
+                .feature-title {
+                    font-weight: 700;
+                    font-size: 10.5px;
+                    color: #0f172a;
+                    margin-bottom: 4px;
+                }
+
+                .feature-desc {
+                    font-size: 9.5px;
+                    color: #475569;
+                    line-height: 1.35;
+                }
+
+                .border-orange { border-left: 3px solid #f97316; }
+                .border-blue { border-left: 3px solid #0284c7; }
+
+                .term-box {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 10px;
+                    font-size: 9.5px;
+                    color: #475569;
+                    text-align: justify;
+                }
+
+                .sig-card {
+                    background: #f8fafc;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 6px;
+                    padding: 12px;
+                    height: 75px;
+                }
+
+                .sig-head {
+                    font-weight: 700;
+                    color: #0f172a;
+                    font-size: 10.5px;
+                    margin-bottom: 8px;
+                }
+
+                .sig-line {
+                    font-size: 9px;
+                    color: #64748b;
+                    font-style: italic;
+                    margin-top: 22px;
+                }
+
+                .footer {
+                    margin-top: 25px;
+                    padding-top: 8px;
+                    border-top: 1px solid #e2e8f0;
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 8.5px;
+                    color: #94a3b8;
+                }
             </style>
         </head>
         <body>
-            <h1>CONTRAT D'ADHÉSION ET DE PARTENARIAT COMMERCIAL</h1>
-            <h2>Plateforme de Vente TiK-Market Cameroun</h2>
-            
-            <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
-            
-            <div class="party">
-                <p><strong>1. La Société TiK-Market SAS</strong>, plateforme e-commerce enregistrée au Cameroun, représentée par son Administrateur Légal, ci-après dénommée <em>« TiK-Market »</em>.</p>
-            </div>
-            
-            <div class="party">
-                <p><strong>2. La Boutique :</strong> <strong>${shop.name}</strong><br>
-                Catégorie : ${shop.category}<br>
-                Localisation certifiée : ${shop.location} (GPS : ${shop.latitude}, ${shop.longitude})<br>
-                Représentée par M./Mme : <strong>${shop.vendorName}</strong> (Gérant)<br>
-                Email : ${shop.vendorEmail.ifBlank { "Non renseigné" }} | Tél : ${shop.vendorPhone.ifBlank { shop.phone }}<br>
-                Numéro d'Identifiant Unique (NIU) : <strong>${shop.niu?.ifBlank { "En cours" } ?: "En cours"}</strong><br>
-                ci-après dénommée <em>« Le Vendeur Partenaire »</em>.</p>
-            </div>
-
-            <div class="article">
-                <p class="art-title">Article 1 : Objet du Contrat</p>
-                <p>Le présent contrat a pour objet de définir les conditions dans lesquelles le Vendeur Partenaire distribue ses produits via la plateforme TiK-Market.</p>
-            </div>
-
-            <div class="article">
-                <p class="art-title">Article 2 : Engagement de Conformité et KYC</p>
-                <p>Le Vendeur s'engage à fournir des informations exactes et des justificatifs d'identité conformes (CNI, photos de boutique, enseigne). TiK-Market se réserve le droit de suspendre tout compte ne respectant pas les critères KYC.</p>
-            </div>
-
-            <div class="article">
-                <p class="art-title">Article 3 : Géolocalisation et Livraisons</p>
-                <p>La boutique atteste de l'exactitude de son adresse physique à ${shop.location}. Les livreurs partenaires s'appuient sur les coordonnées GPS certifiées pour l'enlèvement des commandes.</p>
-            </div>
-
-            <div class="article">
-                <p class="art-title">Article 4 : Durée et Résiliation</p>
-                <p>Le présent contrat est conclu pour une durée indéterminée à compter de sa validation officielle le ${shop.createdAt}. Chaque partie peut y mettre fin moyennant un préavis de 15 jours.</p>
-            </div>
-
-            <div class="signatures">
-                <div class="sig-box">
-                    <p><strong>Pour TiK-Market SAS</strong></p>
-                    <p>L'Administration Légale</p>
-                    <p><em>[Cachet Certifié Électroniquement]</em></p>
+            <div class="container">
+                <!-- Banner Header -->
+                <div class="banner">
+                    <div>
+                        <div class="logo-title">
+                            <span class="logo-tik">TiK-</span><span class="logo-market">Market</span>
+                        </div>
+                        <div class="banner-subtitle">CONVENTION VENDEUR PIONNIER — OFFRE DE LANCEMENT</div>
+                    </div>
+                    <div class="badge-box">
+                        <div class="badge-title">PROGRAMME PARTENAIRE</div>
+                        <div class="badge-sub">N° CVP-2026 / ${shop.id}</div>
+                    </div>
                 </div>
-                <div class="sig-box">
-                    <p><strong>Pour Le Vendeur Partenaire</strong></p>
-                    <p>${shop.vendorName}</p>
-                    <p><em>Lu et approuvé</em></p>
+
+                <!-- 1. IDENTIFICATION DES PARTIES -->
+                <div class="section-header">1. IDENTIFICATION DES PARTIES</div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">LA PLATEFORME</div>
+                        <div class="info-row"><span class="info-label">Structure :</span><span class="info-val">TiK-Market Services</span></div>
+                        <div class="info-row"><span class="info-label">Représentant :</span><span class="info-val">Direction Commerciale</span></div>
+                        <div class="info-row"><span class="info-label">Téléphone / Support :</span><span class="info-val">+237 6________</span></div>
+                        <div class="info-row"><span class="info-label">Ville / Région :</span><span class="info-val">Dschang / Ouest</span></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">LE COMMERÇANT PARTENAIRE</div>
+                        <div class="info-row"><span class="info-label">Boutique / Enseigne :</span><span class="info-val">${shop.name}</span></div>
+                        <div class="info-row"><span class="info-label">Nom du Gérant :</span><span class="info-val">${shop.vendorName}</span></div>
+                        <div class="info-row"><span class="info-label">Adresse / Marché :</span><span class="info-val">${shop.location}</span></div>
+                        <div class="info-row"><span class="info-label">Téléphone WhatsApp :</span><span class="info-val">${shop.vendorPhone.ifBlank { shop.phone }}</span></div>
+                        <div class="info-row"><span class="info-label">Mobile Money (Mtn/Org) :</span><span class="info-val">${shop.phone}</span></div>
+                    </div>
+                </div>
+
+                <!-- 2. ENGAGEMENT & MODALITÉS OPÉRATIONNELLES -->
+                <div class="section-header">2. ENGAGEMENT & MODALITÉS OPÉRATIONNELLES</div>
+                <div class="grid-2">
+                    <div>
+                        <div class="feature-card border-orange">
+                            <div class="feature-title">Frais & Commission Offerts (3 Mois)</div>
+                            <div class="feature-desc"><strong>0 FCFA</strong> de frais d'inscription et <strong>0% de commission</strong> sur l'ensemble des ventes réalisées pendant les 90 premiers jours à compter de la signature.</div>
+                        </div>
+                        <div class="feature-card border-blue">
+                            <div class="feature-title">Disponibilité & Préparation</div>
+                            <div class="feature-desc">Dès réception de la notification de commande (WhatsApp / App), le Commerçant réserve et prépare l'article sous 30 minutes pour la prise en charge par le livreur.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="feature-card">
+                            <div class="feature-title">Égalité Strict des Prix</div>
+                            <div class="feature-desc">Le Commerçant s'engage à pratiquer sur TiK-Market des prix de vente rigoureusement identiques à ceux affichés directement dans sa boutique physique.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-title">Paiement & Reversement</div>
+                            <div class="feature-desc">Le reversement des ventes encaissées par la plateforme s'effectue immédiatement sur le compte Mobile Money du Commerçant dès confirmation de livraison.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. DURÉE ET RÉSILIATION -->
+                <div class="section-header">3. DURÉE ET RÉSILIATION</div>
+                <div class="term-box">
+                    La présente convention prend effet à la date de signature pour une durée initiale de 3 mois renouvelable. Chaque partie conserve la possibilité de suspendre ou retirer ses articles du catalogue TiK-Market à tout moment, sous réserve d'honorer les commandes en cours de traitement. À l'issue de la période gratuite, un barème préférentiel sera proposé au Commerçant sans engagement obligatoire.
+                </div>
+
+                <!-- 4. VALIDATION & SIGNATURES OFFICIEUSES -->
+                <div class="section-header">4. VALIDATION & SIGNATURES OFFICIEUSES</div>
+                <div class="grid-2">
+                    <div class="sig-card">
+                        <div class="sig-head">Pour le Commerçant Partenaire</div>
+                        <div style="font-size: 9px; color: #64748b;">Mention manuscrite « Lu et approuvé » :</div>
+                        <div class="sig-line">Date, Nom & Signature :</div>
+                    </div>
+                    <div class="sig-card">
+                        <div class="sig-head">Pour TiK-Market</div>
+                        <div style="font-size: 9px; color: #64748b;">Le Responsable d'Onboarding / Cachet :</div>
+                        <div class="sig-line">Fait à _______________, le ____ / ____ / 2026</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <div>TiK-Market — Document d'engagement terrain pour le réseau de vendeurs pionniers</div>
+                    <div>Page 1 sur 1</div>
                 </div>
             </div>
         </body>
