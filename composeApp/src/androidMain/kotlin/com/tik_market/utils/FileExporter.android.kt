@@ -23,34 +23,37 @@ actual fun rememberFileExporter(): (filename: String, content: String) -> Boolea
 
             val webView = WebView(context)
             webView.settings.loadsImagesAutomatically = true
+            webView.settings.javaScriptEnabled = true
             webView.loadDataWithBaseURL(null, content, "text/html", "UTF-8", null)
             webView.webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    try {
-                        val width = 595
-                        val height = 842
-                        webView.measure(
-                            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                            View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
-                        )
-                        webView.layout(0, 0, width, height)
+                    view?.postDelayed({
+                        try {
+                            val width = 595
+                            val height = 842
+                            view.measure(
+                                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+                            )
+                            view.layout(0, 0, width, height)
 
-                        val pdfDocument = PdfDocument()
-                        val pageInfo = PdfDocument.PageInfo.Builder(width, height, 1).create()
-                        val page = pdfDocument.startPage(pageInfo)
-                        webView.draw(page.canvas)
-                        pdfDocument.finishPage(page)
+                            val pdfDocument = PdfDocument()
+                            val pageInfo = PdfDocument.PageInfo.Builder(width, height, 1).create()
+                            val page = pdfDocument.startPage(pageInfo)
+                            view.draw(page.canvas)
+                            pdfDocument.finishPage(page)
 
-                        val fos = FileOutputStream(pdfFile)
-                        pdfDocument.writeTo(fos)
-                        pdfDocument.close()
-                        fos.close()
+                            val fos = FileOutputStream(pdfFile)
+                            pdfDocument.writeTo(fos)
+                            pdfDocument.close()
+                            fos.close()
 
-                        Toast.makeText(context, "✅ Fichier PDF enregistré :\nDownloads/$pdfFileName", Toast.LENGTH_LONG).show()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        Toast.makeText(context, "❌ Erreur génération PDF : ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                            Toast.makeText(context, "✅ Fichier PDF enregistré :\nDownloads/$pdfFileName", Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            Toast.makeText(context, "❌ Erreur génération PDF : ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }, 600)
                 }
             }
             true
