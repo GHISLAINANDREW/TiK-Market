@@ -290,7 +290,6 @@ fun VendorDashboardScreen(
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, GreenAccent, onGroupBuys, Modifier.weight(1f))
                                     ActionButton(Icons.Default.People, ts.viewSubscribers, Color(0xFF1565C0), onSubscribers, Modifier.weight(1f))
                                     ActionButton(Icons.Default.Receipt, ts.csvOrders, Color.Gray, {
                                         com.tik_market.ui.chat.openUrl("${ApiClient.baseUrl}/vendor/export.php?type=orders")

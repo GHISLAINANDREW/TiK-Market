@@ -1,6 +1,8 @@
 package com.tik_market.utils
 
+import android.content.Intent
 import android.graphics.pdf.PdfDocument
+import android.net.Uri
 import android.os.Environment
 import android.view.View
 import android.webkit.WebView
@@ -8,6 +10,7 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 
@@ -17,7 +20,7 @@ actual fun rememberFileExporter(): (filename: String, content: String) -> Boolea
     return { filename, content ->
         try {
             val pdfFileName = if (filename.endsWith(".pdf", ignoreCase = true)) filename else "${filename.substringBeforeLast(".")}.pdf"
-            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
             if (!downloadDir.exists()) downloadDir.mkdirs()
             val pdfFile = File(downloadDir, pdfFileName)
 
@@ -48,7 +51,20 @@ actual fun rememberFileExporter(): (filename: String, content: String) -> Boolea
                             pdfDocument.close()
                             fos.close()
 
-                            Toast.makeText(context, "✅ Fichier PDF enregistré :\nDownloads/$pdfFileName", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "✅ PDF enregistré : ${pdfFile.name}", Toast.LENGTH_LONG).show()
+
+                            // Open PDF Intent
+                            try {
+                                val uri: Uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", pdfFile)
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, "application/pdf")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         } catch (e: Exception) {
                             e.printStackTrace()
                             Toast.makeText(context, "❌ Erreur génération PDF : ${e.message}", Toast.LENGTH_SHORT).show()
