@@ -41,6 +41,7 @@ fun CreateReelScreen(
     var isPublishing by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableStateOf(0f) }
     var showProductPicker by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     val videoPicker = rememberMediaPickerLauncher(allowVideo = true, videoOnly = true) { result ->
         if (result != null) {
@@ -183,16 +184,33 @@ fun CreateReelScreen(
                     onClick = {
                         scope.launch {
                             isPublishing = true
-                            uploadProgress = 0f
+                            uploadProgress = 0.2f
+                            error = null
                             try {
                                 if (videoDataUrl != null) {
-                                    // Use the FFmpeg-optimized video endpoint (HD + SD versions).
-                                    val uploaded = ApiClient.uploadVideo(
-                                        dataUrl = videoDataUrl!!,
-                                        fileName = videoFileName ?: "reel.mp4"
-                                    )
-                                    val videoUrl = uploaded?.videoUrl
-                                    if (videoUrl != null) {
+                                    uploadProgress = 0.4f
+                                    var videoUrl: String? = null
+                                    try {
+                                        val uploaded = ApiClient.uploadVideo(
+                                            dataUrl = videoDataUrl!!,
+                                            fileName = videoFileName ?: "reel.mp4"
+                                        )
+                                        videoUrl = uploaded?.videoUrl
+                                    } catch (e: Exception) {
+                                        println("uploadVideo error: ${e.message}")
+                                    }
+
+                                    // Fallback to standard upload if video.php fails
+                                    if (videoUrl.isNullOrBlank()) {
+                                        try {
+                                            videoUrl = ApiClient.uploadImage(videoDataUrl!!, videoFileName ?: "reel.mp4")
+                                        } catch (e: Exception) {
+                                            error = "Échec du téléversement: ${e.message}"
+                                        }
+                                    }
+
+                                    uploadProgress = 0.8f
+                                    if (!videoUrl.isNullOrBlank()) {
                                         val shop = ApiClient.fetchShopByVendor()
                                         if (shop != null) {
                                             ApiClient.createReel(
@@ -201,11 +219,18 @@ fun CreateReelScreen(
                                                 description = description,
                                                 productId = selectedProductId
                                             )
+                                            uploadProgress = 1.0f
                                             onBack()
+                                        } else {
+                                            error = "Boutique introuvable pour ce vendeur"
                                         }
+                                    } else if (error == null) {
+                                        error = "Impossible d'obtenir l'URL de la vidéo"
                                     }
                                 }
-                            } catch (_: Exception) {}
+                            } catch (e: Exception) {
+                                error = "Erreur: ${e.message}"
+                            }
                             isPublishing = false
                         }
                     },
@@ -216,6 +241,11 @@ fun CreateReelScreen(
                 ) {
                     Text("PUBLIER MON REEL", fontWeight = FontWeight.Bold)
                 }
+            }
+
+            if (error != null) {
+                Spacer(Modifier.height(12.dp))
+                Text(error!!, color = RedAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

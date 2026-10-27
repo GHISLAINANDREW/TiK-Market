@@ -284,7 +284,7 @@ fun VendorDashboardScreen(
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    ActionButton(Icons.Default.Videocam, "Lancer un Live", RedAccent, onLiveStreaming, Modifier.weight(1f))
+                                    // ActionButton(Icons.Default.Videocam, "Lancer un Live", RedAccent, onLiveStreaming, Modifier.weight(1f))
                                     ActionButton(Icons.Default.ShoppingBag, ts.viewOrders, Color(0xFF1565C0), onViewOrders, Modifier.weight(1f))
                                     ActionButton(Icons.Default.Group, ts.myGroupBuysMenus, GreenAccent, onGroupBuys, Modifier.weight(1f))
                                 }
