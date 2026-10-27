@@ -387,7 +387,7 @@ private fun EmailAuthStep(
         }
 
         val cities = buildList {
-            addAll(listOf("Dschang", "Bafoussam", "Douala", "Yaoundé", "Bamenda"))
+            addAll(com.tik_market.utils.appCities.map { it.name })
             detectedPlace?.takeIf { p ->
                 p.isNotBlank() && none { it.equals(p, ignoreCase = true) } && !p.equals(s.other, ignoreCase = true)
             }?.let { add(it) }

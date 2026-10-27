@@ -1414,6 +1414,20 @@ fun AdminShopDetailScreen(
                                 Text("Copier", fontSize = 12.sp)
                             }
 
+                            val fileExporter = com.tik_market.utils.rememberFileExporter()
+                            OutlinedButton(
+                                onClick = {
+                                    val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
+                                    val fileName = if (isFiche) "Fiche_Vendeur_${shop.name.replace(" ", "_")}.html" else "Contrat_TiK_Market_${shop.name.replace(" ", "_")}.html"
+                                    fileExporter(fileName, htmlContent)
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Enregistrer Fichier", fontSize = 11.sp)
+                            }
+
                             val pdfPrinter = com.tik_market.utils.rememberPdfPrinter()
                             Button(
                                 onClick = {
@@ -1426,7 +1440,7 @@ fun AdminShopDetailScreen(
                             ) {
                                 Icon(Icons.Default.PictureAsPdf, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Générer PDF / Imprimer", color = Color.White, fontSize = 12.sp)
+                                Text("PDF / Imprimer", color = Color.White, fontSize = 11.sp)
                             }
                         }
                     },
