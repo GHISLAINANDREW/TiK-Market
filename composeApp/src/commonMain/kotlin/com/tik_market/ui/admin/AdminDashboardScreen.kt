@@ -2118,6 +2118,7 @@ private fun SimpleBarChart(data: List<Int>, modifier: Modifier = Modifier) {
 }
 
 fun generateVendorSheetHtml(shop: AdminShop): String {
+    val logoImg = if (shop.logo.isNotBlank()) "<img src=\"${shop.logo}\" style=\"width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #16a34a;\" />" else "<div style=\"width: 70px; height: 70px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b; font-size: 16px;\">${shop.name.take(2).uppercase()}</div>"
     return """
         <!DOCTYPE html>
         <html>
@@ -2125,42 +2126,74 @@ fun generateVendorSheetHtml(shop: AdminShop): String {
             <meta charset="utf-8">
             <title>Fiche Vendeur - ${shop.name}</title>
             <style>
-                body { font-family: Arial, sans-serif; margin: 30px; color: #333; }
-                .header { border-bottom: 3px solid #2E7D32; padding-bottom: 10px; margin-bottom: 20px; }
-                h1 { color: #2E7D32; margin: 0; }
-                .badge { background: #E8F5E9; color: #2E7D32; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-                .section { margin-top: 20px; padding: 15px; background: #F9F9F9; border-radius: 8px; }
-                .label { font-weight: bold; color: #555; }
-                .footer { margin-top: 40px; font-size: 12px; color: #777; border-top: 1px solid #CCC; padding-top: 10px; text-align: center; }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+                body { font-family: 'Inter', sans-serif; margin: 0; padding: 30px; color: #1e293b; background: #f8fafc; font-size: 12px; line-height: 1.6; }
+                .card { max-width: 800px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #22c55e; padding-bottom: 15px; margin-bottom: 20px; }
+                .logo-area { display: flex; align-items: center; gap: 18px; }
+                .logo { font-size: 24px; font-weight: 800; color: #15803d; margin: 0; }
+                .sublogo { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+                .doc-type { background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+                h2 { color: #0f172a; font-size: 14px; font-weight: bold; border-left: 4px solid #16a34a; padding-left: 10px; margin-top: 25px; margin-bottom: 12px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
+                th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+                th { background: #f8fafc; color: #475569; font-weight: 600; width: 35%; }
+                td { color: #0f172a; font-weight: 500; }
+                .status-active { color: #16a34a; font-weight: 700; }
+                .footer { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; }
+                .stamp { border: 2px dashed #16a34a; padding: 8px 16px; border-radius: 8px; color: #15803d; font-weight: 800; font-size: 11px; text-transform: uppercase; text-align: center; }
             </style>
         </head>
         <body>
-            <div class="header">
-                <h1>TiK-Market - Fiche Vendeur Officielle</h1>
-                <p>Identifiant Boutique: #${shop.id} | Généré le: ${shop.createdAt}</p>
-            </div>
-            <div class="section">
-                <h3>1. Informations sur la Boutique</h3>
-                <p><span class="label">Nom de la boutique:</span> ${shop.name}</p>
-                <p><span class="label">Catégorie:</span> ${shop.category}</p>
-                <p><span class="label">Localisation:</span> ${shop.location}</p>
-                <p><span class="label">Téléphone Pro:</span> ${shop.phone}</p>
-                <p><span class="label">Statut KYC:</span> <span class="badge">${if (shop.isVerified) "CERTIFIÉ & VALIDÉ" else "EN ATTENTE"}</span></p>
-            </div>
-            <div class="section">
-                <h3>2. Informations du Gérant / Promoteur</h3>
-                <p><span class="label">Nom complet:</span> ${shop.vendorName}</p>
-                <p><span class="label">Email:</span> ${shop.vendorEmail.ifBlank { "Non renseigné" }}</p>
-                <p><span class="label">Téléphone personnel:</span> ${shop.vendorPhone.ifBlank { shop.phone }}</p>
-                <p><span class="label">Numéro NIU (Fiscal):</span> ${shop.niu?.ifBlank { "Non renseigné" } ?: "Non renseigné"}</p>
-            </div>
-            <div class="section">
-                <h3>3. Géolocalisation Certifiée</h3>
-                <p><span class="label">Latitude:</span> ${shop.latitude}</p>
-                <p><span class="label">Longitude:</span> ${shop.longitude}</p>
-            </div>
-            <div class="footer">
-                Document généré par la plateforme d'administration TiK-Market. Fiche officielle certifiée.
+            <div class="card">
+                <div class="header">
+                    <div class="logo-area">
+                        $logoImg
+                        <div>
+                            <div class="logo">TiK-Market</div>
+                            <div class="sublogo">Opéré par AutenTik Soft Solution SARLU</div>
+                        </div>
+                    </div>
+                    <div class="doc-type">Fiche Vendeur Certifiée</div>
+                </div>
+
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 20px;">
+                    Réf. Registre : <strong>TM-SHOP-#${shop.id}</strong> | Date d'Émission : <strong>${shop.createdAt}</strong>
+                </p>
+
+                <h2>1. Identité de la Boutique</h2>
+                <table>
+                    <tr><th>Nom de la Boutique</th><td>${shop.name}</td></tr>
+                    <tr><th>Catégorie d'Activité</th><td>${shop.category}</td></tr>
+                    <tr><th>Téléphone Professionnel</th><td>${shop.phone}</td></tr>
+                    <tr><th>Adresse & Localisation</th><td>${shop.location}</td></tr>
+                    <tr><th>Statut d'Accréditation</th><td class="status-active">${if (shop.isVerified) "VERIFIÉ & CERTIFIÉ TIK-MARKET" else "EN COURS DE VALIDATION"}</td></tr>
+                </table>
+
+                <h2>2. Représentant Légal / Gérant</h2>
+                <table>
+                    <tr><th>Nom du Gérant / Vendeur</th><td>${shop.vendorName}</td></tr>
+                    <tr><th>Adresse Email</th><td>${shop.vendorEmail.ifBlank { "Non renseigné" }}</td></tr>
+                    <tr><th>Téléphone Personnel</th><td>${shop.vendorPhone.ifBlank { shop.phone }}</td></tr>
+                    <tr><th>Numéro NIU (Fiscal)</th><td><strong>${shop.niu?.ifBlank { "En cours" } ?: "En cours"}</strong></td></tr>
+                </table>
+
+                <h2>3. Géolocalisation & Certifications</h2>
+                <table>
+                    <tr><th>Latitude GPS</th><td>${shop.latitude}</td></tr>
+                    <tr><th>Longitude GPS</th><td>${shop.longitude}</td></tr>
+                    <tr><th>Conformité KYC 5 Photos</th><td>CNI Recto/Verso, Intérieur, Extérieur, Enseigne VÉRIFIÉS</td></tr>
+                </table>
+
+                <div class="footer">
+                    <div>
+                        <strong>AutenTik Soft Solution SARLU</strong><br>
+                        Siège : Cameroun | Contact : AdminAutenTiK@gmail.com
+                    </div>
+                    <div class="stamp">
+                        Cachet Numérique Certifié<br>AutenTik Soft Solution
+                    </div>
+                </div>
             </div>
         </body>
         </html>
@@ -2168,6 +2201,7 @@ fun generateVendorSheetHtml(shop: AdminShop): String {
 }
 
 fun generateVendorContractHtml(shop: AdminShop): String {
+    val logoImg = if (shop.logo.isNotBlank()) "<img src=\"${shop.logo}\" style=\"width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #f97316; margin-right: 12px;\" />" else ""
     return """
         <!DOCTYPE html>
         <html>
@@ -2188,8 +2222,8 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     padding: 15px;
                     color: #1e293b;
                     background: #ffffff;
-                    font-size: 11px;
-                    line-height: 1.4;
+                    font-size: 12px;
+                    line-height: 1.5;
                 }
 
                 .container {
@@ -2215,13 +2249,15 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     font-family: 'Montserrat', sans-serif;
                     font-size: 20px;
                     font-weight: 800;
+                    display: flex;
+                    align-items: center;
                 }
 
                 .logo-tik { color: #ffffff; }
                 .logo-market { color: #f97316; }
 
                 .banner-subtitle {
-                    font-size: 9px;
+                    font-size: 10px;
                     letter-spacing: 1.5px;
                     text-transform: uppercase;
                     color: #d1d5db;
@@ -2235,7 +2271,7 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     padding: 6px 12px;
                     border-radius: 4px;
                     text-align: right;
-                    font-size: 9px;
+                    font-size: 10px;
                 }
 
                 .badge-title {
@@ -2252,14 +2288,14 @@ fun generateVendorContractHtml(shop: AdminShop): String {
 
                 .section-header {
                     font-family: 'Montserrat', sans-serif;
-                    font-size: 11px;
-                    font-weight: 800;
+                    font-size: 14px;
+                    font-weight: bold;
                     color: #111827;
                     text-transform: uppercase;
                     border-bottom: 2px solid #f97316;
-                    padding-bottom: 3px;
-                    margin-top: 14px;
-                    margin-bottom: 8px;
+                    padding-bottom: 4px;
+                    margin-top: 16px;
+                    margin-bottom: 10px;
                 }
 
                 .grid-2 {
@@ -2275,21 +2311,22 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     background: #f8fafc;
                     border: 1px solid #e2e8f0;
                     border-radius: 6px;
-                    padding: 10px 14px;
+                    padding: 12px 16px;
                 }
 
                 .card-title {
                     font-family: 'Montserrat', sans-serif;
-                    font-size: 10px;
-                    font-weight: 700;
+                    font-size: 12px;
+                    font-weight: bold;
                     color: #ea580c;
                     text-transform: uppercase;
                     margin-bottom: 8px;
                 }
 
                 .info-row {
-                    margin-bottom: 4px;
+                    margin-bottom: 6px;
                     display: flex;
+                    font-size: 12px;
                 }
 
                 .info-label {
@@ -2309,21 +2346,21 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     background: #ffffff;
                     border: 1px solid #e2e8f0;
                     border-radius: 6px;
-                    padding: 10px;
-                    margin-bottom: 8px;
+                    padding: 12px;
+                    margin-bottom: 10px;
                 }
 
                 .feature-title {
-                    font-weight: 700;
-                    font-size: 10.5px;
+                    font-weight: bold;
+                    font-size: 12px;
                     color: #0f172a;
                     margin-bottom: 4px;
                 }
 
                 .feature-desc {
-                    font-size: 9.5px;
+                    font-size: 12px;
                     color: #475569;
-                    line-height: 1.35;
+                    line-height: 1.4;
                 }
 
                 .border-orange { border-left: 3px solid #f97316; }
@@ -2333,41 +2370,42 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     background: #f8fafc;
                     border: 1px solid #e2e8f0;
                     border-radius: 6px;
-                    padding: 10px;
-                    font-size: 9.5px;
+                    padding: 12px;
+                    font-size: 12px;
                     color: #475569;
                     text-align: justify;
+                    line-height: 1.5;
                 }
 
                 .sig-card {
                     background: #f8fafc;
                     border: 1px solid #cbd5e1;
                     border-radius: 6px;
-                    padding: 12px;
-                    height: 75px;
+                    padding: 14px;
+                    height: 80px;
                 }
 
                 .sig-head {
-                    font-weight: 700;
+                    font-weight: bold;
                     color: #0f172a;
-                    font-size: 10.5px;
+                    font-size: 12px;
                     margin-bottom: 8px;
                 }
 
                 .sig-line {
-                    font-size: 9px;
+                    font-size: 11px;
                     color: #64748b;
                     font-style: italic;
-                    margin-top: 22px;
+                    margin-top: 25px;
                 }
 
                 .footer {
                     margin-top: 25px;
-                    padding-top: 8px;
+                    padding-top: 10px;
                     border-top: 1px solid #e2e8f0;
                     display: flex;
                     justify-content: space-between;
-                    font-size: 8.5px;
+                    font-size: 10px;
                     color: #94a3b8;
                 }
             </style>
@@ -2376,11 +2414,14 @@ fun generateVendorContractHtml(shop: AdminShop): String {
             <div class="container">
                 <!-- Banner Header -->
                 <div class="banner">
-                    <div>
-                        <div class="logo-title">
-                            <span class="logo-tik">TiK-</span><span class="logo-market">Market</span>
+                    <div style="display: flex; align-items: center;">
+                        $logoImg
+                        <div>
+                            <div class="logo-title">
+                                <span class="logo-tik">TiK-</span><span class="logo-market">Market</span>
+                            </div>
+                            <div class="banner-subtitle">CONVENTION VENDEUR PIONNIER — OFFRE DE LANCEMENT</div>
                         </div>
-                        <div class="banner-subtitle">CONVENTION VENDEUR PIONNIER — OFFRE DE LANCEMENT</div>
                     </div>
                     <div class="badge-box">
                         <div class="badge-title">PROGRAMME PARTENAIRE</div>
@@ -2393,9 +2434,9 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                 <div class="grid-2">
                     <div class="card">
                         <div class="card-title">LA PLATEFORME</div>
-                        <div class="info-row"><span class="info-label">Structure :</span><span class="info-val">TiK-Market Services</span></div>
+                        <div class="info-row"><span class="info-label">Structure :</span><span class="info-val">TiK-Market (AutenTik Soft Solution)</span></div>
                         <div class="info-row"><span class="info-label">Représentant :</span><span class="info-val">Direction Commerciale</span></div>
-                        <div class="info-row"><span class="info-label">Téléphone / Support :</span><span class="info-val">+237 6________</span></div>
+                        <div class="info-row"><span class="info-label">Téléphone / Support :</span><span class="info-val">+237 600000000</span></div>
                         <div class="info-row"><span class="info-label">Ville / Région :</span><span class="info-val">Dschang / Ouest</span></div>
                     </div>
                     <div class="card">
@@ -2404,7 +2445,7 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                         <div class="info-row"><span class="info-label">Nom du Gérant :</span><span class="info-val">${shop.vendorName}</span></div>
                         <div class="info-row"><span class="info-label">Adresse / Marché :</span><span class="info-val">${shop.location}</span></div>
                         <div class="info-row"><span class="info-label">Téléphone WhatsApp :</span><span class="info-val">${shop.vendorPhone.ifBlank { shop.phone }}</span></div>
-                        <div class="info-row"><span class="info-label">Mobile Money (Mtn/Org) :</span><span class="info-val">${shop.phone}</span></div>
+                        <div class="info-row"><span class="info-label">Numéro NIU (Fiscal) :</span><span class="info-val">${shop.niu?.ifBlank { "En cours" } ?: "En cours"}</span></div>
                     </div>
                 </div>
 
@@ -2424,7 +2465,7 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     <div>
                         <div class="feature-card">
                             <div class="feature-title">Égalité Strict des Prix</div>
-                            <div class="feature-desc">Le Commerçant s'engage à pratiquer sur TiK-Market des prix de vente rigoureusement identiques à ceux affichés directement dans sa boutique physique.</div>
+                            <div class="feature-desc">The Commerçant s'engage à pratiquer sur TiK-Market des prix de vente rigoureusement identiques à ceux affichés directement dans sa boutique physique.</div>
                         </div>
                         <div class="feature-card">
                             <div class="feature-title">Paiement & Reversement</div>
@@ -2444,19 +2485,19 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                 <div class="grid-2">
                     <div class="sig-card">
                         <div class="sig-head">Pour le Commerçant Partenaire</div>
-                        <div style="font-size: 9px; color: #64748b;">Mention manuscrite « Lu et approuvé » :</div>
+                        <div style="font-size: 10px; color: #64748b;">Mention manuscrite « Lu et approuvé » :</div>
                         <div class="sig-line">Date, Nom & Signature :</div>
                     </div>
                     <div class="sig-card">
-                        <div class="sig-head">Pour TiK-Market</div>
-                        <div style="font-size: 9px; color: #64748b;">Le Responsable d'Onboarding / Cachet :</div>
-                        <div class="sig-line">Fait à _______________, le ____ / ____ / 2026</div>
+                        <div class="sig-head">Pour TiK-Market (AutenTik Soft Solution)</div>
+                        <div style="font-size: 10px; color: #64748b;">Le Responsable d'Onboarding / Cachet :</div>
+                        <div class="sig-line">Fait à ${shop.location}, le ____ / ____ / 2026</div>
                     </div>
                 </div>
 
                 <!-- Footer -->
                 <div class="footer">
-                    <div>TiK-Market — Document d'engagement terrain pour le réseau de vendeurs pionniers</div>
+                    <div>TiK-Market — Document d'engagement terrain pour le réseau de vendeurs pionniers (Opéré par AutenTik Soft Solution SARLU)</div>
                     <div>Page 1 sur 1</div>
                 </div>
             </div>
