@@ -1401,7 +1401,10 @@ fun AdminShopDetailScreen(
                         }
                     },
                     confirmButton = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             OutlinedButton(
                                 onClick = {
                                     clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(docText))
@@ -1409,38 +1412,38 @@ fun AdminShopDetailScreen(
                                 },
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Copier", fontSize = 12.sp)
-                            }
-
-                            val fileExporter = com.tik_market.utils.rememberFileExporter()
-                            OutlinedButton(
-                                onClick = {
-                                    val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
-                                    val fileName = if (isFiche) "Fiche_Vendeur_${shop.name.replace(" ", "_")}.html" else "Contrat_TiK_Market_${shop.name.replace(" ", "_")}.html"
-                                    fileExporter(fileName, htmlContent)
-                                },
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Enregistrer Fichier", fontSize = 11.sp)
+                                Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(2.dp))
+                                Text("Copier", fontSize = 11.sp)
                             }
 
                             val pdfPrinter = com.tik_market.utils.rememberPdfPrinter()
-                            Button(
+                            OutlinedButton(
                                 onClick = {
                                     val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
                                     val jobName = if (isFiche) "Fiche_Vendeur_${shop.name}" else "Contrat_Vendeur_${shop.name}"
                                     pdfPrinter(htmlContent, jobName)
                                 },
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(2.dp))
+                                Text("Aperçu PDF", fontSize = 11.sp)
+                            }
+
+                            val fileExporter = com.tik_market.utils.rememberFileExporter()
+                            Button(
+                                onClick = {
+                                    val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
+                                    val fileName = if (isFiche) "Fiche_Vendeur_${shop.name.replace(" ", "_")}.pdf" else "Contrat_TiK_Market_${shop.name.replace(" ", "_")}.pdf"
+                                    fileExporter(fileName, htmlContent)
+                                },
                                 colors = ButtonDefaults.buttonColors(containerColor = Green),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Icon(Icons.Default.PictureAsPdf, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("PDF / Imprimer", color = Color.White, fontSize = 11.sp)
+                                Icon(Icons.Default.Download, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(2.dp))
+                                Text("Télécharger PDF", color = Color.White, fontSize = 11.sp)
                             }
                         }
                     },
@@ -2127,21 +2130,23 @@ fun generateVendorSheetHtml(shop: AdminShop): String {
             <title>Fiche Vendeur - ${shop.name}</title>
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-                body { font-family: 'Inter', sans-serif; margin: 0; padding: 30px; color: #1e293b; background: #f8fafc; font-size: 12px; line-height: 1.6; }
-                .card { max-width: 800px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #22c55e; padding-bottom: 15px; margin-bottom: 20px; }
-                .logo-area { display: flex; align-items: center; gap: 18px; }
-                .logo { font-size: 24px; font-weight: 800; color: #15803d; margin: 0; }
-                .sublogo { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
-                .doc-type { background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
-                h2 { color: #0f172a; font-size: 14px; font-weight: bold; border-left: 4px solid #16a34a; padding-left: 10px; margin-top: 25px; margin-bottom: 12px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
-                th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+                @page { size: A4 portrait; margin: 0; }
+                * { box-sizing: border-box; }
+                body { font-family: 'Inter', sans-serif; margin: 0; padding: 15px; color: #1e293b; background: #ffffff; font-size: 11px; line-height: 1.4; }
+                .card { max-width: 760px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+                .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #22c55e; padding-bottom: 10px; margin-bottom: 12px; }
+                .logo-area { display: flex; align-items: center; gap: 14px; }
+                .logo { font-size: 20px; font-weight: 800; color: #15803d; margin: 0; }
+                .sublogo { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+                .doc-type { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 16px; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+                h2 { color: #0f172a; font-size: 12px; font-weight: bold; border-left: 3px solid #16a34a; padding-left: 8px; margin-top: 14px; margin-bottom: 8px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
+                th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
                 th { background: #f8fafc; color: #475569; font-weight: 600; width: 35%; }
                 td { color: #0f172a; font-weight: 500; }
                 .status-active { color: #16a34a; font-weight: 700; }
-                .footer { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; }
-                .stamp { border: 2px dashed #16a34a; padding: 8px 16px; border-radius: 8px; color: #15803d; font-weight: 800; font-size: 11px; text-transform: uppercase; text-align: center; }
+                .footer { margin-top: 20px; padding-top: 12px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8; }
+                .stamp { border: 2px dashed #16a34a; padding: 6px 12px; border-radius: 6px; color: #15803d; font-weight: 800; font-size: 10px; text-transform: uppercase; text-align: center; }
             </style>
         </head>
         <body>
@@ -2213,8 +2218,10 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                 
                 @page {
                     size: A4 portrait;
-                    margin: 10mm;
+                    margin: 0;
                 }
+
+                * { box-sizing: border-box; }
 
                 body {
                     font-family: 'Open Sans', sans-serif;
@@ -2222,12 +2229,12 @@ fun generateVendorContractHtml(shop: AdminShop): String {
                     padding: 15px;
                     color: #1e293b;
                     background: #ffffff;
-                    font-size: 12px;
-                    line-height: 1.5;
+                    font-size: 11px;
+                    line-height: 1.4;
                 }
 
                 .container {
-                    max-width: 800px;
+                    max-width: 760px;
                     margin: 0 auto;
                     background: #ffffff;
                     padding: 15px;

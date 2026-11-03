@@ -55,7 +55,13 @@ data class AuthFormState(
     val otpCode: String = "",
     val otpExpiresAt: Long = 0L,
     val canResend: Boolean = false,
-    val termsAccepted: Boolean = false
+    val termsAccepted: Boolean = false,
+    val isForgotPassword: Boolean = false,
+    val forgotIdentifier: String = "",
+    val forgotMethod: String = "whatsapp", // "whatsapp" or "email"
+    val forgotStep: Int = 1, // 1 = enter identifier + method, 2 = enter code + new password
+    val forgotSuccessMessage: String? = null,
+    val loginSuccessMessage: String? = null
 )
 
 enum class AuthMode { Email, Google, Phone }
@@ -191,6 +197,14 @@ fun AuthScreen(
                             }
 
                                 when {
+                                    form.isForgotPassword -> ForgotPasswordStep(
+                                        form = form,
+                                        onFormChange = { form = it },
+                                        showPassword = showPassword,
+                                        onTogglePassword = { showPassword = !showPassword },
+                                        scope = scope,
+                                        onCancel = { form = form.copy(isForgotPassword = false, forgotStep = 1, error = null) }
+                                    )
                                     form.isOtpStep -> OtpStep(isLogin, form, { form = it }, scope, onLoginSuccess, onTermsClick, onLegalClick)
                                     authMode == AuthMode.Phone -> PhoneStep(isLogin, form, { form = it }, scope, { authMode = AuthMode.Email }, onTermsClick, onLegalClick)
                                     else -> EmailAuthStep(
@@ -207,7 +221,7 @@ fun AuthScreen(
                                     )
                                 }
 
-                            if (!form.isOtpStep && authMode == AuthMode.Email) {
+                            if (!form.isForgotPassword && !form.isOtpStep && authMode == AuthMode.Email) {
                                 Spacer(Modifier.height(12.dp))
                                 TextButton(
                                     onClick = {
@@ -476,6 +490,60 @@ private fun EmailAuthStep(
             isError = passwordError != null,
             errorMessage = passwordError
         )
+
+        if (isLogin) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        onFormChange(
+                            form.copy(
+                                isForgotPassword = true,
+                                forgotIdentifier = if (form.email.isNotBlank()) form.email else form.phone,
+                                forgotStep = 1,
+                                forgotMethod = "whatsapp",
+                                error = null,
+                                forgotSuccessMessage = null
+                            )
+                        )
+                    },
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text(
+                        "Mot de passe oublié ?",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        if (isLogin && form.loginSuccessMessage != null) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                shape = RoundedCornerShape(6.dp),
+                color = Green.copy(alpha = 0.12f)
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), tint = Green)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        form.loginSuccessMessage ?: "",
+                        color = Green,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
         if (!isLogin) {
             LightTextField(
                 value = form.confirmPassword,
@@ -545,7 +613,8 @@ private fun EmailAuthStep(
                                 email = form.email,
                                 phone = form.phone,
                                 password = form.password,
-                                role = "buyer"
+                                role = if (form.isVendorSignup) "vendor" else "buyer",
+                                location = form.location
                             )
                             onLoginSuccess(response.token, response.user.name, response.user.role)
                         }
@@ -802,6 +871,256 @@ private fun OtpStep(
             TextButton(onClick = { onFormChange(form.copy(isOtpStep = false)) }) {
                 Text(s.changeNumber, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+@Composable
+private fun ForgotPasswordStep(
+    form: AuthFormState,
+    onFormChange: (AuthFormState) -> Unit,
+    showPassword: Boolean,
+    onTogglePassword: () -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onCancel: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text(
+            text = "Réinitialisation du mot de passe",
+            style = MaterialTheme.typography.titleLarge,
+            color = TextPrimary,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = if (form.forgotStep == 1) "Saisissez votre email ou téléphone et choisissez la méthode de réception du code."
+                   else "Saisissez le code reçu et votre nouveau mot de passe.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        if (form.forgotSuccessMessage != null) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(6.dp),
+                color = Green.copy(alpha = 0.1f)
+            ) {
+                Row(
+                    Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), tint = Green)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        form.forgotSuccessMessage,
+                        color = Green,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        if (form.forgotStep == 1) {
+            LightTextField(
+                value = form.forgotIdentifier,
+                onValueChange = { onFormChange(form.copy(forgotIdentifier = it, error = null)) },
+                label = "Email ou Numéro de téléphone",
+                keyboardType = KeyboardType.Email
+            )
+
+            Text(
+                "Méthode de réception du code :",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                val isWaSelected = form.forgotMethod == "whatsapp"
+                Surface(
+                    onClick = { onFormChange(form.copy(forgotMethod = "whatsapp")) },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(CardShapeSmall),
+                    color = if (isWaSelected) Green.copy(alpha = 0.12f) else CardWhite,
+                    border = BorderStroke(
+                        if (isWaSelected) 2.dp else 1.dp,
+                        if (isWaSelected) Green else DividerGray
+                    )
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Send,
+                            contentDescription = "WhatsApp",
+                            tint = if (isWaSelected) Green else TextSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "WhatsApp",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isWaSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isWaSelected) Green else TextPrimary
+                        )
+                    }
+                }
+
+                val isEmailSelected = form.forgotMethod == "email"
+                Surface(
+                    onClick = { onFormChange(form.copy(forgotMethod = "email")) },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(CardShapeSmall),
+                    color = if (isEmailSelected) BlueAccent.copy(alpha = 0.12f) else CardWhite,
+                    border = BorderStroke(
+                        if (isEmailSelected) 2.dp else 1.dp,
+                        if (isEmailSelected) BlueAccent else DividerGray
+                    )
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "Email",
+                            tint = if (isEmailSelected) BlueAccent else TextSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Email",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isEmailSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isEmailSelected) BlueAccent else TextPrimary
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            PrimaryButton(
+                text = if (form.isLoading) "" else "Envoyer le code",
+                isLoading = form.isLoading,
+                onClick = {
+                    if (form.forgotIdentifier.isBlank()) {
+                        onFormChange(form.copy(error = "Veuillez entrer votre email ou numéro de téléphone."))
+                        return@PrimaryButton
+                    }
+                    scope.launch {
+                        onFormChange(form.copy(isLoading = true, error = null))
+                        try {
+                            val resp = ApiClient.forgotPassword(form.forgotIdentifier, form.forgotMethod)
+                            onFormChange(
+                                form.copy(
+                                    isLoading = false,
+                                    forgotStep = 2,
+                                    forgotSuccessMessage = resp.message,
+                                    error = null
+                                )
+                            )
+                        } catch (e: Throwable) {
+                            onFormChange(
+                                form.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Impossible d'envoyer le code."
+                                )
+                            )
+                        }
+                    }
+                }
+            )
+        } else {
+            LightTextField(
+                value = form.otpCode,
+                onValueChange = { onFormChange(form.copy(otpCode = it, error = null)) },
+                label = "Code à 6 chiffres",
+                keyboardType = KeyboardType.Number
+            )
+
+            LightTextField(
+                value = form.password,
+                onValueChange = { onFormChange(form.copy(password = it, error = null)) },
+                label = "Nouveau mot de passe",
+                isPassword = true,
+                showPassword = showPassword,
+                onTogglePassword = onTogglePassword
+            )
+
+            LightTextField(
+                value = form.confirmPassword,
+                onValueChange = { onFormChange(form.copy(confirmPassword = it, error = null)) },
+                label = "Confirmer le nouveau mot de passe",
+                isPassword = true,
+                showPassword = showPassword,
+                onTogglePassword = onTogglePassword
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            PrimaryButton(
+                text = if (form.isLoading) "" else "Réinitialiser le mot de passe",
+                isLoading = form.isLoading,
+                onClick = {
+                    if (form.otpCode.isBlank()) {
+                        onFormChange(form.copy(error = "Veuillez entrer le code de vérification."))
+                        return@PrimaryButton
+                    }
+                    if (form.password.length < 6) {
+                        onFormChange(form.copy(error = "Le mot de passe doit contenir au moins 6 caractères."))
+                        return@PrimaryButton
+                    }
+                    if (form.password != form.confirmPassword) {
+                        onFormChange(form.copy(error = "Les mots de passe ne correspondent pas."))
+                        return@PrimaryButton
+                    }
+                    scope.launch {
+                        onFormChange(form.copy(isLoading = true, error = null))
+                        try {
+                            val resp = ApiClient.resetPassword(
+                                identifier = form.forgotIdentifier,
+                                code = form.otpCode,
+                                newPassword = form.password
+                            )
+                            onFormChange(
+                                form.copy(
+                                    isLoading = false,
+                                    isForgotPassword = false,
+                                    forgotStep = 1,
+                                    password = "",
+                                    confirmPassword = "",
+                                    otpCode = "",
+                                    loginSuccessMessage = resp.message,
+                                    error = null
+                                )
+                            )
+                        } catch (e: Throwable) {
+                            onFormChange(
+                                form.copy(
+                                    isLoading = false,
+                                    error = e.message ?: "Échec de la réinitialisation du mot de passe."
+                                )
+                            )
+                        }
+                    }
+                }
+            )
+        }
+
+        TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+            Text("Annuler / Retour à la connexion", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

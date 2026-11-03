@@ -33,9 +33,10 @@ suspend fun ApiClient.register(
     email: String,
     phone: String,
     password: String,
-    role: String = "buyer"
+    role: String = "buyer",
+    location: String = ""
 ): ApiAuthResponse {
-    val body = json.encodeToString(ApiRegisterBody(name, email, phone, password, role))
+    val body = json.encodeToString(ApiRegisterBody(name, email, phone, password, role, location))
     val result = safeRequest<ApiAuthResponse>("POST", ApiClient.Endpoints.REGISTER, body)
     setToken(result.token)
     setCurrentUser(result.user)
@@ -62,3 +63,14 @@ suspend fun ApiClient.verifyOtp(phone: String, code: String): ApiVerifyOtpRespon
     }
     return result
 }
+
+suspend fun ApiClient.forgotPassword(identifier: String, method: String): ApiForgotPasswordResponse {
+    val body = json.encodeToString(ApiForgotPasswordBody(identifier, method))
+    return safeRequest("POST", ApiClient.Endpoints.FORGOT_PASSWORD, body)
+}
+
+suspend fun ApiClient.resetPassword(identifier: String, code: String, newPassword: String): ApiResetPasswordResponse {
+    val body = json.encodeToString(ApiResetPasswordBody(identifier, code, newPassword))
+    return safeRequest("POST", ApiClient.Endpoints.RESET_PASSWORD, body)
+}
+

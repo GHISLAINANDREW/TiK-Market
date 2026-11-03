@@ -39,7 +39,8 @@ data class ApiRegisterBody(
     val email: String,
     val phone: String,
     val password: String,
-    val role: String = "buyer"
+    val role: String = "buyer",
+    val location: String = ""
 )
 
 @Serializable
@@ -71,3 +72,30 @@ data class ApiVerifyOtpResponse(
     val user: ApiUser? = null,
     @SerialName("is_new") val isNew: Boolean = false
 )
+
+@Serializable
+data class ApiForgotPasswordBody(
+    val identifier: String,
+    val method: String
+)
+
+@Serializable
+data class ApiForgotPasswordResponse(
+    val success: Boolean,
+    val message: String,
+    @SerialName("expires_in") val expiresIn: Int = 300
+)
+
+@Serializable
+data class ApiResetPasswordBody(
+    val identifier: String,
+    val code: String,
+    @SerialName("new_password") val newPassword: String
+)
+
+@Serializable
+data class ApiResetPasswordResponse(
+    val success: Boolean,
+    val message: String
+)
+

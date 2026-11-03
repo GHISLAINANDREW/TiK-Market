@@ -1,21 +1,24 @@
 package com.tik_market.utils
 
+import com.tik_market.api.ApiClient
+
 object UrlUtils {
-    private const val PROXY_BASE = "https://tik-market-proxy.gtankou.workers.dev"
-    private const val RENDER_BASE = "https://tik-market.onrender.com"
 
     /**
-     * Resolves a URL to an absolute path and applies proxying rules for Android
-     * to bypass ISP blocks on Render and Cloudinary.
+     * Resolves a URL to an absolute path using the currently working ApiClient base domain.
+     * Bypasses ISP blocks (such as Orange Cameroun blocking onrender.com or workers.dev subdomains)
+     * by routing media requests through whichever base URL is active and functional.
      */
     fun resolveSafeUrl(url: String?): String {
         if (url.isNullOrBlank()) return ""
         if (url.startsWith("data:")) return url
-        
-        // 1. Resolve relative URLs against the Cloudflare proxy domain
+
+        val activeBase = ApiClient.baseUrl.trimEnd('/')
+
+        // 1. Resolve relative URLs against active base domain
         var absoluteUrl = if (!url.startsWith("http")) {
             val cleanPath = url.trimStart('/', '\\').replace("\\", "/")
-            "$PROXY_BASE/$cleanPath"
+            "$activeBase/$cleanPath"
         } else {
             url
         }
@@ -25,11 +28,15 @@ object UrlUtils {
             absoluteUrl = absoluteUrl.replace("http://", "https://")
         }
 
-        // 3. Robust Proxy Logic: route all render.com requests through Cloudflare proxy
-        if (absoluteUrl.contains("onrender.com")) {
-            return absoluteUrl.replace(RENDER_BASE, PROXY_BASE)
+        // 3. Dynamic domain swap: if URL uses an backend host, swap it to activeBase
+        if (absoluteUrl.contains("onrender.com") || absoluteUrl.contains("workers.dev")) {
+            val uriWithoutScheme = absoluteUrl.removePrefix("https://").removePrefix("http://")
+            val firstSlash = uriWithoutScheme.indexOf('/')
+            val path = if (firstSlash >= 0) uriWithoutScheme.substring(firstSlash) else ""
+            return "$activeBase$path"
         }
 
         return absoluteUrl
     }
 }
+

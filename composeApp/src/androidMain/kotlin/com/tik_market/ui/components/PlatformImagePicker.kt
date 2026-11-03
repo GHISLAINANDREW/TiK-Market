@@ -1,16 +1,17 @@
 package com.tik_market.ui.components
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import android.widget.Toast
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.tik_market.utils.UrlUtils
@@ -425,15 +426,21 @@ actual fun rememberTakeVideoLauncher(
 ): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var videoFileUri by remember { mutableStateOf<Uri?>(null) }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data
+        val uri = videoFileUri ?: result.data?.data
         if (uri != null) {
             scope.launch {
                 try {
                     val mimeType = context.contentResolver.getType(uri) ?: "video/mp4"
                     val fileName = getFileName(context, uri) ?: "video.mp4"
                     val retriever = android.media.MediaMetadataRetriever()
-                    retriever.setDataSource(context, uri)
+                    try {
+                        retriever.setDataSource(context, uri)
+                    } catch (_: Exception) {
+                        videoFileUri?.path?.let { retriever.setDataSource(it) }
+                    }
                     val time = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                     val duration = (time?.toLong() ?: 0L) / 1000.0
                     retriever.release()
@@ -449,7 +456,8 @@ actual fun rememberTakeVideoLauncher(
                     } else {
                         onResult(null)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    e.printStackTrace()
                     onResult(null)
                 }
             }
@@ -459,12 +467,35 @@ actual fun rememberTakeVideoLauncher(
     }
     return remember {
         {
-            val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
-            intent.putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 1)
-            if (maxDurationSeconds > 0) {
-                intent.putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, maxDurationSeconds)
+            requestCameraPermission { granted ->
+                if (!granted) {
+                    Toast.makeText(context, "Permission caméra requise pour enregistrer un Reel", Toast.LENGTH_SHORT).show()
+                    onResult(null)
+                    return@requestCameraPermission
+                }
+                try {
+                    val dir = File(context.cacheDir, "videos")
+                    if (!dir.exists()) dir.mkdirs()
+                    val file = File(dir, "reel_${System.currentTimeMillis()}.mp4")
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    videoFileUri = uri
+
+                    val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE).apply {
+                        putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
+                        putExtra(android.provider.MediaStore.EXTRA_VIDEO_QUALITY, 1)
+                        if (maxDurationSeconds > 0) {
+                            putExtra(android.provider.MediaStore.EXTRA_DURATION_LIMIT, maxDurationSeconds)
+                        }
+                        clipData = android.content.ClipData.newRawUri("", uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    }
+                    launcher.launch(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Erreur lancement caméra: ${e.message}", Toast.LENGTH_SHORT).show()
+                    onResult(null)
+                }
             }
-            launcher.launch(intent)
         }
     }
 }

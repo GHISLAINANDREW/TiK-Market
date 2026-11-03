@@ -31,35 +31,46 @@ object ChatWebSocketClient {
         if (session != null && session?.isActive == true) return
 
         wsScope.launch {
-            try {
-                val host = ApiClient.baseUrl.replace("https://", "").replace("http://", "").removeSuffix("/api")
-                val protocol = if (ApiClient.baseUrl.startsWith("https")) "wss" else "ws"
-                
-                client.webSocket(
-                    method = io.ktor.http.HttpMethod.Get,
-                    host = host,
-                    path = "/ws/chat?token=$token"
-                ) {
-                    session = this
-                    println("[WS] Connected to chat")
-                    
-                    for (frame in incoming) {
-                        if (frame is Frame.Text) {
-                            try {
-                                val text = frame.readText()
-                                val msg = Json.decodeFromString<ApiMessage>(text)
-                                _incomingMessages.emit(msg)
-                            } catch (e: Exception) {
-                                println("[WS] Error decoding message: ${e.message}")
+            val candidates = mutableListOf<String>()
+            val currentBase = ApiClient.baseUrl
+            candidates.add(currentBase)
+            for (b in ApiClient.getBaseUrls()) {
+                if (b != currentBase) candidates.add(b)
+            }
+
+            for (baseUrlCandidate in candidates) {
+                try {
+                    val host = baseUrlCandidate.replace("https://", "").replace("http://", "").removeSuffix("/api").trimEnd('/')
+                    println("[WS] Attempting chat connection to $host...")
+
+                    client.webSocket(
+                        method = io.ktor.http.HttpMethod.Get,
+                        host = host,
+                        path = "/ws/chat?token=$token"
+                    ) {
+                        session = this
+                        println("[WS] Connected to chat on $host")
+
+                        for (frame in incoming) {
+                            if (frame is Frame.Text) {
+                                try {
+                                    val text = frame.readText()
+                                    val msg = Json.decodeFromString<ApiMessage>(text)
+                                    _incomingMessages.emit(msg)
+                                } catch (e: Exception) {
+                                    println("[WS] Error decoding message: ${e.message}")
+                                }
                             }
                         }
                     }
+                    break
+                } catch (e: Exception) {
+                    println("[WS] Connection failed on $baseUrlCandidate: ${e.message}")
                 }
-            } catch (e: Exception) {
-                println("[WS] Connection failed: ${e.message}")
-                delay(5000)
-                connect() // Auto-reconnect
             }
+
+            delay(5000)
+            connect() // Auto-reconnect
         }
     }
 
@@ -70,3 +81,4 @@ object ChatWebSocketClient {
         }
     }
 }
+

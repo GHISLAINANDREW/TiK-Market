@@ -25,6 +25,8 @@ object ApiClient {
         const val ME = "/auth/me.php"
         const val OTP_SEND = "/auth/send-otp.php"
         const val OTP_VERIFY = "/auth/verify-otp.php"
+        const val FORGOT_PASSWORD = "/auth/forgot-password.php"
+        const val RESET_PASSWORD = "/auth/reset-password.php"
         const val PRODUCTS = "/products/products.php"
         const val SHOPS = "/shops/shops.php"
         const val CART = "/cart/cart.php"
@@ -71,13 +73,14 @@ object ApiClient {
 
     /**
      * API endpoints, in priority order.
-     * Le premier domaine (Render) peut être bloqué par certains opérateurs mobiles
-     * (ex: Orange Cameroun bloque onrender.com). En cas d'échec réseau, on tente
-     * automatiquement les URLs de secours (domaine personnalisé / proxy Cloudflare).
+     * Le premier domaine (Render/Cloudflare) peut être bloqué par certains opérateurs mobiles
+     * (ex: Orange Cameroun bloque onrender.com et certains sous-domaines workers.dev).
+     * En cas d'échec réseau, on tente automatiquement les URLs de secours.
      */
     private var _baseUrls: List<String> = listOf(
-        "https://tik-market-proxy.gtankou.workers.dev",
-        "https://tik-market.onrender.com"
+        "https://tik-market.onrender.com",
+        "https://tik-market-api.gtankou.workers.dev",
+        "https://tik-market-proxy.gtankou.workers.dev"
     )
     private var _activeBaseUrlIndex = 0
 
@@ -160,6 +163,17 @@ object ApiClient {
             if (isLoggingEnabled) println("[API] $method $url" + (body?.let { " | Body: $it" } ?: ""))
             try {
                 val response = HttpEngine.request(method, url, buildHeaders(), body)
+                val trimmed = response.trim()
+                if (trimmed.startsWith("<") ||
+                    trimmed.contains("<!DOCTYPE", ignoreCase = true) ||
+                    trimmed.contains("<html", ignoreCase = true) ||
+                    response.contains("Cloudflare Error", ignoreCase = true) ||
+                    response.contains("No Workers script", ignoreCase = true) ||
+                    (response.contains("\"status\":404") && response.contains("detail", ignoreCase = true)) ||
+                    (response.contains("\"status\": 404") && response.contains("detail", ignoreCase = true))
+                ) {
+                    throw Exception("Reponse proxy/HTML invalide sur ${_baseUrls[index]}")
+                }
                 if (isLoggingEnabled) println("[API] Success on ${_baseUrls[index]}")
                 _activeBaseUrlIndex = index
                 return response
@@ -168,7 +182,7 @@ object ApiClient {
                 lastError = e
             }
         }
-        throw lastError ?: Exception("Network error")
+        throw lastError ?: Exception("Erreur reseau")
     }
 
     internal fun buildUrl(path: String, params: Map<String, Any?> = emptyMap()): String {
@@ -184,7 +198,26 @@ object ApiClient {
         body: String? = null
     ): T {
         val resp = request(method, path, body)
-        return json.decodeFromString<T>(resp)
+        val trimmed = resp.trim()
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+            throw Exception("Reponse serveur non valide (non-JSON).")
+        }
+        return try {
+            json.decodeFromString<T>(resp)
+        } catch (e: Exception) {
+            try {
+                val element = json.parseToJsonElement(resp)
+                val obj = element as? kotlinx.serialization.json.JsonObject
+                val err = obj?.get("error")?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.content else it.toString() }
+                    ?: obj?.get("message")?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.content else it.toString() }
+                if (!err.isNullOrBlank()) throw Exception(err)
+            } catch (ex: Exception) {
+                if (ex.message != null && !ex.message!!.contains("Serializer") && !ex.message!!.contains("Json")) {
+                    throw ex
+                }
+            }
+            throw Exception("Format de donnees invalide : ${e.message}")
+        }
     }
 
     internal suspend fun get(path: String): String = request("GET", path)
@@ -196,8 +229,12 @@ object ApiClient {
      * Measures round-trip latency (ms) against a lightweight backend endpoint.
      * Used to adapt playback quality to the current connection.
      */
-    suspend fun probeLatencyMs(): Long =
-        kotlin.system.measureTimeMillis { request("GET", "/ping.php") }
+    suspend fun probeLatencyMs(): Long {
+        val start = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        try { request("GET", "/ping.php") } catch (_: Exception) {}
+        val end = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        return (end - start).coerceAtLeast(0)
+    }
 
     // ── Helper ──
 
