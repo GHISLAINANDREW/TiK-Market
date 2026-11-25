@@ -73,14 +73,14 @@ object ApiClient {
 
     /**
      * API endpoints, in priority order.
-     * Le premier domaine (Render/Cloudflare) peut être bloqué par certains opérateurs mobiles
-     * (ex: Orange Cameroun bloque onrender.com et certains sous-domaines workers.dev).
-     * En cas d'échec réseau, on tente automatiquement les URLs de secours.
+     * Vercel (tik-market-app.vercel.app/api) sert de proxy CDN ultra-rapide et fiable
+     * contournant tous les blocages réseau des opérateurs mobiles (ex: Orange Cameroun).
      */
     private var _baseUrls: List<String> = listOf(
+        "https://tik-market-app.vercel.app/api",
+        "https://dschang-market.vercel.app/api",
         "https://tik-market.onrender.com",
-        "https://tik-market-api.gtankou.workers.dev",
-        "https://tik-market-proxy.gtankou.workers.dev"
+        "https://tik-market-api.gtankou.workers.dev"
     )
     private var _activeBaseUrlIndex = 0
 

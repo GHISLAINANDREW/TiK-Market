@@ -28,8 +28,8 @@ object UrlUtils {
             absoluteUrl = absoluteUrl.replace("http://", "https://")
         }
 
-        // 3. Dynamic domain swap: if URL uses an backend host, swap it to activeBase
-        if (absoluteUrl.contains("onrender.com") || absoluteUrl.contains("workers.dev")) {
+        // 3. Dynamic domain swap: if URL uses a backend host, swap it to activeBase
+        if (absoluteUrl.contains("onrender.com") || absoluteUrl.contains("workers.dev") || absoluteUrl.contains("vercel.app")) {
             val uriWithoutScheme = absoluteUrl.removePrefix("https://").removePrefix("http://")
             val firstSlash = uriWithoutScheme.indexOf('/')
             val path = if (firstSlash >= 0) uriWithoutScheme.substring(firstSlash) else ""

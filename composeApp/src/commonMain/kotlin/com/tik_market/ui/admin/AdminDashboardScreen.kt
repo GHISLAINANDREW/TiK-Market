@@ -1402,7 +1402,7 @@ fun AdminShopDetailScreen(
                     },
                     confirmButton = {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             OutlinedButton(
@@ -1412,23 +1412,9 @@ fun AdminShopDetailScreen(
                                 },
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(2.dp))
-                                Text("Copier", fontSize = 11.sp)
-                            }
-
-                            val pdfPrinter = com.tik_market.utils.rememberPdfPrinter()
-                            OutlinedButton(
-                                onClick = {
-                                    val htmlContent = if (isFiche) generateVendorSheetHtml(shop) else generateVendorContractHtml(shop)
-                                    val jobName = if (isFiche) "Fiche_Vendeur_${shop.name}" else "Contrat_Vendeur_${shop.name}"
-                                    pdfPrinter(htmlContent, jobName)
-                                },
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(2.dp))
-                                Text("Aperçu PDF", fontSize = 11.sp)
+                                Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Copier", fontSize = 12.sp)
                             }
 
                             val fileExporter = com.tik_market.utils.rememberFileExporter()
@@ -1441,9 +1427,9 @@ fun AdminShopDetailScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Green),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                Icon(Icons.Default.Download, null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(2.dp))
-                                Text("Télécharger PDF", color = Color.White, fontSize = 11.sp)
+                                Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Télécharger le PDF", color = Color.White, fontSize = 12.sp)
                             }
                         }
                     },

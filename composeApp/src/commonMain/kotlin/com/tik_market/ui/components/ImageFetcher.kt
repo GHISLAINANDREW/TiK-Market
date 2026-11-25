@@ -23,7 +23,7 @@ object ImageFetcher {
         if (primaryBytes != null) return primaryBytes
 
         // If primary fails and url contains a domain from baseUrls, attempt fallback candidate domains
-        if (url.contains("workers.dev") || url.contains("onrender.com")) {
+        if (url.contains("workers.dev") || url.contains("onrender.com") || url.contains("vercel.app")) {
             val uriWithoutScheme = url.removePrefix("https://").removePrefix("http://")
             val firstSlash = uriWithoutScheme.indexOf('/')
             val path = if (firstSlash >= 0) uriWithoutScheme.substring(firstSlash) else ""

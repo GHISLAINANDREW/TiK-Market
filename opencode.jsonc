@@ -1,7 +1,4 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "openwork",
-  "plugin": [
-    "opencode-chrome-devtools"
-  ]
+  "default_agent": "openwork"
 }
