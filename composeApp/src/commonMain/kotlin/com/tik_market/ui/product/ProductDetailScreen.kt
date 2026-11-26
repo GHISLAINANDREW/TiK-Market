@@ -137,8 +137,9 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
-                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
+                        val firstImg = product.images.firstOrNull { it.isNotBlank() } ?: ""
+                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🖼️ Photo du produit :\n$firstImg\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
                     var showMenu by remember { mutableStateOf(false) }
@@ -860,6 +861,7 @@ private fun FullScreenZoomViewer(
         initialPage = selectedIndex.coerceIn(images.indices),
         pageCount = { images.size }
     )
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(pagerState.currentPage) {
         onIndexChange(pagerState.currentPage)
@@ -949,6 +951,38 @@ private fun FullScreenZoomViewer(
                 }
             }
 
+            // Navigation arrows left/right in full screen zoom
+            if (images.size > 1) {
+                if (pagerState.currentPage > 0) {
+                    IconButton(
+                        onClick = {
+                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 16.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronLeft, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    }
+                }
+                if (pagerState.currentPage < images.size - 1) {
+                    IconButton(
+                        onClick = {
+                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronRight, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                    }
+                }
+            }
+
             // Top Bar: Close button, Image counter, Share button
             Row(
                 modifier = Modifier
@@ -974,8 +1008,9 @@ private fun FullScreenZoomViewer(
 
                 IconButton(
                     onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
-                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
+                        val firstImg = product.images.firstOrNull { it.isNotBlank() } ?: ""
+                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🖼️ Photo :\n$firstImg\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     },
                     modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
@@ -1003,6 +1038,9 @@ private fun FullScreenZoomViewer(
                                     if (pagerState.currentPage == idx) Orange else Color.White.copy(alpha = 0.5f),
                                     CircleShape
                                 )
+                                .clickable {
+                                    scope.launch { pagerState.animateScrollToPage(idx) }
+                                }
                         )
                     }
                 }

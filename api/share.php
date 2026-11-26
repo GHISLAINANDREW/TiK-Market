@@ -37,6 +37,11 @@ if ($productId > 0) {
                     } else if (!empty($product['image_url'])) {
                         $imageUrl = $product['image_url'];
                     }
+
+                    // Convert relative image URLs to absolute URLs
+                    if (!empty($imageUrl) && !preg_match('/^https?:\/\//i', $imageUrl)) {
+                        $imageUrl = "https://tik-market.onrender.com/" . ltrim($imageUrl, '/');
+                    }
                 }
             }
         }
@@ -62,13 +67,16 @@ if (!$isBot && !isset($_GET['preview'])) {
     <meta name="description" content="<?php echo htmlspecialchars($description); ?>">
 
     <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:site_name" content="TiK-Market">
     <meta property="og:type" content="product">
     <meta property="og:url" content="<?php echo htmlspecialchars($appUrl); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($title); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($description); ?>">
     <meta property="og:image" content="<?php echo htmlspecialchars($imageUrl); ?>">
-    <meta property="og:image:width" content="600">
-    <meta property="og:image:height" content="600">
+    <meta property="og:image:secure_url" content="<?php echo htmlspecialchars($imageUrl); ?>">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="800">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
