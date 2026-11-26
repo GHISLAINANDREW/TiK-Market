@@ -30,23 +30,18 @@ enum class ConnectionQuality(val label: String, val captureIntervalMs: Long, val
  */
 class ConnectionQualityMonitor {
     private val latencies = mutableListOf<Long>()
-    private val lock = Any()
 
     /** Record the time (ms) a single upload took. */
     fun recordUpload(durationMs: Long) {
-        synchronized(lock) {
-            latencies.add(durationMs)
-            // Keep the last 5 samples for a rolling average.
-            if (latencies.size > 5) latencies.removeAt(0)
-        }
+        latencies.add(durationMs)
+        // Keep the last 5 samples for a rolling average.
+        if (latencies.size > 5) latencies.removeAt(0)
     }
 
     /** Average latency over the recent window. */
     fun averageLatencyMs(): Long {
-        synchronized(lock) {
-            if (latencies.isEmpty()) return 1000L
-            return latencies.average().toLong()
-        }
+        if (latencies.isEmpty()) return 1000L
+        return latencies.average().toLong()
     }
 
     fun currentQuality(): ConnectionQuality =

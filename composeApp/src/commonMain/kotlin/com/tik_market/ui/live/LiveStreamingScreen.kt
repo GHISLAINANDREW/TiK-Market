@@ -23,7 +23,6 @@ import com.tik_market.utils.ConnectionQualityMonitor
 import com.tik_market.utils.shareText
 import com.tik_market.utils.startLiveAudioCapture
 import com.tik_market.utils.stopLiveAudioCapture
-import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,13 +111,11 @@ fun LiveStreamingScreen(
                     if (isLive && streamId > 0 && !uploadInFlight) {
                         uploadInFlight = true
                         scope.launch {
-                            val elapsed = kotlin.system.measureTimeMillis {
-                                try {
-                                    ApiClient.uploadLiveFrame(streamId, frameB64)
-                                } catch (e: Exception) {
-                                    // Upload failed — treat as very slow.
-                                }
-                            }
+                            val mark = kotlin.time.TimeSource.Monotonic.markNow()
+                            try {
+                                ApiClient.uploadLiveFrame(streamId, frameB64)
+                            } catch (_: Exception) {}
+                            val elapsed = mark.elapsedNow().inWholeMilliseconds
                             qualityMonitor.recordUpload(elapsed)
                             qualityLabel = qualityMonitor.currentQuality().label
                             uploadInFlight = false
