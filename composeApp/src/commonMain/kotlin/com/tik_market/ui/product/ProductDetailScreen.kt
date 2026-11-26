@@ -33,9 +33,20 @@ import com.tik_market.utils.format
 //import androidx.compose.ui.draw.scale
 //import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch
-
 import com.tik_market.utils.FormatUtils
 import com.tik_market.data.Resource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -50,6 +61,7 @@ fun ProductDetailScreen(
     onToggleCompare: () -> Unit = {}
 ) {
     var selectedImageIndex by remember { mutableStateOf(0) }
+    var showZoomDialog by remember { mutableStateOf(false) }
     var reviewResource by remember { mutableStateOf<Resource<List<Review>>>(Resource.Loading) }
     var showReportDialog by remember { mutableStateOf(false) }
     var isInWishlist by remember { mutableStateOf(false) }
@@ -127,8 +139,8 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
-                        val shareText = "🚀 Découvre ${product.title} sur TiK-Market\nPrix : ${FormatUtils.formatPrice(product.price)}\n\nLien : $shareUrl"
+                        val shareUrl = "https://tikmarket-app.vercel.app/api/share.php?p=${product.id}"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
                     var showMenu by remember { mutableStateOf(false) }
@@ -208,7 +220,8 @@ fun ProductDetailScreen(
                         modifier = Modifier
                             .let { if (isWeb) it.size(400.dp) else it.weight(1f).aspectRatio(1f) }
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF8F8F8)),
+                            .background(Color(0xFFF8F8F8))
+                            .clickable { showZoomDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
                         val currentUrl = product.images.getOrNull(selectedImageIndex) ?: ""
@@ -223,7 +236,7 @@ fun ProductDetailScreen(
 
                         // Boutons sur l'image
                         IconButton(
-                            onClick = { /* Zoom */ },
+                            onClick = { showZoomDialog = true },
                             modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).background(Color.White.copy(alpha = 0.7f), CircleShape).size(36.dp)
                         ) { Icon(Icons.Default.ZoomIn, null, Modifier.size(20.dp)) }
                         
@@ -771,6 +784,169 @@ fun ProductDetailScreen(
                 }
             }
         )
+    }
+
+    if (showZoomDialog) {
+        FullScreenZoomViewer(
+            product = product,
+            selectedIndex = selectedImageIndex,
+            onIndexChange = { selectedImageIndex = it },
+            onDismiss = { showZoomDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun FullScreenZoomViewer(
+    product: Product,
+    selectedIndex: Int,
+    onIndexChange: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        var scale by remember { mutableFloatStateOf(1f) }
+        var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f)),
+            contentAlignment = Alignment.Center
+        ) {
+            val currentUrl = product.images.getOrNull(selectedIndex) ?: ""
+            var zoomImgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+            LaunchedEffect(currentUrl) {
+                if (currentUrl.isNotBlank()) zoomImgBitmap = loadImageFromUrl(currentUrl)
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            if (scale > 1f) {
+                                val maxOffsetX = (size.width * (scale - 1f)) / 2f
+                                val maxOffsetY = (size.height * (scale - 1f)) / 2f
+                                offset = androidx.compose.ui.geometry.Offset(
+                                    x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                    y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                )
+                            } else {
+                                offset = androidx.compose.ui.geometry.Offset.Zero
+                            }
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                if (scale > 1f) {
+                                    scale = 1f
+                                    offset = androidx.compose.ui.geometry.Offset.Zero
+                                } else {
+                                    scale = 2.5f
+                                }
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (zoomImgBitmap != null) {
+                    Image(
+                        bitmap = zoomImgBitmap!!,
+                        contentDescription = product.title,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
+                    )
+                } else {
+                    Text(
+                        SampleData.productEmojis[product.id] ?: "📦",
+                        fontSize = 120.sp,
+                        modifier = Modifier.graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offset.x,
+                            translationY = offset.y
+                        )
+                    )
+                }
+            }
+
+            // Top Bar: Close button, Image counter, Share button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
+                ) {
+                    Icon(Icons.Default.Close, null, tint = Color.White)
+                }
+
+                Text(
+                    text = "${selectedIndex + 1} / ${product.images.size.coerceAtLeast(1)}",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+
+                IconButton(
+                    onClick = {
+                        val shareUrl = "https://tikmarket-app.vercel.app/api/share.php?p=${product.id}"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
+                        shareText(shareText, "TiK-Market - ${product.title}")
+                    },
+                    modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
+                ) {
+                    Icon(Icons.Default.Share, null, tint = Color.White)
+                }
+            }
+
+            // Bottom Bar: Thumbnails indicator
+            val images = product.images.ifEmpty { listOf("") }
+            if (images.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 28.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    images.forEachIndexed { idx, _ ->
+                        Box(
+                            modifier = Modifier
+                                .size(if (selectedIndex == idx) 12.dp else 8.dp)
+                                .background(
+                                    if (selectedIndex == idx) Orange else Color.White.copy(alpha = 0.5f),
+                                    CircleShape
+                                )
+                                .clickable {
+                                    onIndexChange(idx)
+                                    scale = 1f
+                                    offset = androidx.compose.ui.geometry.Offset.Zero
+                                }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
