@@ -24,8 +24,8 @@ actual object HttpEngine {
             val conn = URL(url).openConnection() as HttpURLConnection
             connection = conn
             conn.requestMethod = method.uppercase()
-            conn.connectTimeout = 6000  // 6s connect timeout for fast fallback on mobile networks (Orange/MTN)
-            conn.readTimeout = 15000    // 15s read timeout
+            conn.connectTimeout = 10000 // 10s connect timeout
+            conn.readTimeout = 30000    // 30s read timeout (pour autoriser le réveil Render après inactivité)
             conn.instanceFollowRedirects = true
             conn.useCaches = false
             conn.doInput = true

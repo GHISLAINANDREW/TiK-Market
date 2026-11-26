@@ -73,14 +73,14 @@ object ApiClient {
 
     /**
      * API endpoints, in priority order.
-     * Vercel (tik-market-app.vercel.app/api) sert de proxy CDN ultra-rapide et fiable
-     * contournant tous les blocages réseau des opérateurs mobiles (ex: Orange Cameroun).
+     * 1. Serveur principal Render (données réelles en direct)
+     * 2. Proxys Cloudflare / Vercel pour le secours
      */
     private var _baseUrls: List<String> = listOf(
-        "https://tik-market-app.vercel.app/api",
-        "https://dschang-market.vercel.app/api",
         "https://tik-market.onrender.com",
-        "https://tik-market-api.gtankou.workers.dev"
+        "https://tik-market-api.gtankou.workers.dev",
+        "https://tik-market-proxy.gtankou.workers.dev",
+        "https://tik-market-app.vercel.app/api"
     )
     private var _activeBaseUrlIndex = 0
 
