@@ -137,9 +137,8 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val firstImg = product.images.firstOrNull { it.isNotBlank() } ?: ""
                         val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
-                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🖼️ Photo du produit :\n$firstImg\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 *Voir le produit sur TiK-Market :*\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
                     var showMenu by remember { mutableStateOf(false) }
@@ -1008,9 +1007,8 @@ private fun FullScreenZoomViewer(
 
                 IconButton(
                     onClick = {
-                        val firstImg = product.images.firstOrNull { it.isNotBlank() } ?: ""
                         val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
-                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🖼️ Photo :\n$firstImg\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
+                        val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 *Voir le produit sur TiK-Market :*\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     },
                     modifier = Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)

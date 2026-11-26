@@ -24,7 +24,7 @@ fun PollingManager(appState: AppState) {
                 try {
                     val msgCount = ApiClient.fetchUnreadCount()
                     if (msgCount > previousUnreadMessages) {
-                        NotificationUtils.showNotification("Nouveau message", "Vous avez reçu un message")
+                        NotificationUtils.showNotification("Nouveau message", "Vous avez reçu un nouveau message", type = "message", relatedId = 0)
                     }
                     previousUnreadMessages = msgCount
                     appState.unreadMessages = msgCount
@@ -54,7 +54,12 @@ fun PollingManager(appState: AppState) {
                     val unreadNotifs = notifications.count { !it.isRead }
                     if (unreadNotifs > previousUnreadNotifications) {
                         notifications.filter { !it.isRead }.forEach { notif ->
-                            NotificationUtils.showNotification(notif.title, notif.message)
+                            NotificationUtils.showNotification(
+                                title = notif.title,
+                                message = notif.message,
+                                type = notif.type.ifBlank { "notification" },
+                                relatedId = notif.relatedId ?: 0
+                            )
                         }
                     }
                     previousUnreadNotifications = unreadNotifs
