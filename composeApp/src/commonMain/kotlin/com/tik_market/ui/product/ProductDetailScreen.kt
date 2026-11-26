@@ -137,7 +137,7 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
+                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
                         val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
@@ -855,82 +855,97 @@ private fun FullScreenZoomViewer(
     onIndexChange: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val images = product.images.ifEmpty { listOf("") }
+    val pagerState = rememberPagerState(
+        initialPage = selectedIndex.coerceIn(images.indices),
+        pageCount = { images.size }
+    )
+
+    LaunchedEffect(pagerState.currentPage) {
+        onIndexChange(pagerState.currentPage)
+    }
+
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        var scale by remember { mutableFloatStateOf(1f) }
-        var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.95f)),
             contentAlignment = Alignment.Center
         ) {
-            val currentUrl = product.images.getOrNull(selectedIndex) ?: ""
-            var zoomImgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-            LaunchedEffect(currentUrl) {
-                if (currentUrl.isNotBlank()) zoomImgBitmap = loadImageFromUrl(currentUrl)
-            }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                var scale by remember { mutableFloatStateOf(1f) }
+                var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 5f)
-                            if (scale > 1f) {
-                                val maxOffsetX = (size.width * (scale - 1f)) / 2f
-                                val maxOffsetY = (size.height * (scale - 1f)) / 2f
-                                offset = androidx.compose.ui.geometry.Offset(
-                                    x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
-                                    y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
-                                )
-                            } else {
-                                offset = androidx.compose.ui.geometry.Offset.Zero
-                            }
-                        }
-                    }
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
+                val currentUrl = images.getOrNull(page) ?: ""
+                var zoomImgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                LaunchedEffect(currentUrl) {
+                    if (currentUrl.isNotBlank()) zoomImgBitmap = loadImageFromUrl(currentUrl)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                scale = (scale * zoom).coerceIn(1f, 5f)
                                 if (scale > 1f) {
-                                    scale = 1f
-                                    offset = androidx.compose.ui.geometry.Offset.Zero
+                                    val maxOffsetX = (size.width * (scale - 1f)) / 2f
+                                    val maxOffsetY = (size.height * (scale - 1f)) / 2f
+                                    offset = androidx.compose.ui.geometry.Offset(
+                                        x = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX),
+                                        y = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
+                                    )
                                 } else {
-                                    scale = 2.5f
+                                    offset = androidx.compose.ui.geometry.Offset.Zero
                                 }
                             }
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    if (scale > 1f) {
+                                        scale = 1f
+                                        offset = androidx.compose.ui.geometry.Offset.Zero
+                                    } else {
+                                        scale = 2.5f
+                                    }
+                                }
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (zoomImgBitmap != null) {
+                        Image(
+                            bitmap = zoomImgBitmap!!,
+                            contentDescription = product.title,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                )
                         )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                if (zoomImgBitmap != null) {
-                    Image(
-                        bitmap = zoomImgBitmap!!,
-                        contentDescription = product.title,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
+                    } else {
+                        Text(
+                            SampleData.productEmojis[product.id] ?: "📦",
+                            fontSize = 120.sp,
+                            modifier = Modifier.graphicsLayer(
                                 scaleX = scale,
                                 scaleY = scale,
                                 translationX = offset.x,
                                 translationY = offset.y
                             )
-                    )
-                } else {
-                    Text(
-                        SampleData.productEmojis[product.id] ?: "📦",
-                        fontSize = 120.sp,
-                        modifier = Modifier.graphicsLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            translationX = offset.x,
-                            translationY = offset.y
                         )
-                    )
+                    }
                 }
             }
 
@@ -951,7 +966,7 @@ private fun FullScreenZoomViewer(
                 }
 
                 Text(
-                    text = "${selectedIndex + 1} / ${product.images.size.coerceAtLeast(1)}",
+                    text = "${pagerState.currentPage + 1} / ${images.size}",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
@@ -959,7 +974,7 @@ private fun FullScreenZoomViewer(
 
                 IconButton(
                     onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
+                        val shareUrl = "https://tikmarket-app.vercel.app/?p=${product.id}"
                         val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     },
@@ -970,7 +985,6 @@ private fun FullScreenZoomViewer(
             }
 
             // Bottom Bar: Thumbnails indicator
-            val images = product.images.ifEmpty { listOf("") }
             if (images.size > 1) {
                 Row(
                     modifier = Modifier
@@ -981,19 +995,14 @@ private fun FullScreenZoomViewer(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    images.forEachIndexed { idx, _ ->
+                    images.indices.forEach { idx ->
                         Box(
                             modifier = Modifier
-                                .size(if (selectedIndex == idx) 12.dp else 8.dp)
+                                .size(if (pagerState.currentPage == idx) 12.dp else 8.dp)
                                 .background(
-                                    if (selectedIndex == idx) Orange else Color.White.copy(alpha = 0.5f),
+                                    if (pagerState.currentPage == idx) Orange else Color.White.copy(alpha = 0.5f),
                                     CircleShape
                                 )
-                                .clickable {
-                                    onIndexChange(idx)
-                                    scale = 1f
-                                    offset = androidx.compose.ui.geometry.Offset.Zero
-                                }
                         )
                     }
                 }
