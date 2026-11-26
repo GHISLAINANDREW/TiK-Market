@@ -37,12 +37,10 @@ import com.tik_market.utils.FormatUtils
 import com.tik_market.data.Resource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.window.Dialog
@@ -139,7 +137,7 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton(onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/api/share.php?p=${product.id}"
+                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
                         val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     }) { Icon(Icons.Default.Share, null) }
@@ -215,23 +213,77 @@ fun ProductDetailScreen(
 
                     if (isWeb) Spacer(Modifier.width(32.dp))
 
-                    // Image principale (au centre)
+                    val imagesList = product.images.ifEmpty { listOf("") }
+                    val pagerState = rememberPagerState(pageCount = { imagesList.size })
+
+                    LaunchedEffect(pagerState.currentPage) {
+                        selectedImageIndex = pagerState.currentPage
+                    }
+                    LaunchedEffect(selectedImageIndex) {
+                        if (pagerState.currentPage != selectedImageIndex && selectedImageIndex in imagesList.indices) {
+                            pagerState.animateScrollToPage(selectedImageIndex)
+                        }
+                    }
+
+                    // Image principale swipeable (au centre)
                     Box(
                         modifier = Modifier
                             .let { if (isWeb) it.size(400.dp) else it.weight(1f).aspectRatio(1f) }
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF8F8F8))
-                            .clickable { showZoomDialog = true },
+                            .background(Color(0xFFF8F8F8)),
                         contentAlignment = Alignment.Center
                     ) {
-                        val currentUrl = product.images.getOrNull(selectedImageIndex) ?: ""
-                        var mainImgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-                        LaunchedEffect(currentUrl) { if (currentUrl.isNotBlank()) mainImgBitmap = loadImageFromUrl(currentUrl) }
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            val currentUrl = imagesList.getOrNull(page) ?: ""
+                            var mainImgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+                            LaunchedEffect(currentUrl) {
+                                if (currentUrl.isNotBlank()) mainImgBitmap = loadImageFromUrl(currentUrl)
+                            }
 
-                        if (mainImgBitmap != null) {
-                            Image(bitmap = mainImgBitmap!!, contentDescription = product.title, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
-                        } else {
-                            Text(SampleData.productEmojis[product.id] ?: "📦", fontSize = if (isWeb) 150.sp else 100.sp)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable { showZoomDialog = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (mainImgBitmap != null) {
+                                    Image(
+                                        bitmap = mainImgBitmap!!,
+                                        contentDescription = product.title,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Text(SampleData.productEmojis[product.id] ?: "📦", fontSize = if (isWeb) 150.sp else 100.sp)
+                                }
+                            }
+                        }
+
+                        // Indicatif de pages (puces)
+                        if (imagesList.size > 1) {
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 12.dp)
+                                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                imagesList.indices.forEach { index ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (selectedImageIndex == index) 8.dp else 6.dp)
+                                            .background(
+                                                if (selectedImageIndex == index) Orange else Color.White.copy(alpha = 0.6f),
+                                                CircleShape
+                                            )
+                                    )
+                                }
+                            }
                         }
 
                         // Boutons sur l'image
@@ -907,7 +959,7 @@ private fun FullScreenZoomViewer(
 
                 IconButton(
                     onClick = {
-                        val shareUrl = "https://tikmarket-app.vercel.app/api/share.php?p=${product.id}"
+                        val shareUrl = "https://tikmarket-app.vercel.app/s/${product.id}"
                         val shareText = "🛍️ *${product.title}*\n💰 *Prix : ${FormatUtils.formatPrice(product.price)}*\n\n🔗 Voir le produit sur TiK-Market :\n$shareUrl"
                         shareText(shareText, "TiK-Market - ${product.title}")
                     },

@@ -7,6 +7,8 @@
   "framework": null,
   "installCommand": "",
   "rewrites": [
+    { "source": "/s/:id", "destination": "https://tik-market.onrender.com/share.php?p=:id" },
+    { "source": "/share.php", "destination": "https://tik-market.onrender.com/share.php" },
     { "source": "/api/:path*", "destination": "https://tik-market.onrender.com/:path*" },
     { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
   ],
