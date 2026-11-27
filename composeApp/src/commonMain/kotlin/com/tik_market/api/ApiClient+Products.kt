@@ -170,9 +170,11 @@ suspend fun ApiClient.createShop(
     cniBack: String? = null,
     interiorPhoto: String? = null,
     exteriorPhoto: String? = null,
-    signPhoto: String? = null
+    signPhoto: String? = null,
+    latitude: Double? = null,
+    longitude: Double? = null
 ): ApiShop {
-    val body = json.encodeToString(ApiCreateShopBody(name, description, phone, location, category, imageUrl, cniFront, cniBack, interiorPhoto, exteriorPhoto, signPhoto))
+    val body = json.encodeToString(ApiCreateShopBody(name, description, phone, location, category, imageUrl, cniFront, cniBack, interiorPhoto, exteriorPhoto, signPhoto, latitude, longitude))
     return safeRequest<ApiShopResponse>("POST", ApiClient.Endpoints.SHOPS, body).shop
 }
 

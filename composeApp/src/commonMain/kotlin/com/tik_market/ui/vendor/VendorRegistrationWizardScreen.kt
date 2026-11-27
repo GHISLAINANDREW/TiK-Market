@@ -63,6 +63,17 @@ fun VendorRegistrationWizardScreen(
     var shopDescription by remember { mutableStateOf("") }
     var shopPhone by remember { mutableStateOf("") }
     var shopCategory by remember { mutableStateOf("Alimentation") }
+    var shopLat by remember { mutableStateOf<Double?>(null) }
+    var shopLng by remember { mutableStateOf<Double?>(null) }
+
+    LaunchedEffect(Unit) {
+        getCurrentLocationLatLng { lat, lng ->
+            if (lat != null && lng != null) {
+                shopLat = lat
+                shopLng = lng
+            }
+        }
+    }
     var categoryExpanded by remember { mutableStateOf(false) }
     var latitude by remember { mutableStateOf(0.0) }
     var longitude by remember { mutableStateOf(0.0) }
@@ -476,7 +487,7 @@ fun VendorRegistrationWizardScreen(
                                             var signUrl: String? = null
                                             if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
 
-                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
+                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl, shopLat, shopLng)
                                             successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
                                             kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)
@@ -519,7 +530,7 @@ fun VendorRegistrationWizardScreen(
                                             var signUrl: String? = null
                                             if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
 
-                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
+                                            ApiClient.createShop(shopName, shopDescription, shopPhone, "Dschang", shopCategory, logoUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl, shopLat, shopLng)
                                             successMessage = "Compte marchand en cours de validation par l'équipe TiK-Market. Vous pouvez commencer à publier vos produits !"
                                             kotlinx.coroutines.delay(1500L)
                                             onRegistrationComplete(shopName)

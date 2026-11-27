@@ -199,6 +199,25 @@ fun ShopPageScreen(
                                         }
                                     }
                                 }
+                                // Itinéraire GPS
+                                Surface(
+                                    onClick = {
+                                        val navUrl = if (s.latitude != 0.0 && s.longitude != 0.0) {
+                                            "https://www.google.com/maps/dir/?api=1&destination=${s.latitude},${s.longitude}"
+                                        } else {
+                                            "https://www.google.com/maps/dir/?api=1&destination=${s.location.replace(" ", "+")}"
+                                        }
+                                        openUrl(navUrl)
+                                    },
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color.White.copy(alpha = 0.25f)
+                                ) {
+                                    Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Navigation, null, Modifier.size(16.dp), tint = Color.White)
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Itinéraire GPS", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
                             }
                         }
                     }

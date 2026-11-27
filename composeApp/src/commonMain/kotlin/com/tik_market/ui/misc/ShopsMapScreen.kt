@@ -32,6 +32,17 @@ import kotlinx.coroutines.launch
  * Écran "Carte des boutiques" — affiche une liste avec localisation
  * et un lien vers Google Maps pour chaque boutique.
  */
+private fun calculateDistanceKm(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+    val r = 6371.0
+    val dLat = (lat2 - lat1) * (kotlin.math.PI / 180.0)
+    val dLng = (lng2 - lng1) * (kotlin.math.PI / 180.0)
+    val a = kotlin.math.sin(dLat / 2) * kotlin.math.sin(dLat / 2) +
+            kotlin.math.cos(lat1 * (kotlin.math.PI / 180.0)) * kotlin.math.cos(lat2 * (kotlin.math.PI / 180.0)) *
+            kotlin.math.sin(dLng / 2) * kotlin.math.sin(dLng / 2)
+    val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
+    return r * c
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShopsMapScreen(
@@ -41,10 +52,21 @@ fun ShopsMapScreen(
     var shops by remember { mutableStateOf<List<ApiShop>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
+    var userLat by remember { mutableStateOf<Double?>(null) }
+    var userLng by remember { mutableStateOf<Double?>(null) }
     // Store loaded logos
     var shopLogos by remember { mutableStateOf<Map<Int, ImageBitmap>>(emptyMap()) }
     val scope = rememberCoroutineScope()
     val ts = LocalAppStrings.current
+
+    LaunchedEffect(Unit) {
+        com.tik_market.utils.getCurrentLocationLatLng { lat, lng ->
+            if (lat != null && lng != null) {
+                userLat = lat
+                userLng = lng
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         isLoading = true
@@ -67,9 +89,21 @@ fun ShopsMapScreen(
         isLoading = false
     }
 
-    val filteredShops = remember(shops, searchQuery) {
-        if (searchQuery.isBlank()) shops
+    val filteredShops = remember(shops, searchQuery, userLat, userLng) {
+        val base = if (searchQuery.isBlank()) shops
         else shops.filter { it.name.contains(searchQuery, ignoreCase = true) || it.location.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
+
+        if (userLat != null && userLng != null) {
+            base.sortedBy { shop ->
+                if (shop.latitude != 0.0 && shop.longitude != 0.0) {
+                    calculateDistanceKm(userLat!!, userLng!!, shop.latitude, shop.longitude)
+                } else {
+                    9999.0
+                }
+            }
+        } else {
+            base
+        }
     }
 
     Scaffold(
@@ -120,6 +154,8 @@ fun ShopsMapScreen(
                         ShopMapCard(
                             shop = shop,
                             logo = shopLogos[shop.id],
+                            userLat = userLat,
+                            userLng = userLng,
                             onClick = { onShopClick(shop.id) }
                         )
                     }
@@ -154,9 +190,18 @@ fun ShopsMapScreen(
 private fun ShopMapCard(
     shop: ApiShop,
     logo: ImageBitmap?,
+    userLat: Double? = null,
+    userLng: Double? = null,
     onClick: () -> Unit
 ) {
     val ts = LocalAppStrings.current
+    val distText = remember(userLat, userLng, shop.latitude, shop.longitude) {
+        if (userLat != null && userLng != null && shop.latitude != 0.0 && shop.longitude != 0.0) {
+            val d = calculateDistanceKm(userLat, userLng, shop.latitude, shop.longitude)
+            if (d < 1.0) "${(d * 1000).toInt()} m" else "${(d * 10).toInt() / 10.0} km"
+        } else null
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -188,8 +233,16 @@ private fun ShopMapCard(
                             Icon(Icons.Default.Verified, null, Modifier.size(14.dp), tint = Color(0xFFFFD700))
                         }
                     }
-                    if (shop.category.isNotBlank()) {
-                        Text(shop.category, fontSize = 12.sp, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (shop.category.isNotBlank()) {
+                            Text(shop.category, fontSize = 12.sp, color = Color.Gray)
+                        }
+                        if (distText != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Surface(color = GreenSurface, shape = RoundedCornerShape(8.dp)) {
+                                Text("📍 $distText", fontSize = 10.sp, color = Green, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -218,7 +271,14 @@ private fun ShopMapCard(
                         }
                         
                         Surface(
-                            onClick = { openUrl("https://www.google.com/maps/dir/?api=1&destination=${shop.location.replace(" ", "+")}") },
+                            onClick = {
+                                val navUrl = if (shop.latitude != 0.0 && shop.longitude != 0.0) {
+                                    "https://www.google.com/maps/dir/?api=1&destination=${shop.latitude},${shop.longitude}"
+                                } else {
+                                    "https://www.google.com/maps/dir/?api=1&destination=${shop.location.replace(" ", "+")}"
+                                }
+                                openUrl(navUrl)
+                            },
                             shape = RoundedCornerShape(12.dp),
                             color = BlueAccent.copy(alpha = 0.1f)
                         ) {

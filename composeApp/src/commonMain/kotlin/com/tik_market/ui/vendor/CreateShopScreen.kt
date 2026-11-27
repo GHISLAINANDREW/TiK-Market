@@ -49,11 +49,28 @@ fun CreateShopScreen(
     var description by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("Dschang") }
+    var shopLat by remember { mutableStateOf<Double?>(null) }
+    var shopLng by remember { mutableStateOf<Double?>(null) }
     var showLocationPicker by remember { mutableStateOf(false) }
     var category by remember { mutableStateOf("") }
     var categoryExpanded by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Auto-detect GPS location on screen launch
+    LaunchedEffect(Unit) {
+        getCurrentLocationLatLng { lat, lng ->
+            if (lat != null && lng != null) {
+                shopLat = lat
+                shopLng = lng
+                getPlaceName(lat, lng) { place ->
+                    if (place.isNotBlank() && (location == "Dschang" || location.isBlank())) {
+                        location = place
+                    }
+                }
+            }
+        }
+    }
     
     var shopImageBase64 by remember { mutableStateOf<String?>(null) }
     var shopImageFileName by remember { mutableStateOf("shop_profile.jpg") }
@@ -268,7 +285,7 @@ fun CreateShopScreen(
                                             var signUrl: String? = null
                                             if (signBase64 != null) signUrl = ApiClient.uploadImage(signBase64!!, "sign.jpg")
 
-                                            ApiClient.createShop(name.trim(), description.trim(), phone.trim(), location.trim(), category, imageUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl)
+                                            ApiClient.createShop(name.trim(), description.trim(), phone.trim(), location.trim(), category, imageUrl, cniFrontUrl, cniBackUrl, interiorUrl, exteriorUrl, signUrl, shopLat, shopLng)
                                             onShopCreated(name.trim())
                                         } catch (e: Exception) {
                                             errorMessage = e.message ?: ts.errGeneric

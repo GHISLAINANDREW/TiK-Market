@@ -29,7 +29,9 @@ data class ApiCreateShopBody(
     @SerialName("cni_back") val cniBack: String? = null,
     @SerialName("interior_photo") val interiorPhoto: String? = null,
     @SerialName("exterior_photo") val exteriorPhoto: String? = null,
-    @SerialName("sign_photo") val signPhoto: String? = null
+    @SerialName("sign_photo") val signPhoto: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 @Serializable
