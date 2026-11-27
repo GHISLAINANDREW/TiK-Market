@@ -6,22 +6,17 @@
 // - Composants transverses : ui/components/{AppBottomBar,PollingManager,...}.kt
 package com.tik_market
 
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tik_market.api.*
 import com.tik_market.api.dto.*
 import kotlinx.coroutines.delay
@@ -80,6 +75,16 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showOnboarding by remember { mutableStateOf(OnboardingManager.isFirstLaunch()) }
+    var updateInfo by remember { mutableStateOf<ApiVersionCheckResponse?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val latest = ApiClient.fetchLatestAppVersion()
+            if (latest != null && latest.versionCode > 17) {
+                updateInfo = latest
+            }
+        } catch (_: Exception) {}
+    }
 
     // Handle cold-start startup parameters (notifications, deep links)
     remember {
@@ -343,6 +348,44 @@ fun App(onExit: () -> Unit = {}, initialScreen: NavScreen = NavScreen.Splash) {
                                 }
                             }
                         }
+                    }
+
+                    if (updateInfo != null) {
+                        val info = updateInfo!!
+                        AlertDialog(
+                            onDismissRequest = {
+                                if (!info.forceUpdate) updateInfo = null
+                            },
+                            icon = { Icon(Icons.Default.SystemUpdate, null, tint = Green) },
+                            title = { Text("🚀 Mise à jour disponible (${info.versionName})", fontWeight = FontWeight.Bold) },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(info.releaseNotes.ifBlank { "Une nouvelle version de TiK-Market est disponible avec des améliorations et des corrections." }, fontSize = 13.sp)
+                                    Text("Version actuelle : v1.0.17  ➔  Nouvelle : v${info.versionName}", fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val downloadUrl = info.apkUrl.ifBlank { "https://github.com/GHISLAINANDREW/TiK-Market/releases/latest/download/TiK-Market_latest.apk" }
+                                        com.tik_market.utils.downloadFile(downloadUrl, "TiK-Market_v${info.versionName}.apk")
+                                        if (!info.forceUpdate) updateInfo = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Green)
+                                ) {
+                                    Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Télécharger la mise à jour")
+                                }
+                            },
+                            dismissButton = {
+                                if (!info.forceUpdate) {
+                                    TextButton(onClick = { updateInfo = null }) {
+                                        Text("Plus tard")
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             }

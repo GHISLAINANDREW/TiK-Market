@@ -130,3 +130,11 @@ suspend fun ApiClient.fetchVendorStats(): ApiVendorStatsResponse {
         ApiVendorStatsResponse()
     }
 }
+
+suspend fun ApiClient.fetchLatestAppVersion(): ApiVersionCheckResponse? {
+    return try {
+        safeRequest<ApiVersionCheckResponse>("GET", "/version.php")
+    } catch (_: Exception) {
+        null
+    }
+}

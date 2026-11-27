@@ -92,3 +92,12 @@ data class ApiSuccessResponse(
 
 @Serializable
 data class ApiError(val error: String)
+
+@Serializable
+data class ApiVersionCheckResponse(
+    @SerialName("version_code") val versionCode: Int = 1,
+    @SerialName("version_name") val versionName: String = "1.0.0",
+    @SerialName("apk_url") val apkUrl: String = "",
+    @SerialName("release_notes") val releaseNotes: String = "",
+    @SerialName("force_update") val forceUpdate: Boolean = false
+)
